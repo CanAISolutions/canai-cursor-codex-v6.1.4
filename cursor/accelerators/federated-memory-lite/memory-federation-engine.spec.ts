@@ -1,8 +1,8 @@
-// cursor/accelerators/federated-memory-lite/__tests__/memory-federation-engine.spec.ts
+// cursor/accelerators/federated-memory-lite/memory-federation-engine.spec.ts
 // ✅ Snapshot Unit Tests – memory-federation-engine
 // Ensures priority routing, fallback logic, and trace accuracy are Codex-compliant.
 
-import { resolveMemory, MemoryRequest } from '../memory-federation-engine'
+import { resolveMemory, MemoryRequest } from './memory-federation-engine'
 
 describe('resolveMemory', () => {
   const baseSources = {

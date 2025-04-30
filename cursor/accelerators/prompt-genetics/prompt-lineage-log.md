@@ -1,38 +1,91 @@
-# 🧬 Prompt Lineage & Variant Tracking
+# 🧬 Prompt Lineage Log – Codex-Compliant Evolution Tracker
 
-Tracks how prompts evolve over time — which traits are inherited, mutated, or selected.
+## 📘 Purpose
+
+Tracks how prompts evolve over time — what traits are inherited, mutated, or selected.  
+Supports variant replay, automated optimization, fitness-based promotion, and drift prevention.
+
+---
+
+## 📦 Lineage Metadata Fields
+
+| Field             | Type         | Description |
+|------------------|--------------|-------------|
+| `promptId`       | `string`     | Unique ID of the prompt variant |
+| `originId`       | `string`     | ID of the prompt it evolved from |
+| `createdAt`      | `timestamp`  | Time of creation |
+| `traitSnapshot`  | `object`     | All prompt traits at creation (must match schema) |
+| `mutations`      | `string[]`   | Trait keys that were changed |
+| `ignored`        | `string[]`   | Traits skipped due to schema mismatch |
+| `fitnessScore`   | `number`     | Output of `evaluatePromptFitness()` |
+| `copilotSource`  | `string?`    | Optional signature of agent or process |
+| `schemaVersion`  | `string`     | Matches `prompt-trait-schema.jsonc.version` |
+
+> 🔐 All lineage logs must match schema versioning to ensure replay compatibility.
 
 ---
 
 ## 📊 Lineage Graph Rules
 
-- Every prompt has:
-  - A unique `promptId`
-  - Parent `originId`
-  - Trait snapshot (see `prompt-trait-schema`)
-  - Fitness score
-- Lineages are traced via mutation trees stored in `PromptLogs`
-- Prompt with highest `fitnessScore` per lineage is promoted to `preferredPrompt` in metadata
+- All prompts are mutation descendants of either:
+  - A Codex-authored `basePrompt`
+  - A Copilot-modified `variant`
+- Prompt lineage trees are stored in `PromptLogs.lineageTree`
+- The prompt with the **highest `fitnessScore`** is tagged as the `preferredPrompt`
+- Lineage depth must not exceed **5 hops** without review
 
 ---
 
-## 🎯 Selection Strategy
+## 🎯 Selection & Intervention Strategy
 
-| Goal                   | Action                                |
-|------------------------|----------------------------------------|
-| Low emotional score    | Inject variant with stronger tone alignment |
-| High revision count    | Penalize variant fitness, flag for replay  |
-| High reuse rate        | Promote to default variant pool        |
+| Signal                    | Action                                 |
+|---------------------------|----------------------------------------|
+| Low `emotional-resonance` | Inject mutation improving tone strength |
+| High `revision-count`     | Penalize score, flag for replay         |
+| High `reuse-rate`         | Promote to default or featured variant  |
 
----
-
-## Agent Usage
-
-→ Used by: `promptReplay`, `smart-revision-loop`, `promptFixSuggestor`  
-→ Optional input for Copilot: “Evolve from `promptId` X with adjusted tone”
+> Mutation logic is enforced via `prompt-genome-engine.ts`
 
 ---
 
-## Warning
+## 🛑 Decay Prevention Rules
 
-Always track prompt evolution in `sessionDeltaLogEmitter` to prevent drift loops.
+- Every Copilot-triggered variant **must** emit a lineage log via `emitDeltaLog("prompt-lineage", {...})`
+- If a prompt has more than 3 consecutive mutations without improved fitness:
+  - Flag for `promptFixSuggestor`
+  - Consider schema update
+
+---
+
+## 📘 Copilot Usage Example
+
+```json
+{
+  "promptId": "variant-003",
+  "originId": "base-welcome-001",
+  "createdAt": "2025-04-30T15:22:10Z",
+  "traitSnapshot": {
+    "tone-clarity": 0.9,
+    "emotional-resonance": "inspiring",
+    "reuse-rate": 0.7,
+    "revision-count": 0
+  },
+  "mutations": ["tone-clarity", "reuse-rate"],
+  "ignored": [],
+  "fitnessScore": 9.4,
+  "copilotSource": "agent.growth-optimizer",
+  "schemaVersion": "1.0.0"
+}
+```
+
+---
+
+## 🔒 Codex Enforcement
+
+- ✅ Schema-bound
+- ✅ Snapshot-safe
+- ✅ Drift-resistant
+- ✅ Self-healing loop aware
+- ✅ Copilot-upgradable
+
+_Last Verified: 2025-04-30 • Status: Codex Finalized_

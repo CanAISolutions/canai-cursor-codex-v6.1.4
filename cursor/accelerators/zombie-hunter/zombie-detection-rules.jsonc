@@ -1,23 +1,50 @@
 {
-    // Signal patterns that define a "zombie session"
+    // 🚨 Codex Signal Schema for Zombie Session Detection
+    // Interprets session stagnation patterns and emotional decay across revisions
+  
+    "schemaVersion": "1.0",
+    "description": "Defines threshold limits and named detection patterns for identifying zombie loops and non-evolving user sessions.",
+  
     "thresholds": {
-      "maxRevisionCount": 5,
-      "minEmotionScore": 0.2,
-      "minOutputDelta": 0.05
+      "maxRevisionCount": 5,         // If revision count exceeds this, flag
+      "minEmotionScore": 0.2,        // Below this is considered emotional flatline
+      "minOutputDelta": 0.05         // < 5% change means output drift is likely stalled
     },
+  
     "patterns": [
       {
         "name": "no-change-loop",
-        "conditions": ["same-output-3x", "revise-count >= 3"]
+        "description": "Same output shown repeatedly across revisions without meaningful improvement.",
+        "conditions": [
+          "same-output-3x",
+          "revise-count >= 3"
+        ],
+        "trigger": "emit:zombie-flag-no-change"
       },
       {
         "name": "emotion-flatline",
-        "conditions": ["emotionScore < 0.2", "no change after 2 revisions"]
+        "description": "Emotional resonance is critically low, and revisions fail to lift tone.",
+        "conditions": [
+          "emotionScore < 0.2",
+          "no-change-after-2-revisions"
+        ],
+        "trigger": "emit:zombie-flag-emotionless"
       },
       {
         "name": "drift-deadzone",
-        "conditions": ["outputDelta < 0.05", "tone = flat"]
+        "description": "Semantic drift between revisions is negligible, tone remains flat.",
+        "conditions": [
+          "outputDelta < 0.05",
+          "tone = flat"
+        ],
+        "trigger": "emit:zombie-flag-deadzone"
       }
-    ]
+    ],
+  
+    "copilotActions": {
+      "emitOnDetection": true,
+      "logTo": ["sessionDeltaLogEmitter", "FeedbackLogs", "PromptLogs"],
+      "recommendedResponse": "trigger:rescue-strategy"
+    }
   }
   
