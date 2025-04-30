@@ -1,0 +1,68 @@
+{
+  // @codex-purpose: Schema definition for multi-session replay triggers across prompt types
+  // @codex-system: retry-fulfillment-handler.ts + session reconnection logic
+  // @codex-critical: Prevents bulk retry logic from misfiring across disconnected sessions or unknown reasons
+  // @codex-verified: v1.4.2
+
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CrossEventReplay",
+  "type": "object",
+  "required": ["type", "source", "payload", "_meta"],
+  "properties": {
+    "type": {
+      "const": "event-replay",
+      "description": "Routes to replay handler across session types"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["system", "copilot"],
+      "description": "Who triggered the replay (system or Copilot)"
+    },
+    "payload": {
+      "type": "object",
+      "required": ["sessionIds", "reason", "replayAttempt"],
+      "properties": {
+        "sessionIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "List of sessions to be retried"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why these sessions need replayed (e.g. timeout, corruption)"
+        },
+        "replayAttempt": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How many times the system has attempted to recover these sessions"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "_meta": {
+      "type": "object",
+      "required": [
+        "description",
+        "assert",
+        "guardrailFor",
+        "triggerField",
+        "routeTo",
+        "snapshotCompatible",
+        "lastVerifiedAgainst"
+      ],
+      "properties": {
+        "description": { "type": "string" },
+        "assert": { "type": "string", "enum": ["matchEventShape"] },
+        "guardrailFor": { "type": "string" },
+        "triggerField": { "type": "string" },
+        "routeTo": { "type": "string" },
+        "snapshotCompatible": { "type": "boolean" },
+        "lastVerifiedAgainst": { "type": "string" }
+      }
+    }
+  }
+}

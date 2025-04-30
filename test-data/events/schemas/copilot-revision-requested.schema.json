@@ -1,0 +1,66 @@
+{
+  // @codex-purpose: Schema definition for Copilot-initiated fulfillment regenerations
+  // @codex-system: revision-engine.ts + retry fallback monitor
+  // @codex-critical: Prevents invalid retries and ensures Codex-safe fulfillment loop recovery
+  // @codex-verified: v1.4.2
+
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CopilotRevisionRequested",
+  "type": "object",
+  "required": ["type", "source", "payload", "_meta"],
+  "properties": {
+    "type": {
+      "const": "copilot-revision-requested",
+      "description": "Fixed type to route event into the Copilot revision engine"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["copilot"],
+      "description": "Always 'copilot' for this event type"
+    },
+    "payload": {
+      "type": "object",
+      "required": ["sessionId", "promptType", "revisionType", "revisionCount", "reason"],
+      "properties": {
+        "sessionId": { "type": "string" },
+        "promptType": { "type": "string" },
+        "revisionType": {
+          "type": "string",
+          "enum": ["regenerate-output", "retry-completion"],
+          "description": "The nature of the requested revision"
+        },
+        "revisionCount": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Tracks how many revisions have occurred in-session"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Explanation for why Copilot flagged this output"
+        },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "_meta": {
+      "type": "object",
+      "required": [
+        "description",
+        "assert",
+        "guardrailFor",
+        "triggerField",
+        "routeTo",
+        "snapshotCompatible",
+        "lastVerifiedAgainst"
+      ],
+      "properties": {
+        "description": { "type": "string" },
+        "assert": { "type": "string", "enum": ["matchEventShape"] },
+        "guardrailFor": { "type": "string" },
+        "triggerField": { "type": "string" },
+        "routeTo": { "type": "string" },
+        "snapshotCompatible": { "type": "boolean" },
+        "lastVerifiedAgainst": { "type": "string" }
+      }
+    }
+  }
+}

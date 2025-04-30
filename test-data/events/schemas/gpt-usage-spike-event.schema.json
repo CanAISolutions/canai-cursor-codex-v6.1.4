@@ -1,0 +1,73 @@
+{
+  // @codex-purpose: Defines schema for GPT usage spikes across sessions to power autoscaling and anomaly detection
+  // @codex-system: usage-monitor.ts + token load analytics
+  // @codex-critical: Prevents invisible overages and enables safe alerting before fulfillment degradation
+  // @codex-verified: v1.4.2
+
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GPTUsageSpikeEvent",
+  "type": "object",
+  "required": ["type", "source", "payload", "_meta"],
+  "properties": {
+    "type": {
+      "const": "gpt-usage-spike",
+      "description": "Signals that system token usage exceeded thresholds"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["system"],
+      "description": "Always triggered internally by the monitoring system"
+    },
+    "payload": {
+      "type": "object",
+      "required": ["spikeType", "tokenDelta", "sessionsImpacted", "windowMinutes", "timestamp"],
+      "properties": {
+        "spikeType": {
+          "type": "string",
+          "enum": ["token", "cost", "latency"],
+          "description": "Type of usage anomaly detected"
+        },
+        "tokenDelta": {
+          "type": "integer",
+          "minimum": 100000,
+          "description": "Number of tokens over baseline during window"
+        },
+        "sessionsImpacted": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of sessions during spike"
+        },
+        "windowMinutes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Time window over which spike was measured"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "_meta": {
+      "type": "object",
+      "required": [
+        "description",
+        "assert",
+        "guardrailFor",
+        "triggerField",
+        "routeTo",
+        "snapshotCompatible",
+        "lastVerifiedAgainst"
+      ],
+      "properties": {
+        "description": { "type": "string" },
+        "assert": { "type": "string", "enum": ["matchEventShape"] },
+        "guardrailFor": { "type": "string" },
+        "triggerField": { "type": "string" },
+        "routeTo": { "type": "string" },
+        "snapshotCompatible": { "type": "boolean" },
+        "lastVerifiedAgainst": { "type": "string" }
+      }
+    }
+  }
+}
