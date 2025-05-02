@@ -1,5 +1,15 @@
 ﻿import { z } from 'zod';
 
-export const ReverseSynthesisCoreSchema = z.object({
-  // TODO: define the input fields for reverse-synthesis-core here
+export const ReverseSynthesisConfigSchema = z.object({
+  enabled: z.boolean(),
+  logLevel: z.string().optional(),
+  synthesisPatternsPath: z.string(),
+  traceLogging: z.boolean().optional(),
+  metricsEnabled: z.boolean().optional(),
+  feedbackCapture: z
+    .object({
+      stateKey: z.string(),
+      logFile: z.string(),
+    })
+    .optional(),
 });

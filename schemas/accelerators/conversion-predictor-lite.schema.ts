@@ -1,5 +1,15 @@
 ﻿import { z } from 'zod';
 
-export const ConversionPredictorLiteSchema = z.object({
-  // TODO: define the input fields for conversion-predictor-lite here
+export const ConversionPredictorConfigSchema = z.object({
+  enabled: z.boolean(),
+  scoreThreshold: z.number(),
+  fallbackAction: z.enum(['halt', 'warn']),
+  logLevel: z.string(),
+  metricsEnabled: z.boolean().optional(),
+  feedbackCapture: z
+    .object({
+      stateKey: z.string(),
+      logFile: z.string(),
+    })
+    .optional(),
 });

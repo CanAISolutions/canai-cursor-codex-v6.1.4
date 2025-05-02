@@ -1,5 +1,15 @@
 ﻿import { z } from 'zod';
 
-export const ZombieHunterSchema = z.object({
-  // TODO: define the input fields for zombie-hunter here
+export const ZombieHunterConfigSchema = z.object({
+  enabled: z.boolean(),
+  maxIdleMinutes: z.number(),
+  rescueStrategy: z.enum(['prompt', 'replay', 'feedback']),
+  logLevel: z.string().optional(),
+  metricsEnabled: z.boolean().optional(),
+  feedbackCapture: z
+    .object({
+      stateKey: z.string(),
+      logFile: z.string(),
+    })
+    .optional(),
 });

@@ -1,5 +1,9 @@
 ﻿import { z } from 'zod';
 
-export const CopilotInjectorSchema = z.object({
-  // TODO: define the input fields for copilot-injector here
+export const CopilotInjectorConfigSchema = z.object({
+  enabled: z.boolean(),
+  triggerTags: z.array(z.string()),
+  logLevel: z.string().optional(),
+  feedbackPolicyPath: z.string(),
+  injectThreshold: z.number().optional(),
 });

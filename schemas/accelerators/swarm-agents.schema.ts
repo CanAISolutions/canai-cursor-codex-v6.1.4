@@ -1,5 +1,16 @@
 ﻿import { z } from 'zod';
 
-export const SwarmAgentsSchema = z.object({
-  // TODO: define the input fields for swarm-agents here
+export const SwarmAgentConfigSchema = z.object({
+  enabled: z.boolean(),
+  agentTypes: z.array(z.string()),
+  decisionPolicyPath: z.string(),
+  logLevel: z.string().optional(),
+  consensusThreshold: z.number().optional(),
+  metricsEnabled: z.boolean().optional(),
+  feedbackCapture: z
+    .object({
+      stateKey: z.string(),
+      logFile: z.string(),
+    })
+    .optional(),
 });
