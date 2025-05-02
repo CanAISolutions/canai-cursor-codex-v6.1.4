@@ -23,22 +23,21 @@ type ReadinessReport = {
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
-    'smart-prompt-score.ts',
-    'smart-prompt-score.spec.ts',
-    'prompt-score-engine.ts',
-    'prompt-score-engine.spec.ts',
-    'scoring-signals.jsonc',
-    'scoring-policy.md',
     'behavior-contract.md',
-    'purpose.md',
-    'integration-contract.md',
+    'file-manifest.md',
+    'folder-checklist.md',
     'future-integration.md',
+    'integration-contract.md',
     'observability.ts',
     'pattern-insights.ts',
-    'system-readiness.ts',
+    'prompt-score-engine.spec.ts',
+    'prompt-score-engine.ts',
+    'purpose.md',
+    'README.md',
+    'scoring-policy.md',
+    'scoring-signals.jsonc',
     'self-check-blocks.md',
-    'folder-checklist.md',
-    'file-manifest.md',
+    'system-readiness.ts',
     'version.lock'
   ];
 

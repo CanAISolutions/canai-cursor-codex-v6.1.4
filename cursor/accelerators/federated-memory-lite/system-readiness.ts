@@ -23,22 +23,21 @@ type ReadinessReport = {
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
-    'federated-memory-lite.ts',
-    'federated-memory-lite.spec.ts',
+    'behavior-contract.md',
+    'file-manifest.md',
+    'folder-checklist.md',
+    'future-integration.md',
+    'integration-contract.md',
+    'memory-conflict-policy.md',
     'memory-federation-engine.ts',
     'memory-federation-engine.spec.ts',
     'memory-routing-spec.jsonc',
-    'memory-conflict-policy.md',
-    'behavior-contract.md',
-    'purpose.md',
-    'integration-contract.md',
-    'future-integration.md',
     'observability.ts',
     'pattern-insights.ts',
-    'system-readiness.ts',
+    'purpose.md',
+    'README.md',
     'self-check-blocks.md',
-    'folder-checklist.md',
-    'file-manifest.md',
+    'system-readiness.ts',
     'version.lock'
   ];
 

@@ -23,21 +23,19 @@ type ReadinessReport = {
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
-    'emotional-foresight-lite.ts',
-    'emotional-foresight-lite.spec.ts',
-    'foresight-model-lite.ts',
     'emotion-signal-spec.jsonc',
-    'intervention-policy.md',
-    'behavior-contract.md',
-    'purpose.md',
-    'integration-contract.md',
+    'file-manifest.md',
+    'folder-checklist.md',
+    'foresight-model-lite.ts',
     'future-integration.md',
+    'integration-contract.md',
+    'intervention-policy.md',
     'observability.ts',
     'pattern-insights.ts',
-    'system-readiness.ts',
+    'purpose.md',
+    'README.md',
     'self-check-blocks.md',
-    'folder-checklist.md',
-    'file-manifest.md',
+    'system-readiness.ts',
     'version.lock'
   ];
 

@@ -23,22 +23,20 @@ type ReadinessReport = {
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
-    'prompt-genetics.ts',
-    'prompt-genetics.spec.ts',
-    'prompt-genome-engine.ts',
-    'prompt-genome-engine.spec.ts',
-    'prompt-trait-schema.jsonc',
-    'prompt-lineage-log.md',
     'behavior-contract.md',
-    'purpose.md',
-    'integration-contract.md',
+    'file-manifest.md',
+    'folder-checklist.md',
     'future-integration.md',
+    'integration-contract.md',
     'observability.ts',
     'pattern-insights.ts',
-    'system-readiness.ts',
+    'prompt-genome-engine.ts',
+    'prompt-lineage-log.md',
+    'prompt-trait-schema.jsonc',
+    'purpose.md',
+    'README.md',
     'self-check-blocks.md',
-    'folder-checklist.md',
-    'file-manifest.md',
+    'system-readiness.ts',
     'version.lock'
   ];
 

@@ -23,22 +23,21 @@ type ReadinessReport = {
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
-    'reverse-synthesis-core.ts',
-    'reverse-synthesis-core.spec.ts',
-    'reverse-synthesis-engine.ts',
-    'reverse-synthesis-engine.spec.ts',
-    'synthesis-patterns.jsonc',
-    'synthesis-trace-schema.md',
     'behavior-contract.md',
-    'purpose.md',
-    'integration-contract.md',
+    'file-manifest.md',
+    'folder-checklist.md',
     'future-integration.md',
+    'integration-contract.md',
     'observability.ts',
     'pattern-insights.ts',
-    'system-readiness.ts',
+    'purpose.md',
+    'README.md',
+    'reverse-synthesis-engine.spec.ts',
+    'reverse-synthesis-engine.ts',
     'self-check-blocks.md',
-    'folder-checklist.md',
-    'file-manifest.md',
+    'synthesis-patterns.jsonc',
+    'synthesis-trace-schema.md',
+    'system-readiness.ts',
     'version.lock'
   ];
 

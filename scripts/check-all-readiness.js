@@ -27,7 +27,7 @@ require('ts-node').register({
       // Note the .ts extension here
       const { systemReadiness } = require(`../cursor/accelerators/${agent}/system-readiness.ts`);
       const status = systemReadiness();
-      console.log(`${agent}: ${status}`);
+      console.log(`\n--- ${agent} ---\n`, status, '\n');
     } catch (e) {
       console.error(`${agent}: ERROR loading/running systemReadiness(): ${e.message}`);
     }

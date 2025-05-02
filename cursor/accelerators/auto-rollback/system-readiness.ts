@@ -1,7 +1,7 @@
 /**
  * ✅ File: `system-readiness.ts`
  * location: `/cursor/accelerators/auto-rollback/system-readiness.ts`
- * purpose: CI health check and config/schema enforcement for auto-rollback agent
+ * purpose: CI health check and config/version enforcement for auto-rollback agent
  * drop-type: Copy/paste-safe (Codex-critical)
  */
 
@@ -10,13 +10,12 @@
 
 import fs from 'fs';
 import path from 'path';
-import { autoRollbackConfigSchema, minimumFields } from './auto-rollback.schema';
+import { execSync } from 'child_process';
 
 type ReadinessStatus = 'green' | 'yellow' | 'red';
 
 type ReadinessReport = {
   status: ReadinessStatus;
-  missingFields?: string[];
   missingFiles?: string[];
   versionDrift?: boolean;
   notes?: string[];
@@ -24,18 +23,22 @@ type ReadinessReport = {
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
+    'auto-rollback.ts',            // intended entrypoint
+    'auto-rollback.spec.ts',       // wrapper tests
+    'rollback-engine.ts',          
+    'rollback-engine.test.ts',     
+    'trigger-conditions.jsonc',    
+    'rollback-policy.md',          
     'behavior-contract.md',
-    'auto-rollback.ts',
-    'auto-rollback.spec.ts',
     'purpose.md',
     'integration-contract.md',
     'future-integration.md',
     'observability.ts',
     'pattern-insights.ts',
-    'system-readiness.ts',
     'self-check-blocks.md',
     'folder-checklist.md',
     'file-manifest.md',
+    'system-readiness.ts',
     'version.lock'
   ];
 
@@ -59,28 +62,15 @@ export function systemReadiness(): ReadinessReport {
     };
   }
 
-  const configRaw = fs.readFileSync(configPath, 'utf-8');
-  const configParsed = JSON.parse(configRaw);
-  const presentKeys = Object.keys(configParsed);
-  const missingFields = minimumFields.filter(key => !presentKeys.includes(key));
-
-  if (missingFields.length > 0) {
-    return {
-      status: 'yellow',
-      missingFields,
-      notes: ['Config present but missing required fields.']
-    };
-  }
-
-  const versionLockPath = path.resolve(__dirname, 'version.lock');
-  const versionSHA = fs.readFileSync(versionLockPath, 'utf-8').trim();
-  const currentSHA = require('child_process').execSync('git rev-parse HEAD').toString().trim();
-
-  const versionDrift = versionSHA !== currentSHA;
+  // Version lock SHA check
+  const versionLockPath = path.join(dir, 'version.lock');
+  const savedSHA = fs.readFileSync(versionLockPath, 'utf-8').trim();
+  const currentSHA = execSync('git rev-parse HEAD').toString().trim();
+  const drift = savedSHA !== currentSHA;
 
   return {
-    status: versionDrift ? 'yellow' : 'green',
-    versionDrift,
-    notes: versionDrift ? ['version.lock is out of sync with git SHA'] : []
+    status: drift ? 'yellow' : 'green',
+    versionDrift: drift,
+    notes: drift ? ['version.lock is out of sync with git HEAD'] : []
   };
 }

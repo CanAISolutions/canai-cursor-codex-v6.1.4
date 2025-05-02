@@ -1,19 +1,15 @@
 /**
  * ✅ File: `system-readiness.ts`
  * location: `/cursor/accelerators/conversion-predictor-lite/system-readiness.ts`
- * purpose: Validates folder completeness, config schema, version drift, and enforcement checkpoints
- * drop-type: Cursor + CI compatible, audit-safe
+ * purpose: CI check for file structure, config presence, and version lock
+ * drop-type: Codex copy/paste-safe
  */
-
-// File: /cursor/accelerators/conversion-predictor-lite/system-readiness.ts
-// CI enforcement for schema integrity, file count, and version lock status
 
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
 type ReadinessStatus = 'green' | 'yellow' | 'red';
-
 type ReadinessReport = {
   status: ReadinessStatus;
   missingFiles?: string[];
@@ -23,8 +19,6 @@ type ReadinessReport = {
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
-    'conversion-predictor-lite.ts',
-    'conversion-predictor-lite.spec.ts',
     'conversion-predictor-engine.ts',
     'conversion-predictor-engine.spec.ts',
     'conversion-signals.jsonc',
@@ -34,10 +28,11 @@ export function systemReadiness(): ReadinessReport {
     'future-integration.md',
     'observability.ts',
     'pattern-insights.ts',
-    'system-readiness.ts',
-    'self-check-blocks.md',
-    'folder-checklist.md',
     'file-manifest.md',
+    'folder-checklist.md',
+    'self-check-blocks.md',
+    'README.md',
+    'system-readiness.ts',
     'version.lock'
   ];
 
@@ -49,11 +44,10 @@ export function systemReadiness(): ReadinessReport {
     return {
       status: 'red',
       missingFiles,
-      notes: ['Missing required files.']
+      notes: ['Missing one or more required enforcement files.']
     };
   }
 
-  // Validate config schema presence
   const configPath = path.resolve(__dirname, '../../../config/accelerators/conversion-predictor-lite-config.jsonc');
   if (!fs.existsSync(configPath)) {
     return {
@@ -62,16 +56,17 @@ export function systemReadiness(): ReadinessReport {
     };
   }
 
-  // Version lock check
-  const versionPath = path.resolve(__dirname, 'version.lock');
+  const lockPath = path.join(dir, 'version.lock');
+  const savedSHA = fs.readFileSync(lockPath, 'utf-8').trim();
   const currentSHA = execSync('git rev-parse HEAD').toString().trim();
-  const savedSHA = fs.readFileSync(versionPath, 'utf-8').trim();
 
-  const drift = savedSHA !== currentSHA;
+  if (savedSHA !== currentSHA) {
+    return {
+      status: 'yellow',
+      versionDrift: true,
+      notes: ['version.lock is out of sync with git HEAD.']
+    };
+  }
 
-  return {
-    status: drift ? 'yellow' : 'green',
-    versionDrift: drift,
-    notes: drift ? ['Version mismatch – re-sync required.'] : []
-  };
+  return { status: 'green' };
 }

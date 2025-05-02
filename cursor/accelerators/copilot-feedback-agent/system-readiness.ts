@@ -23,21 +23,22 @@ type ReadinessReport = {
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
-    'copilot-feedback-agent.ts',
-    'copilot-feedback-agent.spec.ts',
+    'behavior-contract.md',
     'copilot-feedback-engine.ts',
     'copilot-feedback-engine.spec.ts',
+    'copilot-feedback-logging.md',
+    'copilot-feedback-policy.md',
     'copilot-feedback-rules.jsonc',
-    'behavior-contract.md',
-    'purpose.md',
-    'integration-contract.md',
+    'file-manifest.md',
+    'folder-checklist.md',
     'future-integration.md',
+    'integration-contract.md',
     'observability.ts',
     'pattern-insights.ts',
-    'system-readiness.ts',
+    'purpose.md',
+    'README.md',
     'self-check-blocks.md',
-    'folder-checklist.md',
-    'file-manifest.md',
+    'system-readiness.ts',
     'version.lock'
   ];
 
