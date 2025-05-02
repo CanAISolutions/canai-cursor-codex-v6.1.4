@@ -1,91 +1,129 @@
-# ✅ File: `integration-contract.md`  
-@location: `/cursor/accelerators/prompt-genetics/integration-contract.md`  
-@purpose: Defines schema, I/O structure, and state keys for mutation + replay logic  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
-```md
-# 🧬 Integration Contract – Prompt Genetics
+# 📡 Integration Contract – Prompt Genetics
 
 @agent: prompt-genetics  
 @version: v1.0.0  
-@checkpoint-protocol: v2.3  
-@codex-type: Structural Evolution Engine
+@enforced-by: system-readiness.ts  
+@layer: Prompt Evolution ⬌ Trait Tracking ⬌ Lineage Logging  
 
 ---
 
-## 📥 Input Schema
+## 🔌 Required Upstream Fields (from config)
+
+Loaded and validated via Zod:
 
 ```ts
-type PromptGenomeInput = {
-  basePrompt: string
-  traits: Record<string, any>
-  schemaVersion: string
-  goal: 'increase_clicks' | 'boost_emotion' | 'reduce_length' | 'custom'
+import { PromptGeneticsConfigSchema } from '../../../schemas/accelerators/prompt-genetics.schema';
+```
+
+| Field             | Type       | Required | Description                                      |
+|-------------------|------------|----------|--------------------------------------------------|
+| `enabled`         | `boolean`  | ✅       | Master switch for the accelerator                |
+| `logLevel`        | `string`   | ⬛       | Logger verbosity (default: 'info')               |
+| `lineageTracking` | `boolean`  | ✅       | Whether to track genetic lineage of prompt traits|
+| `metricsEnabled`  | `boolean`  | ⬛       | Toggle detailed metric emission                  |
+| `feedbackCapture` | `object`   | ⬛       | Optional genome event capture settings           |
+
+> **Fail-Closed**: Missing or invalid config → Zod throws → `systemReadiness()` marks `config: red` and halts execution.
+
+---
+
+## 🧬 Prompt Trait Schema (from `prompt-trait-schema.jsonc`)
+
+| Field        | Type        | Description                                          |
+|--------------|-------------|------------------------------------------------------|
+| `tone`       | `string`    | Prompt’s emotional tone or style                     |
+| `structure`  | `string`    | Formatting category (e.g., list, paragraph)          |
+| `focus`      | `string[]`  | Topics or key intent regions detected                |
+| `complexity` | `number`    | Abstraction level or linguistic density (0–1)        |
+
+> Schema fields are validated via Zod; malformed → `systemReadiness()` marks `observability: red` and skips extraction.
+
+---
+
+## 🔐 Persistent State Keys (via `acceleratorState`)
+
+All keys namespaced as `prompt-genetics:*`
+
+| Key                            | Interface               | Description                                |
+|--------------------------------|-------------------------|--------------------------------------------|
+| `prompt-genetics:genome-state` | `PromptGenomeState`     | Records extracted traits and lineage origin|
+
+### Interface
+
+```ts
+export interface PromptGenomeState {
+  tone: string;
+  structure: string;
+  focus: string[];
+  complexity: number;
+  originSessionId: string;
+  timestamp: string;
+  version?: string;
 }
 ```
 
-- `traits`: key-value object using `prompt-trait-schema.jsonc`
-- `goal`: drives fitness function selection
+---
+
+## 🔗 Upstream & Downstream Integrations
+
+### Consumes From:
+- **Trait Schema**  
+  `/cursor/accelerators/prompt-genetics/prompt-trait-schema.jsonc`
+- **Prompt Input Context**  
+  `/cursor/session/context.ts`
+- **Config Loader**  
+  `/shared/loadConfig.ts#loadConfig('prompt-genetics')`
+
+### Emits To:
+- **State Writes**  
+  `setAcceleratorState('prompt-genetics:genome-state', …)`
+- **Lineage Log**  
+  Appends entry to `/cursor/accelerators/prompt-genetics/prompt-lineage-log.md`
+- **Feedback Log**  
+  Optional write to `/logs/feedback_log.json` if `feedbackCapture` enabled
+
+### Invokes:
+- `loadConfig('prompt-genetics')`
+- `extractPromptTraits(promptText: string)`
+- `getAcceleratorState()` / `setAcceleratorState()`
+- `logger.info()` / `logger.warn()`
+- `appendFeedbackLog(entry)`
 
 ---
 
-## 📤 Output Schema
+## ⚙️ Error Handling & Retry Semantics
 
-```ts
-type PromptVariantResult = {
-  mutatedPrompt: string
-  traitsUsed: Record<string, any>
-  fitnessScore: number
-  variantId: string
-  trace: {
-    mutationReason: string
-    ignoredTraits: string[]
-    schemaVersion: string
-    parentVariantId?: string
-  }
-}
-```
-
-- `trace` must include lineage and schema metadata  
-- If `mutationReason = "reused_parent"`, no mutation applied — replay logic detected
+- On schema parse failure → `observability: yellow`, skip extraction  
+- Extraction engine errors → retry once; on persistent failure, mark `genetics: skipped`  
+- Absent or invalid config → abort early via `systemReadiness()`
 
 ---
 
-## ⚙️ Trait Schema Spec
+## 🔜 Future Integration Teaser
 
-File: `prompt-trait-schema.jsonc`
+See `/cursor/accelerators/prompt-genetics/future-integration.md` for:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `name` | `string` | Trait name |
-| `type` | `enum | numeric | toggle` | Value type |
-| `goals` | `string[]` | Optimization goals this trait affects |
-| `default` | any | Safe fallback |
-| `allowedValues` | any[] | Required for `enum` |
-| `min`, `max` | number | Required for `numeric` |
+- **Trait-Based Prompt Optimizer**  
+- **Lineage Explorer Dashboard**  
+- **Automated Genome Drift Reactions**  
+- **MetaPrompt Architect Assistant**
 
 ---
 
-## 🧷 State Keys
+## 🧾 Audit References
 
-| Key | Type | Purpose |
-|-----|------|---------|
-| `prompt-genetics:lastVariant` | object | Stores most recent mutation output |
-| → `.variantId` | string | Unique for each new prompt variant |
-| → `.fitnessScore` | number | Used by revision loop for scoring |
-| → `.trace` | object | Full lineage + schema record |
-
----
-
-## 🔁 Downstream Consumers
-
-| Module | Function |
-|--------|----------|
-| `promptReplay.ts` | Replays variant by `variantId` |
-| `smartPromptScore.ts` | Can influence fitness logic |
-| `SessionAnalytics.json` | Logs trait → fitness mapping |
-| `growth-optimizer.ts` | Uses variant generation for evolution loop |
+| File                                                                                     | Role                                      | Traceability Type   |
+|------------------------------------------------------------------------------------------|-------------------------------------------|---------------------|
+| `/cursor/accelerators/prompt-genetics/prompt-trait-schema.jsonc`                       | Trait definition for genome tracking      | `json-schema`       |
+| `/cursor/accelerators/prompt-genetics/prompt-lineage-log.md`                           | Persistent trait lineage log              | `lineage-log`       |
+| `/config/accelerators/prompt-genetics-config.jsonc`                                     | Config file matched by Zod schema         | `config`            |
+| `/schemas/accelerators/prompt-genetics.schema.ts`                                       | Zod schema for config validation          | `schema`            |
+| `/cursor/accelerators/prompt-genetics/self-check-blocks.md`                            | Validates required keys & files presence  | `assertion-contract`|
+| `/cursor/accelerators/prompt-genetics/folder-checklist.md`                              | 10-minute manual audit checklist          | `manual-audit`      |
+| `/cursor/accelerators/prompt-genetics/future-integration.md`                            | Strategic roadmap and planned extensions  | `strategic-plan`    |
+| `/logs/feedback_log.json`                                                               | Captures genome event logs                | `system-log`        |
 
 ---
 
+✅ **This contract enforces schema‐driven trait extraction, meticulous lineage logging, configurable observability, and seamless integration under the CanAI Codex Enforcement Directive.**
 ```

@@ -1,24 +1,25 @@
-# ✅ File: `system-readiness.ts`  
-@location: `/cursor/accelerators/conversion-predictor-lite/system-readiness.ts`  
-@purpose: Validates folder completeness, config schema, version drift, and enforcement checkpoints  
-@drop-type: Cursor + CI compatible, audit-safe
+/**
+ * ✅ File: `system-readiness.ts`
+ * location: `/cursor/accelerators/conversion-predictor-lite/system-readiness.ts`
+ * purpose: Validates folder completeness, config schema, version drift, and enforcement checkpoints
+ * drop-type: Cursor + CI compatible, audit-safe
+ */
 
-```ts
 // File: /cursor/accelerators/conversion-predictor-lite/system-readiness.ts
 // CI enforcement for schema integrity, file count, and version lock status
 
-import fs from 'fs'
-import path from 'path'
-import { execSync } from 'child_process'
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
-type ReadinessStatus = 'green' | 'yellow' | 'red'
+type ReadinessStatus = 'green' | 'yellow' | 'red';
 
 type ReadinessReport = {
-  status: ReadinessStatus
-  missingFiles?: string[]
-  versionDrift?: boolean
-  notes?: string[]
-}
+  status: ReadinessStatus;
+  missingFiles?: string[];
+  versionDrift?: boolean;
+  notes?: string[];
+};
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
@@ -38,30 +39,39 @@ export function systemReadiness(): ReadinessReport {
     'folder-checklist.md',
     'file-manifest.md',
     'version.lock'
-  ]
+  ];
 
-  const dir = path.resolve(__dirname)
-  const files = fs.readdirSync(dir)
-  const missingFiles = REQUIRED_FILES.filter(f => !files.includes(f))
+  const dir = path.resolve(__dirname);
+  const files = fs.readdirSync(dir);
+  const missingFiles = REQUIRED_FILES.filter(f => !files.includes(f));
 
   if (missingFiles.length > 0) {
     return {
       status: 'red',
       missingFiles,
       notes: ['Missing required files.']
-    }
+    };
   }
 
-  const versionPath = path.resolve(__dirname, 'version.lock')
-  const currentSHA = execSync('git rev-parse HEAD').toString().trim()
-  const savedSHA = fs.readFileSync(versionPath, 'utf-8').trim()
+  // Validate config schema presence
+  const configPath = path.resolve(__dirname, '../../../config/accelerators/conversion-predictor-lite-config.jsonc');
+  if (!fs.existsSync(configPath)) {
+    return {
+      status: 'red',
+      notes: ['Missing config file: conversion-predictor-lite-config.jsonc']
+    };
+  }
 
-  const drift = savedSHA !== currentSHA
+  // Version lock check
+  const versionPath = path.resolve(__dirname, 'version.lock');
+  const currentSHA = execSync('git rev-parse HEAD').toString().trim();
+  const savedSHA = fs.readFileSync(versionPath, 'utf-8').trim();
+
+  const drift = savedSHA !== currentSHA;
 
   return {
     status: drift ? 'yellow' : 'green',
     versionDrift: drift,
     notes: drift ? ['Version mismatch – re-sync required.'] : []
-  }
+  };
 }
-```

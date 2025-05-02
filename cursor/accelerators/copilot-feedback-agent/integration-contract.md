@@ -1,79 +1,140 @@
-# ✅ File: `integration-contract.md`  
-@location: `/cursor/accelerators/copilot-feedback-agent/integration-contract.md`  
-@purpose: Declares all config inputs, runtime triggers, and state interactions  
-@drop-type: Copy/paste-safe, Codex-enforced
-
 ```md
 # 📡 Integration Contract – Copilot Feedback Agent
 
 @agent: copilot-feedback-agent  
 @version: v1.0.0  
-@layer: Copilot Intelligence × Emotional Recovery  
-@enforced-by: system-readiness.ts
+@enforced-by: system-readiness.ts  
+@layer: Judgment ⬌ Feedback ⬌ UX  
 
 ---
 
-## 📥 Inputs (Runtime + Config)
+## 🔌 Required Upstream Fields (from config)
 
-This agent uses both runtime session signals and a declarative config file.
-
-### 🧠 Runtime Session Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `revisionCount` | `number` | How many times a prompt has been edited |
-| `emotionalDrift` | `boolean` | True if tone diverges from target intent |
-| `copilotActive` | `boolean` | True if user is in Copilot session |
-| `userTone` | `string` | Detected user tone (e.g., confused, hopeful) |
-| `outputTone` | `string` | Detected tone of current GPT output |
-
-### ⚙️ Configuration Source
-
-File: `copilot-feedback-rules.jsonc`
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `revisionFatigueThreshold` | `number` | Trigger warning if revision count exceeds this |
-| `driftCorrectionTips[]` | `string[]` | Suggestions when emotional misalignment is detected |
-| `copilotHints[]` | `string[]` | Soft nudges shown during Copilot guidance |
-| `manualBypass` | `boolean` | Admin override to silence feedback logic |
-
----
-
-## 🧾 Output Shape
+Loaded and validated via Zod:
 
 ```ts
-{
-  trigger: boolean,
-  reason: 'emotionalDrift' | 'fatigue' | 'copilotHint',
-  suggestion: string,
-  severity: 'info' | 'warn' | 'critical'
+import { CopilotFeedbackConfigSchema } from '../../../schemas/accelerators/copilot-feedback-agent.schema';
+```
+
+| Field               | Type        | Required | Description                                          |
+|---------------------|-------------|----------|------------------------------------------------------|
+| `enabled`           | `boolean`   | ✅       | Master toggle for the agent                          |
+| `interventionTags`  | `string[]`  | ✅       | Tags to monitor for flagging issues                  |
+| `logLevel`          | `string`    | ⬛       | Logging verbosity level                              |
+| `feedbackRulesPath` | `string`    | ✅       | Path to `copilot-feedback-rules.jsonc`               |
+| `policyPath`        | `string`    | ✅       | Path to `copilot-feedback-policy.md`                 |
+| `metricsEnabled`    | `boolean`   | ⬛       | Toggle observability metrics                         |
+
+> **Fail-Closed**: Missing or malformed config → Zod throws → `systemReadiness()` marks `config: red` and agent aborts safely.
+
+---
+
+## 📃 Parsed Feedback Rules (from `copilot-feedback-rules.jsonc`)
+
+| Field            | Type        | Description                                         |
+|------------------|-------------|-----------------------------------------------------|
+| `triggerPhrases` | `string[]`  | Triggers feedback when detected in input/output     |
+| `maxWordCount`   | `number`    | Warn if response exceeds this word count threshold  |
+| `toneMismatch`   | `boolean`   | Triggers if output tone differs from expected       |
+| `inputWeakness`  | `boolean`   | Detects low-signal or weak user input               |
+
+> Rules are Zod-validated; malformed → `systemReadiness()` marks `observability: red` and skips feedback.
+
+---
+
+## 🔐 Persistent State Keys (via `acceleratorState`)
+
+| Key                                    | Interface                     | Description                               |
+|----------------------------------------|-------------------------------|-------------------------------------------|
+| `copilot-feedback-agent:session-log`   | `CopilotFeedbackLogState`     | Logs flags, triggers, and detected tone   |
+
+### Interface
+
+```ts
+export interface CopilotFeedbackLogState {
+  flags: string[];
+  triggers: string[];
+  detectedTone?: string;
+  timestamp: string;
+  version?: string;
 }
 ```
 
 ---
 
-## 🧷 State Keys
+## 🔗 Upstream & Downstream Integrations
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `copilot-feedback-agent:lastTriggered` | `object` | Metadata from last feedback trigger |
-| → `.reason` | `string` | What triggered the agent |
-| → `.timestamp` | `string` | ISO timestamp of event |
-| → `.copilotSessionId` | `string?` | Optional ID for traceability |
+### Consumes From:
+- **Config Loader**  
+  `/shared/loadConfig.ts#loadConfig('copilot-feedback-agent')`  
+  Loads rules and policy paths.
+
+- **Feedback Rules**  
+  `/cursor/accelerators/copilot-feedback-agent/copilot-feedback-rules.jsonc`
+
+- **Policy Doc**  
+  `/cursor/accelerators/copilot-feedback-agent/copilot-feedback-policy.md`
+
+- **Input Context**  
+  `/cursor/session/context.ts`
+
+- **Tone Analysis**  
+  `/cursor/accelerators/tone-override-agent/tone-overrider.ts#getResult`
+
+### Emits To:
+- **State Writes**  
+  `setAcceleratorState('copilot-feedback-agent:session-log', …)`
+
+- **Feedback Log**  
+  Appends entry to `/logs/feedback_log.json`
+
+- **Copilot Injector**  
+  Indirectly triggers via state change and feedback log
+
+### Invokes:
+- `evaluateFeedbackTriggers()`  
+  `/cursor/accelerators/copilot-feedback-agent/copilot-feedback-engine.ts`
+- `getAcceleratorState()` / `setAcceleratorState()`  
+  `/shared/acceleratorState.ts`
+- `logger.warn()` / `logger.info()`  
+  `/shared/logger.ts`
+- `appendFeedbackLog(entry)`  
+  `/shared/logger.ts#appendFeedbackLog`
 
 ---
 
-## 🔁 Module Integration Points
+## ⚙️ Error Handling & Retry Semantics
 
-| Module | Link |
-|--------|------|
-| `copilot-ui.tsx` | Renders suggestion bubble |
-| `copilot-nudger.ts` | Injects guidance into prompt field |
-| `SessionAnalytics.json` | Logs trigger patterns over time |
-| `copilot-feedback-logging.md` | Describes trace format for audit visibility |
+- Invalid rules or missing context → skip feedback, log warning, `observability: yellow`  
+- Engine errors → retry up to **2** times; on persistent failure, log error and abort  
+- On fail-safe trip → mark session `feedback: partial` in state
 
 ---
 
-✅ Integration contract now declared.  
+## 🔜 Future Integration Teaser
+
+See `/cursor/accelerators/copilot-feedback-agent/future-integration.md` for:
+
+- **User-Facing Feedback Overlay**  
+- **Prompt Rewrite Suggestions**  
+- **Session Scorecard & Refinement Loop**  
+- **Feedback Model Training Hooks**
+
+---
+
+## 🧾 Audit References
+
+| File                                                                  | Role                                           | Traceability Type     |
+|-----------------------------------------------------------------------|------------------------------------------------|-----------------------|
+| `/cursor/accelerators/copilot-feedback-agent/copilot-feedback-rules.jsonc` | Rule definitions for feedback triggers     | `json-rules`          |
+| `/cursor/accelerators/copilot-feedback-agent/copilot-feedback-policy.md` | Fallback and override policy                | `policy-doc`          |
+| `/config/accelerators/copilot-feedback-agent-config.jsonc`           | Active Zod-validated config                    | `config`              |
+| `/cursor/accelerators/copilot-feedback-agent/self-check-blocks.md`   | Validates config, rules, and state keys        | `assertion-contract`  |
+| `/cursor/accelerators/copilot-feedback-agent/folder-checklist.md`    | Manual audit checklist                         | `manual-audit`        |
+| `/cursor/accelerators/copilot-feedback-agent/future-integration.md`  | Strategic roadmap                              | `strategic-plan`      |
+| `/logs/feedback_log.json`                                             | Central feedback event log                     | `system-log`          |
+
+---
+
+✅ **This contract ensures human-aligned feedback flow, AI transparency, fail-safe defaults, and enforcement of Codex clarity across sessions, signals, and refinement triggers.**
 ```

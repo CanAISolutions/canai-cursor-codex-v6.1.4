@@ -1,23 +1,25 @@
-# ✅ File: `system-readiness.ts`  
-@location: `/cursor/accelerators/reverse-synthesis-core/system-readiness.ts`  
-@purpose: CI enforcement for file structure, schema presence, and version locking  
-@drop-type: Codex copy/paste-safe, Cursor-compatible
+/**
+ * ✅ File: `system-readiness.ts`
+ * location: `/cursor/accelerators/reverse-synthesis-core/system-readiness.ts`
+ * purpose: CI enforcement for file structure, schema presence, and version locking
+ * drop-type: Codex copy/paste-safe, Cursor-compatible
+ */
 
 // File: /cursor/accelerators/reverse-synthesis-core/system-readiness.ts
 // CI contract for file validation, Codex SHA lock, and pattern config integrity
 
-import fs from 'fs'
-import path from 'path'
-import { execSync } from 'child_process'
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
-type ReadinessStatus = 'green' | 'yellow' | 'red'
+type ReadinessStatus = 'green' | 'yellow' | 'red';
 
 type ReadinessReport = {
-  status: ReadinessStatus
-  missingFiles?: string[]
-  versionDrift?: boolean
-  notes?: string[]
-}
+  status: ReadinessStatus;
+  missingFiles?: string[];
+  versionDrift?: boolean;
+  notes?: string[];
+};
 
 export function systemReadiness(): ReadinessReport {
   const REQUIRED_FILES = [
@@ -38,25 +40,35 @@ export function systemReadiness(): ReadinessReport {
     'folder-checklist.md',
     'file-manifest.md',
     'version.lock'
-  ]
+  ];
 
-  const folder = path.resolve(__dirname)
-  const existingFiles = fs.readdirSync(folder)
-  const missing = REQUIRED_FILES.filter(f => !existingFiles.includes(f))
+  const folder = path.resolve(__dirname);
+  const existingFiles = fs.readdirSync(folder);
+  const missing = REQUIRED_FILES.filter(f => !existingFiles.includes(f));
 
   if (missing.length > 0) {
     return {
       status: 'red',
       missingFiles: missing,
       notes: ['Missing required Codex checkpoint files.']
-    }
+    };
   }
 
-  const versionPath = path.join(folder, 'version.lock')
-  const savedSHA = fs.readFileSync(versionPath, 'utf-8').trim()
-  const currentSHA = execSync('git rev-parse HEAD').toString().trim()
+  // Validate config file exists
+  const configPath = path.resolve(__dirname, '../../../config/accelerators/reverse-synthesis-core-config.jsonc');
+  if (!fs.existsSync(configPath)) {
+    return {
+      status: 'red',
+      notes: ['Missing config file: reverse-synthesis-core-config.jsonc']
+    };
+  }
 
-  const versionMismatch = savedSHA !== currentSHA
+  // Version lock check
+  const versionPath = path.join(folder, 'version.lock');
+  const savedSHA = fs.readFileSync(versionPath, 'utf-8').trim();
+  const currentSHA = execSync('git rev-parse HEAD').toString().trim();
+
+  const versionMismatch = savedSHA !== currentSHA;
 
   return {
     status: versionMismatch ? 'yellow' : 'green',
@@ -64,5 +76,5 @@ export function systemReadiness(): ReadinessReport {
     notes: versionMismatch
       ? ['Commit SHA mismatch – update version.lock to match HEAD.']
       : []
-  }
+  };
 }

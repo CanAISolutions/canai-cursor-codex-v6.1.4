@@ -1,22 +1,24 @@
-# ✅ File: `system-readiness.ts`  
-@location: `/cursor/accelerators/tone-override-agent/system-readiness.ts`  
-@purpose: Verifies Codex file presence, Git SHA sync, and config field integrity  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
+/**
+ * ✅ File: `system-readiness.ts`
+ * location: `/cursor/accelerators/tone-override-agent/system-readiness.ts`
+ * purpose: Verifies Codex file presence, Git SHA sync, and config field integrity
+ * drop-type: Codex copy/paste-safe, Cursor-auditable
+ */
 
 // File: /cursor/accelerators/tone-override-agent/system-readiness.ts
 // Validates all required files, schema safety, and commit sync for CI enforcement
 
-import fs from 'fs'
-import path from 'path'
-import { execSync } from 'child_process'
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
-type ReadinessStatus = 'green' | 'yellow' | 'red'
+type ReadinessStatus = 'green' | 'yellow' | 'red';
 
 interface ReadinessReport {
-  status: ReadinessStatus
-  missingFiles?: string[]
-  versionDrift?: boolean
-  notes?: string[]
+  status: ReadinessStatus;
+  missingFiles?: string[];
+  versionDrift?: boolean;
+  notes?: string[];
 }
 
 export function systemReadiness(): ReadinessReport {
@@ -37,29 +39,38 @@ export function systemReadiness(): ReadinessReport {
     'folder-checklist.md',
     'file-manifest.md',
     'version.lock'
-  ]
+  ];
 
-  const folderPath = __dirname
-  const existingFiles = fs.readdirSync(folderPath)
-  const missingFiles = REQUIRED_FILES.filter(f => !existingFiles.includes(f))
+  const folderPath = path.resolve(__dirname);
+  const existingFiles = fs.readdirSync(folderPath);
+  const missingFiles = REQUIRED_FILES.filter(f => !existingFiles.includes(f));
 
   if (missingFiles.length > 0) {
     return {
       status: 'red',
       missingFiles,
       notes: ['Missing required enforcement files.']
-    }
+    };
   }
 
-  const versionPath = path.join(folderPath, 'version.lock')
-  const shaFromFile = fs.readFileSync(versionPath, 'utf-8').trim()
-  const currentSHA = execSync('git rev-parse HEAD').toString().trim()
+  // Validate config file exists
+  const configPath = path.resolve(__dirname, '../../../config/accelerators/tone-override-agent-config.jsonc');
+  if (!fs.existsSync(configPath)) {
+    return {
+      status: 'red',
+      notes: ['Missing config file: tone-override-agent-config.jsonc']
+    };
+  }
 
-  const drift = shaFromFile !== currentSHA
+  // Version lock SHA check
+  const versionPath = path.join(folderPath, 'version.lock');
+  const shaFromFile = fs.readFileSync(versionPath, 'utf-8').trim();
+  const currentSHA = execSync('git rev-parse HEAD').toString().trim();
+  const drift = shaFromFile !== currentSHA;
 
   return {
     status: drift ? 'yellow' : 'green',
     versionDrift: drift,
     notes: drift ? ['version.lock SHA mismatch – update required.'] : []
-  }
+  };
 }

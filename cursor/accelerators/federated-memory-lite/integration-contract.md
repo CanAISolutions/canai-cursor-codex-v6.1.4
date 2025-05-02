@@ -1,89 +1,135 @@
-# ✅ File: `integration-contract.md`  
-@location: `/cursor/accelerators/federated-memory-lite/integration-contract.md`  
-@purpose: Declares all I/O types, config schema, and state keys for safe federation  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
 ```md
-# 🔌 Integration Contract – Federated Memory Lite
+# 📡 Integration Contract – Federated Memory Lite
 
 @agent: federated-memory-lite  
 @version: v1.0.0  
-@codex-layer: Context Resolution × Session Memory Safety  
-@checkpoint-protocol: v2.3
+@enforced-by: system-readiness.ts  
+@layer: Memory ⬌ Conflict Resolution ⬌ Routing  
 
 ---
 
-## 📥 Input Schema
+## 🔌 Required Upstream Fields (from config)
+
+Loaded and validated via Zod:
 
 ```ts
-type MemoryRequest = {
-  intent: string
-  userId: string
-  memorySources: {
-    source: 'user' | 'system' | 'copilot' | 'gpt'
-    value: string
-    confidence?: number
-    lastModified?: string
-  }[]
+import { FederatedMemoryConfigSchema } from '../../../schemas/accelerators/federated-memory-lite.schema';
+```
+
+| Field                | Type                          | Required | Description                                                |
+|----------------------|-------------------------------|----------|------------------------------------------------------------|
+| `enabled`            | `boolean`                     | ✅       | Master switch for memory federation engine                |
+| `routingMode`        | `"strict" \| "fallback"`      | ✅       | Controls how routing conflicts are handled                |
+| `logLevel`           | `string`                      | ⬛       | Logger verbosity                                           |
+| `conflictPolicyPath` | `string`                      | ✅       | Path to `memory-conflict-policy.md`                        |
+| `metricsEnabled`     | `boolean`                     | ⬛       | Toggle detailed metric emission                            |
+| `feedbackCapture`    | `object`                      | ⬛       | Optional conflict‐logging settings                         |
+
+> **Fail-Closed**: Missing/invalid config → Zod throws → `systemReadiness()` marks `config: red` and engine halts immediately.
+
+---
+
+## 📡 Memory Routing Spec (from `memory-routing-spec.jsonc`)
+
+| Field            | Type              | Description                                                     |
+|------------------|-------------------|-----------------------------------------------------------------|
+| `memoryType`     | `string`          | Category of memory (e.g., "user-profile", "session")            |
+| `sourcePriority` | `string[]`        | Ordered list of memory sources to query                         |
+| `fallbacks`      | `Record<string, any>` | Map of source to fallback value or rule                     |
+| `requireFresh`   | `boolean`         | Reject stale data if true                                       |
+
+> Spec fields validated via Zod; malformed → `systemReadiness()` marks `observability: red` and skips routing.
+
+---
+
+## 🔐 Persistent State Keys (via `acceleratorState`)
+
+All keys namespaced as `federated-memory-lite:*`
+
+| Key                                   | Interface                          | Description                                                  |
+|---------------------------------------|------------------------------------|--------------------------------------------------------------|
+| `federated-memory-lite:conflict-state`| `MemoryConflictResolutionState`    | Records conflict outcome and resolution path                |
+
+### Interface
+
+```ts
+export interface MemoryConflictResolutionState {
+  memoryType: string;
+  sourcesEvaluated: string[];
+  resolutionUsed: string;
+  fallbackUsed?: string;
+  timestamp: string;
+  version?: string;
 }
 ```
 
-- `intent`: declared memory use (e.g. `tone`, `persona`, `instructions`)
-- `memorySources`: list of possible values from different origins
+---
+
+## 🔗 Upstream & Downstream Integrations
+
+### Consumes From:
+- **Memory Routing Spec**  
+  `/cursor/accelerators/federated-memory-lite/memory-routing-spec.jsonc`
+- **Policy File**  
+  `/cursor/accelerators/federated-memory-lite/memory-conflict-policy.md`
+- **Federation Engine**  
+  `/cursor/accelerators/federated-memory-lite/memory-federation-engine.ts`
+- **Session Memory Accessors**  
+  `/cursor/session/sessionMemory.ts`  
+  `/cursor/session/userMemory.ts`
+- **Config Loader**  
+  `/shared/loadConfig.ts#loadConfig('federated-memory-lite')`
+
+### Emits To:
+- **State Writes**  
+  `setAcceleratorState('federated-memory-lite:conflict-state', …)`
+- **Feedback Log**  
+  Appends to `/logs/feedback_log.json` if `feedbackCapture` enabled
+- **Memory Consumers**  
+  Exposes `resolveMemoryConflict()` for reuse by other modules
+
+### Invokes:
+- `resolveMemoryConflict(memoryType: string)`
+- `getAcceleratorState()` / `setAcceleratorState()`
+- `logger.info()` / `logger.warn()`
+- `appendFeedbackLog(entry)`
 
 ---
 
-## 📤 Output Schema
+## ⚙️ Error Handling & Retry Semantics
 
-```ts
-type MemoryResolutionResult = {
-  resolvedValue: string
-  sourceUsed: string
-  trace: {
-    reason: string
-    priorityRank: number
-    fallbackTriggered?: boolean
-    rejectedSources: string[]
-  }
-}
-```
-
-- Trace must always be returned — even if fallback or null resolution
-- `fallbackTriggered` must match conditions in `memory-routing-spec.jsonc`
+- Missing spec or invalid config → log warning, skip resolution  
+- Memory accessor failures → retry up to **2** times, else use configured fallback  
+- Unresolvable conflict → mark state `memory: unresolved` and escalate
 
 ---
 
-## ⚙️ Routing Spec Configuration
+## 🔜 Future Integration Teaser
 
-File: `memory-routing-spec.jsonc`
+See `/cursor/accelerators/federated-memory-lite/future-integration.md`:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `priorityByIntent` | `Record<string, string[]>` | Ranked source priority for each memory intent |
-| `allowFallback` | `boolean` | Whether fallback to lower-priority source is allowed |
-| `minimumConfidence` | `number` | Confidence floor (if present in memory source) |
-| `conflictResolutionMode` | `'reject' | 'prefer-latest'` | How to handle version mismatch or dual valid sources |
+- **Memory Provenance Tagging**  
+- **Time-Decayed Routing Filters**  
+- **Conflict Escalation Agent**  
+- **Federated Memory Audit Trail**
 
 ---
 
-## 🧷 State Keys
+## 🧾 Audit References
 
-| Key | Type | Purpose |
-|-----|------|---------|
-| `federated-memory-lite:lastResolution` | `object` | Stores latest resolution result |
-| → `.trace` | `object` | Records source selection path |
-| → `.sourceUsed` | `string` | Final chosen source |
-
----
-
-## 🔁 Downstream Consumers
-
-| Module | Purpose |
-|--------|---------|
-| `copilot-prompt-builder.ts` | Injects resolved memory into Copilot requests |
-| `sessionDeltaLogEmitter.ts` | Logs full trace for audit + analytics |
-| `memorySyncBridge.ts` | Updates async memory graph if override detected |
+| File                                                                                | Role                                                | Traceability Type     |
+|-------------------------------------------------------------------------------------|-----------------------------------------------------|-----------------------|
+| `/cursor/accelerators/federated-memory-lite/memory-routing-spec.jsonc`             | Defines memory routing priorities                   | `json-routing`        |
+| `/cursor/accelerators/federated-memory-lite/memory-conflict-policy.md`             | Human-readable conflict resolution policies         | `policy-doc`          |
+| `/cursor/accelerators/federated-memory-lite/memory-federation-engine.ts`           | Core federation engine logic                        | `engine-core`         |
+| `/config/accelerators/federated-memory-lite-config.jsonc`                          | Active JSONC config loaded at startup               | `config`              |
+| `/schemas/accelerators/federated-memory-lite.schema.ts`                             | Zod schema validating config                        | `schema`              |
+| `/cursor/accelerators/federated-memory-lite/self-check-blocks.md`                  | Validates presence and correctness of required files| `assertion-contract`  |
+| `/cursor/accelerators/federated-memory-lite/folder-checklist.md`                   | 10-minute human audit checklist                     | `manual-audit`        |
+| `/logs/feedback_log.json`                                                           | Logs conflict-resolution events                     | `system-log`          |
+| `/cursor/accelerators/federated-memory-lite/future-integration.md`                 | Strategic roadmap and next-phase hooks              | `strategic-plan`      |
 
 ---
 
+✅ **This contract ensures robust, conflict‐aware memory resolution with fallback ethics, detailed observability, and full Codex compliance under the Dream‐State Directive.**
 ```
