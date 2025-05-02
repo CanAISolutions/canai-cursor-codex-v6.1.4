@@ -1,67 +1,70 @@
-# /cursor — CanAI Intelligence Cockpit
+# /cursor/ Folder — CanAI Copilot & Developer Guide
 
-## Purpose
-This folder contains the **core intelligence systems** that make CanAI more than just an app.  
-It turns the product into a **living, learning, self-evolving system** that improves every day — with or without human intervention.
-
-## What Happens If Cursor Is Built Right
-
-### 1. The System Becomes Self-Aware
-- It understands what it is, what it's doing, and why.
-- Every prompt, revision, trigger, and fallback is trackable, explainable, and learnable.
-
-> “Nothing is silent. Everything is visible. We know what’s working, and what isn’t.”
+**Purpose:**  
+This folder is the intelligence core of CanAI. It contains all system logic for customer experience orchestration, prompt refinement, spark evolution, memory handoff, and analytics feedback loops.  
+It is designed for **AI-first development** and **human-AI collaboration** using tools like Cursor, GitHub Copilot, and GPT copilots.
 
 ---
 
-### 2. It Learns and Improves Automatically
-- Every user interaction fuels smarter future outputs.
-- Prompts evolve themselves. Agents adapt. Emotional tone improves with use.
+## Folder Philosophy
 
-> “The more it runs, the better it gets.”
-
----
-
-### 3. Failures Are Caught and Healed
-- Silent bugs, prompt mismatches, and logic gaps are detected in real time.
-- Self-healing triggers prevent decay. Failures are fixed or flagged — gracefully.
-
-> “The system takes care of itself — and protects the experience.”
+- **AI-readable, modular, and Markdown-commented**  
+- **Zero ambiguity** — every file must explain its intent, logic, and evolution path  
+- **Codex-compliant** — all logic honors the CanAI Customer Experience Map and Memory Protocol  
+- **Testable + Versionable** — prompt outputs and decisions must be auditable over time
 
 ---
 
-### 4. You Can Scale Without Fear
-- All modules are versioned, observable, and modular.
-- Cursor agents can distribute logic, track health, and adapt behavior under load.
+## Key Files
 
-> “You grow — and the system keeps pace.”
+| File | Purpose |
+|------|---------|
+| `agent-executor.ts` | Routes memory + spark data into final agent execution |
+| `concept-spark.ts` | Generates Spark concepts based on user intent |
+| `spark-feedback-widget.tsx` | UI logic to capture spark resonance feedback |
+| `spark-save-trigger.ts` | Logic to log and recall saved sparks |
+| `spark-conversion-trigger.ts` | Detects spark activation → monetization offer |
+| `spark-quality-index.ts` | Benchmarks spark performance using engagement signals |
+| `trust-timeline.ts` | Visual data transparency (Trust layer UI logic) |
+| `transition-mapper.ts` | Emotional stage transitions and fallback logic |
+| `self-evolve.ts` | Learns from patterns (e.g., overwhelm, revise loops) and adjusts system rules |
+| `multimodal-parser.ts` | Handles voice/image/video input preprocessing |
+| `context-engine.ts` | Adds trend, season, or location-based tuning to sparks |
+| `integration-hub.ts` | Slack, Notion, Google export logic |
+| `collaboration-engine.ts` | Supports co-creation with other users |
+| `offline-sync.ts` | Enables offline session storage + sync backflow |
+| `feedback-adaptation.ts` | Emotional feedback tagging + session-specific UI variations |
 
 ---
 
-### 5. You Can Hand Off With Confidence
-- Future developers, copilots, or acquirers can understand the system instantly.
-- Everything is documented, testable, composable, and Cursor-native.
+## Key Support Files (outside /cursor)
 
-> “This is not code. This is an operating system.”
-
----
-
-## In One Line
-**Cursor turns CanAI into a living brain — not just a product.**  
-It is the cockpit, the conscience, and the control center of the entire system.
+| File | Location | Purpose |
+|------|----------|---------|
+| `canai-customer-experience-map-BIBLE-FINAL.md` | `/docs/` | The master CX logic system — all flows derive from here |
+| `cx-evolution-queue.md` | `/docs/` | Tracker for all enhancements, current + future |
+| `cx-review-log.md` | `/docs/` | Auto-created GitHub issue to enforce quarterly audits |
+| `klaviyo-triggers.json` | `/automations/` | Lifecycle follow-ups mapped to spark/session data |
 
 ---
 
-## How to Use This Folder
-Each subfolder has its own `README.md`, contract rules, and test logic. Begin with:
-- `/boot_sequence/` — how the system wakes up
-- `/agents/` — how logic is distributed
-- `/self-awareness/` — how the system reflects and logs
-- `/prompt-evolution/` — how it improves itself
-- `/system-intel/` — how it sees and explains itself
+## Dev Protocol for Cursor Copilots
 
-All code in this folder adheres to `.cursorrules`, is designed for AI copilot orchestration, and supports continuous improvement without silent decay.
+1. **Always open** `canai-customer-experience-map-BIBLE-FINAL.md` in a Notepad  
+2. **Before editing any logic**, check `cx-evolution-queue.md` to see if it’s already scoped  
+3. **All new logic** must:
+   - Log inputs and actions to `SessionAnalytics`, `PromptLogs`, or `SparkResonanceLog[]`
+   - Be wrapped with markdown comments explaining **what it does**, **why**, and **what files it touches**
+4. **Never remove spark, emotion, or validation layers** — these are system-critical
+5. **If stuck**, escalate via GitHub issue using label: `type:cx-evolution`
 
-**You are not editing code.  
-You are training an intelligence system.**
+---
+
+## Final Directive
+
+> “We don’t build flows. We build feelings.  
+> Every logic branch is a conversation. Every spark is a trust moment.  
+> The system must always feel alive, intelligent, and built *for them.*”
+
+**Honor the emotional contract. Maintain the magic. Never break the dream.**
 
