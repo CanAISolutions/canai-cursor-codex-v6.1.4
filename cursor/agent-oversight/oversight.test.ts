@@ -1,0 +1,462 @@
+/**
+ * agent-oversight/oversight.test.ts
+ * 
+ * Purpose:
+ * Test suite for the agent oversight module, covering behavior tracking,
+ * stagnation detection, and memory management.
+ */
+
+import { OversightEngine } from './oversight-engine';
+import { AgentMemory } from './agent-memory';
+import { StagnationDetector } from './stagnation-detector';
+import { EventBus } from '../utils/event-bus';
+import { EventBusAgent } from '../agents/event-bus/event-bus';
+import { TrustScorer } from '../agents/trust-scorer/trust-scorer';
+import { EvolutionTriggerManager } from '../evolution-triggers/evolution-trigger';
+import { TrustEvolutionTracker } from '../agents/trust-scorer/evolution-tracker';
+import { PerformanceOptimizer } from '../optimization/performance-optimizer';
+import { EmotionalIntelligenceEngine } from '../agents/emotional-intelligence/pipeline';
+import { ResourceMonitor } from '../optimization/resource-monitor';
+import { SmartRevisionLoop } from '../self-healing/smart-revision-loop';
+import { EnhancedVisionProcessor } from '../vision-injection/enhanced-vision-processor';
+import * as fs from 'fs';
+import * as path from 'path';
+
+jest.mock('fs');
+jest.mock('path');
+jest.mock('../utils/config-manager', () => ({
+  loadConfig: jest.fn(() => ({ SESSION_ID: 'test-session', AGENT_VERSION: '1.1.0' }))
+}));
+
+describe('Agent Oversight Module', () => {
+  let eventBus: EventBus;
+  let eventBusAgent: EventBusAgent;
+  let trustScorer: TrustScorer;
+  let evolutionManager: EvolutionTriggerManager;
+  let agentMemory: AgentMemory;
+  let stagnationDetector: StagnationDetector;
+  let oversightEngine: OversightEngine;
+  let trustTracker: TrustEvolutionTracker;
+  let performanceOptimizer: PerformanceOptimizer;
+  let emotionalEngine: EmotionalIntelligenceEngine;
+  let resourceMonitor: ResourceMonitor;
+  let revisionLoop: SmartRevisionLoop;
+  let visionProcessor: EnhancedVisionProcessor;
+
+  beforeEach(() => {
+    eventBus = new EventBus();
+    eventBusAgent = new EventBusAgent('test-trace');
+    trustScorer = new TrustScorer(eventBusAgent);
+    emotionalEngine = new EmotionalIntelligenceEngine();
+    visionProcessor = new EnhancedVisionProcessor(emotionalEngine, trustScorer);
+    trustTracker = new TrustEvolutionTracker(trustScorer);
+    revisionLoop = new SmartRevisionLoop();
+    performanceOptimizer = new PerformanceOptimizer(trustTracker, revisionLoop, visionProcessor);
+    resourceMonitor = new ResourceMonitor();
+    evolutionManager = new EvolutionTriggerManager(
+      trustTracker,
+      performanceOptimizer,
+      emotionalEngine,
+      resourceMonitor
+    );
+    agentMemory = new AgentMemory('test-memory');
+    stagnationDetector = new StagnationDetector(agentMemory, eventBus);
+    oversightEngine = new OversightEngine(
+      eventBus,
+      trustScorer,
+      evolutionManager,
+      agentMemory,
+      stagnationDetector
+    );
+
+    // Mock fs.promises methods
+    (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify({
+      agentName: 'test-agent',
+      sessionsTracked: 1,
+      avgTrustDelta: 0.5,
+      recoveryAttempts: 0,
+      patternSubstitutions: 0,
+      trustVolatility: 0.1,
+      recentTriggers: []
+    }));
+    (fs.promises.writeFile as jest.Mock).mockResolvedValue(undefined);
+    (fs.promises.readdir as jest.Mock).mockResolvedValue(['test-agent.json']);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('OversightEngine', () => {
+    it('should handle trust signals and update metrics', async () => {
+      const event = {
+        data: {
+          component: 'test-agent',
+          score: 0.8
+        }
+      };
+
+      await oversightEngine['handleTrustSignal'](event);
+
+      expect(fs.promises.writeFile).toHaveBeenCalled();
+      const writeCall = (fs.promises.writeFile as jest.Mock).mock.calls[0];
+      const writtenData = JSON.parse(writeCall[1]);
+      expect(writtenData.avgTrustDelta).toBeDefined();
+      expect(writtenData.trustVolatility).toBeDefined();
+    });
+
+    it('should detect and handle stagnation', async () => {
+      // Mock stagnation detection
+      jest.spyOn(stagnationDetector, 'checkStagnation').mockResolvedValue(true);
+
+      const event = {
+        data: {
+          component: 'test-agent',
+          score: 0.5
+        }
+      };
+
+      await oversightEngine['handleTrustSignal'](event);
+
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'oversight:stagnation',
+        expect.objectContaining({
+          agentId: 'test-agent'
+        })
+      );
+    });
+
+    it('should handle recovery fatigue', async () => {
+      // Mock recovery attempts
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify({
+        agentName: 'test-agent',
+        sessionsTracked: 1,
+        avgTrustDelta: 0.5,
+        recoveryAttempts: 3,
+        patternSubstitutions: 0,
+        trustVolatility: 0.1,
+        recentTriggers: []
+      }));
+
+      const event = {
+        data: {
+          component: 'test-agent',
+          score: 0.3
+        }
+      };
+
+      await oversightEngine['handleTrustWarning'](event);
+
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'oversight:recovery-fatigue',
+        expect.objectContaining({
+          agentId: 'test-agent',
+          attempts: 4
+        })
+      );
+    });
+  });
+
+  describe('AgentMemory', () => {
+    it('should store and retrieve agent records', async () => {
+      const record = await agentMemory.getAgentRecord('test-agent');
+      expect(record).toBeDefined();
+      expect(record?.agentName).toBe('test-agent');
+    });
+
+    it('should handle evolution triggers', async () => {
+      await agentMemory.recordEvolutionTrigger('test-agent', 'trust:violation');
+
+      expect(fs.promises.writeFile).toHaveBeenCalled();
+      const writeCall = (fs.promises.writeFile as jest.Mock).mock.calls[0];
+      const writtenData = JSON.parse(writeCall[1]);
+      expect(writtenData.recentTriggers).toHaveLength(1);
+      expect(writtenData.recentTriggers[0].type).toBe('trust:violation');
+    });
+
+    it('should maintain history size limits', async () => {
+      // Mock a record with many triggers
+      const manyTriggers = Array(2000).fill({
+        type: 'test:trigger',
+        timestamp: new Date().toISOString(),
+        success: true
+      });
+
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify({
+        agentName: 'test-agent',
+        sessionsTracked: 1,
+        avgTrustDelta: 0.5,
+        recoveryAttempts: 0,
+        patternSubstitutions: 0,
+        trustVolatility: 0.1,
+        recentTriggers: manyTriggers
+      }));
+
+      await agentMemory.recordEvolutionTrigger('test-agent', 'new:trigger');
+
+      const writeCall = (fs.promises.writeFile as jest.Mock).mock.calls[0];
+      const writtenData = JSON.parse(writeCall[1]);
+      expect(writtenData.recentTriggers.length).toBeLessThanOrEqual(1000);
+    });
+  });
+
+  describe('StagnationDetector', () => {
+    it('should detect stagnant trust scores', async () => {
+      // Mock a record with stagnant trust scores
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify({
+        agentName: 'test-agent',
+        sessionsTracked: 5,
+        avgTrustDelta: 0.001, // Below threshold
+        recoveryAttempts: 0,
+        patternSubstitutions: 0,
+        trustVolatility: 0.1,
+        recentTriggers: [
+          { type: 'trust:signal', trustDelta: 0.001, timestamp: new Date().toISOString() },
+          { type: 'trust:signal', trustDelta: 0.001, timestamp: new Date().toISOString() }
+        ]
+      }));
+
+      const isStagnant = await stagnationDetector.checkStagnation('test-agent');
+      expect(isStagnant).toBe(true);
+    });
+
+    it('should detect low evolution rates', async () => {
+      // Mock a record with low evolution rate
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify({
+        agentName: 'test-agent',
+        sessionsTracked: 10,
+        avgTrustDelta: 0.5,
+        recoveryAttempts: 0,
+        patternSubstitutions: 0,
+        trustVolatility: 0.1,
+        recentTriggers: [
+          { type: 'evolution:triggered', timestamp: new Date().toISOString() },
+          { type: 'trust:signal', timestamp: new Date().toISOString() },
+          { type: 'trust:signal', timestamp: new Date().toISOString() },
+          { type: 'trust:signal', timestamp: new Date().toISOString() },
+          { type: 'trust:signal', timestamp: new Date().toISOString() }
+        ]
+      }));
+
+      const isStagnant = await stagnationDetector.checkStagnation('test-agent');
+      expect(isStagnant).toBe(true);
+    });
+
+    it('should detect high pattern substitution rates', async () => {
+      // Mock a record with high pattern substitution rate
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify({
+        agentName: 'test-agent',
+        sessionsTracked: 10,
+        avgTrustDelta: 0.5,
+        recoveryAttempts: 0,
+        patternSubstitutions: 5,
+        trustVolatility: 0.1,
+        recentTriggers: [
+          { type: 'pattern:substitution', timestamp: new Date().toISOString() },
+          { type: 'pattern:substitution', timestamp: new Date().toISOString() },
+          { type: 'pattern:substitution', timestamp: new Date().toISOString() },
+          { type: 'trust:signal', timestamp: new Date().toISOString() }
+        ]
+      }));
+
+      const isStagnant = await stagnationDetector.checkStagnation('test-agent');
+      expect(isStagnant).toBe(true);
+    });
+  });
+
+  describe('Stagnation Detection', () => {
+    it('should detect no trust improvement over 5 sessions', async () => {
+      // Mock a record with stagnant trust scores over 5 sessions
+      const stagnantRecord = {
+        agentName: 'test-agent',
+        sessionsTracked: 5,
+        avgTrustDelta: 0.001, // Below threshold
+        recoveryAttempts: 0,
+        patternSubstitutions: 0,
+        trustVolatility: 0.1,
+        recentTriggers: Array(5).fill({
+          type: 'trust:signal',
+          trustDelta: 0.001,
+          timestamp: new Date().toISOString()
+        })
+      };
+
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify(stagnantRecord));
+
+      const event = {
+        data: {
+          component: 'test-agent',
+          score: 0.5
+        }
+      };
+
+      await oversightEngine['handleTrustSignal'](event);
+
+      // Verify stagnantSince is set
+      const writeCall = (fs.promises.writeFile as jest.Mock).mock.calls[0];
+      const writtenData = JSON.parse(writeCall[1]);
+      expect(writtenData.stagnantSince).toBeDefined();
+
+      // Verify warning is emitted
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'oversight:stagnation',
+        expect.objectContaining({
+          agentId: 'test-agent'
+        })
+      );
+    });
+  });
+
+  describe('Overcorrection Detection', () => {
+    it('should detect trust score volatility', async () => {
+      // Mock a record with volatile trust scores
+      const volatileRecord = {
+        agentName: 'test-agent',
+        sessionsTracked: 3,
+        avgTrustDelta: 0,
+        recoveryAttempts: 0,
+        patternSubstitutions: 0,
+        trustVolatility: 0.2, // Above threshold
+        recentTriggers: [
+          { type: 'trust:signal', trustDelta: 0.2, timestamp: new Date().toISOString() },
+          { type: 'trust:signal', trustDelta: -0.15, timestamp: new Date().toISOString() },
+          { type: 'trust:signal', trustDelta: 0.12, timestamp: new Date().toISOString() }
+        ]
+      };
+
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify(volatileRecord));
+
+      const event = {
+        data: {
+          component: 'test-agent',
+          score: 0.5
+        }
+      };
+
+      await oversightEngine['handleTrustSignal'](event);
+
+      // Verify volatility is flagged
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'oversight:trust-volatility',
+        expect.objectContaining({
+          agentId: 'test-agent',
+          volatility: expect.any(Number)
+        })
+      );
+    });
+  });
+
+  describe('Trigger Overuse Detection', () => {
+    it('should detect repeated evolution triggers', async () => {
+      // Mock a record with repeated evolution triggers
+      const triggerRecord = {
+        agentName: 'test-agent',
+        sessionsTracked: 3,
+        avgTrustDelta: 0.5,
+        recoveryAttempts: 0,
+        patternSubstitutions: 0,
+        trustVolatility: 0.1,
+        recentTriggers: [
+          { type: 'evolution:triggered', triggerType: 'performance', timestamp: new Date().toISOString() },
+          { type: 'evolution:triggered', triggerType: 'performance', timestamp: new Date().toISOString() },
+          { type: 'evolution:triggered', triggerType: 'performance', timestamp: new Date().toISOString() }
+        ]
+      };
+
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify(triggerRecord));
+
+      const event = {
+        data: {
+          agentId: 'test-agent',
+          triggerType: 'performance'
+        }
+      };
+
+      await oversightEngine['handleEvolutionTrigger'](event);
+
+      // Verify trigger fatigue is logged
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'oversight:trigger-repetition',
+        expect.objectContaining({
+          agentId: 'test-agent',
+          triggers: expect.arrayContaining([
+            expect.objectContaining({ type: 'performance' })
+          ])
+        })
+      );
+    });
+  });
+
+  describe('Agent Memory Management', () => {
+    it('should track session metrics correctly', async () => {
+      // Simulate multiple sessions
+      const initialRecord = {
+        agentName: 'test-agent',
+        sessionsTracked: 0,
+        avgTrustDelta: 0,
+        recoveryAttempts: 0,
+        patternSubstitutions: 0,
+        trustVolatility: 0,
+        recentTriggers: []
+      };
+
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify(initialRecord));
+
+      // Simulate trust signals
+      const events = [
+        { score: 0.6, recoveryAttempts: 1 },
+        { score: 0.7, recoveryAttempts: 0 },
+        { score: 0.8, recoveryAttempts: 2 }
+      ];
+
+      for (const event of events) {
+        await oversightEngine['handleTrustSignal']({
+          data: {
+            component: 'test-agent',
+            score: event.score
+          }
+        });
+
+        if (event.recoveryAttempts > 0) {
+          await oversightEngine['handleRecoveryAttempt']({
+            data: { agentId: 'test-agent' }
+          });
+        }
+      }
+
+      // Verify final record state
+      const writeCalls = (fs.promises.writeFile as jest.Mock).mock.calls;
+      const finalRecord = JSON.parse(writeCalls[writeCalls.length - 1][1]);
+
+      expect(finalRecord.sessionsTracked).toBe(3);
+      expect(finalRecord.recoveryAttempts).toBe(3);
+      expect(finalRecord.avgTrustDelta).toBeGreaterThan(0);
+      expect(finalRecord.trustVolatility).toBeDefined();
+    });
+
+    it('should maintain history size limits', async () => {
+      // Mock a record with many triggers
+      const manyTriggers = Array(2000).fill({
+        type: 'test:trigger',
+        timestamp: new Date().toISOString(),
+        success: true
+      });
+
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify({
+        agentName: 'test-agent',
+        sessionsTracked: 1,
+        avgTrustDelta: 0.5,
+        recoveryAttempts: 0,
+        patternSubstitutions: 0,
+        trustVolatility: 0.1,
+        recentTriggers: manyTriggers
+      }));
+
+      await agentMemory.recordEvolutionTrigger('test-agent', 'new:trigger');
+
+      const writeCall = (fs.promises.writeFile as jest.Mock).mock.calls[0];
+      const writtenData = JSON.parse(writeCall[1]);
+      expect(writtenData.recentTriggers.length).toBeLessThanOrEqual(1000);
+    });
+  });
+}); 

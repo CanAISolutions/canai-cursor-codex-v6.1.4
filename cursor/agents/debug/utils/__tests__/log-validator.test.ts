@@ -3,53 +3,73 @@
  * @description Unit tests for log-validator.ts — input validation and sanitization logic.
  */
 
-import { validateLog } from '../utils/log-validator';
-import { recordMetric } from '../utils/telemetry';
-import * as maskModule from '../utils/maskSensitive';
-import { DebugConfig } from '../config';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { validateLog } from '../log-validator';
+import { recordMetric } from '../telemetry';
+import * as maskModule from '../maskSensitive';
+import { DebugConfig } from '../../config/config';
 
-import { jest } from '@jest/globals';
-
-jest.mock('../utils/telemetry');
+jest.mock('../telemetry');
+jest.mock('../maskSensitive');
 
 describe('validateLog', () => {
-  const config: DebugConfig = {
-    maxLogSize: 10000,
-    aiProvider: 'openai',
-    aiProviderConfig: {},
+  const mockConfig: Required<DebugConfig> = {
     trustScoreThreshold: 4.2,
+    escalationPriority: 'high',
+    concurrencyLimit: 5,
+    pipelineTimeoutMs: 30000,
+    maxLogSize: 1000,
+    maxLogLines: 1000,
+    fallbackMode: false,
+    dryRun: false,
+    aiProvider: 'openai',
+    fallbackProvider: 'anthropic',
+    aiProviderConfig: {},
+    bugDetectionRetries: 3,
+    fixProposalRetries: 3
   };
-
-  const traceId = 'test-trace';
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (maskModule.maskSensitive as jest.Mock).mockImplementation(input => input);
   });
 
-  it('passes valid log and sanitizes output', () => {
-    const spy = jest.spyOn(maskModule, 'maskSensitive');
-    const log = 'TypeError: Cannot read property';
-    const result = validateLog(log, config, traceId);
-
-    expect(result).toContain('[REDACTED');
-    expect(spy).toHaveBeenCalledWith(expect.stringContaining('TypeError'));
+  it('validates and sanitizes valid logs', () => {
+    const input = 'Valid log message with Error: test failed';
+    const result = validateLog(input, mockConfig, 'trace-123');
+    expect(result).toBe(input);
+    expect(maskModule.maskSensitive).toHaveBeenCalledWith(input);
   });
 
-  it('throws on empty log', () => {
-    expect(() => validateLog('   ', config, traceId)).toThrowError(/Log is empty/);
-    expect(recordMetric).toHaveBeenCalledWith('invalid_log_format', expect.objectContaining({ traceId }));
+  it('rejects empty logs', () => {
+    expect(() => validateLog('', mockConfig, 'trace-123')).toThrow('Log is empty');
+    expect(recordMetric).toHaveBeenCalledWith('invalid_log_format', {
+      traceId: 'trace-123',
+      reason: 'empty'
+    });
   });
 
-  it('throws if log exceeds maxLogSize', () => {
-    const longLog = 'Error: Overflow'.repeat(2000);
-    expect(() => validateLog(longLog, config, traceId)).toThrowError(/Log exceeds maxLogSize/);
-    expect(recordMetric).toHaveBeenCalledWith('log_too_large', expect.objectContaining({ traceId }));
+  it('rejects oversized logs', () => {
+    const largeLog = 'x'.repeat(mockConfig.maxLogSize + 1);
+    expect(() => validateLog(largeLog, mockConfig, 'trace-123')).toThrow('Log exceeds maxLogSize');
+    expect(recordMetric).toHaveBeenCalledWith('log_too_large', {
+      traceId: 'trace-123',
+      size: mockConfig.maxLogSize + 1
+    });
   });
 
-  it('flags logs with suspicious structure', () => {
-    const oddLog = 'This is a weird string without stack';
-    const result = validateLog(oddLog, config, traceId);
-    expect(result).toContain('REDACTED');
-    expect(recordMetric).toHaveBeenCalledWith('log_suspicious_structure', { traceId });
+  it('flags suspicious log structure', () => {
+    const input = 'Just a normal message without error context';
+    validateLog(input, mockConfig, 'trace-123');
+    expect(recordMetric).toHaveBeenCalledWith('log_suspicious_structure', {
+      traceId: 'trace-123'
+    });
+  });
+
+  it('normalizes line endings', () => {
+    const input = 'Line 1\r\nLine 2\r\nLine 3';
+    const expected = 'Line 1\nLine 2\nLine 3';
+    const result = validateLog(input, mockConfig, 'trace-123');
+    expect(result).toBe(expected);
   });
 });

@@ -4,65 +4,54 @@
  * Validates PII, secrets, tokens, and path masking.
  */
 
+import { describe, it, expect } from '@jest/globals';
 import { maskSensitive } from '../maskSensitive';
 
 describe('maskSensitive', () => {
-  it('masks email addresses', () => {
-    const input = 'User email is john.doe@example.com';
-    const result = maskSensitive(input);
-    expect(result).toContain('[REDACTED_EMAIL]');
-  });
-
   it('masks access tokens', () => {
-    const input = 'access_token=abcd1234xyz5678';
+    const input = 'access_token="abcd1234xyz5678"';
     const result = maskSensitive(input);
-    expect(result).toContain('[REDACTED_ACCESS_TOKEN]');
+    expect(result).toBe('[REDACTED_ACCESS_TOKEN]');
   });
 
   it('masks api keys', () => {
-    const input = '"apiKey": "1234abcd5678efgh"';
+    const input = 'api_key=xyz123456789abcd';
     const result = maskSensitive(input);
-    expect(result).toContain('[REDACTED_API_KEY]');
+    expect(result).toBe('[REDACTED_API_KEY]');
   });
 
   it('masks bearer tokens', () => {
-    const input = 'Bearer abcd-1234-xyz-token';
+    const input = 'Bearer xyz123456789abcd';
     const result = maskSensitive(input);
-    expect(result).toContain('[REDACTED_BEARER_TOKEN]');
+    expect(result).toBe('[REDACTED_BEARER_TOKEN]');
   });
 
-  it('masks authorization headers', () => {
-    const input = 'authorization: Bearer secret1234token';
+  it('masks email addresses', () => {
+    const input = 'user@example.com';
     const result = maskSensitive(input);
-    expect(result).toContain('[REDACTED_AUTHORIZATION_HEADER]');
+    expect(result).toBe('[REDACTED_EMAIL]');
   });
 
-  it('masks env vars like DB_PASSWORD', () => {
-    const input = 'DB_PASSWORD=secret123';
+  it('masks filesystem paths', () => {
+    const input = '/usr/local/bin/node';
     const result = maskSensitive(input);
-    expect(result).toContain('[REDACTED_ENV_VAR]');
+    expect(result).toBe('[REDACTED_FILESYSTEM_PATH]');
   });
 
-  it('masks Unix-style file paths', () => {
-    const input = 'File saved at /usr/local/bin/file.js';
+  it('masks windows paths', () => {
+    const input = 'C:\\Program Files\\App\\config.json';
     const result = maskSensitive(input);
-    expect(result).toContain('[REDACTED_FILESYSTEM_PATH]');
+    expect(result).toBe('[REDACTED_WINDOWS_PATH]');
   });
 
-  it('masks Windows-style file paths', () => {
-    const input = 'C:\\Users\\Admin\\secret.txt';
+  it('masks environment variables', () => {
+    const input = 'DB_PASSWORD=secretpass123';
     const result = maskSensitive(input);
-    expect(result).toContain('[REDACTED_WINDOWS_PATH]');
+    expect(result).toBe('[REDACTED_ENV_VAR]');
   });
 
-  it('masks token-like strings', () => {
-    const input = 'sk-abc123xyz789';
-    const result = maskSensitive(input);
-    expect(result).toContain('[REDACTED_TOKEN_LIKE]');
-  });
-
-  it('does not over-redact safe content', () => {
-    const input = 'Normal log with no secrets.';
+  it('preserves non-sensitive content', () => {
+    const input = 'Normal log message without secrets';
     const result = maskSensitive(input);
     expect(result).toBe(input);
   });

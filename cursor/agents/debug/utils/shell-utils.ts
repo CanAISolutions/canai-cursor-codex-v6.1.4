@@ -7,9 +7,12 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { appendToFixContextAsync } from '../context/fix-context-utils';
-import { recordMetric } from '../telemetry';
+import { recordMetric } from './telemetry';
 
 const execPromise = promisify(exec);
+
+const forbidden = ['&&', '||', ';', '`', '|', '$(', '>>', '<'];
+const disallowedCommands = ['rm -rf', 'mkfs', 'dd', 'format', 'node'];
 
 // Default execution limits
 export const GIT_COMMAND_TIMEOUT = 2000;
@@ -30,75 +33,64 @@ const ALLOWED_COMMANDS = [
 
 // Override hooks for tests
 export const testOverrides = {
-  execAsync: null as ((cmd: string, opts?: any) => Promise<{ stdout: string; stderr: string }>) | null
+  execAsync: null as null | ((cmd: string) => Promise<{ stdout: string; stderr: string }>)
 };
 
 /**
- * Sanitizes shell input to block command injection risks.
+ * Sanitizes shell input to prevent command injection
+ * @param cmd The command to sanitize
+ * @throws Error with code INVALID_SHELL_INPUT if unsafe tokens are found
  */
 export function sanitizeShellInput(cmd: string): string {
-  const forbidden = ['&&', '||', ';', '`', '|', '$(', '>>', '<'];
   for (const token of forbidden) {
     if (cmd.includes(token)) {
-      throw Object.assign(new Error(`Disallowed token in shell input: ${token}`), {
-        errorType: 'validation',
-        errorCode: 'INVALID_SHELL_INPUT'
-      });
+      throw new Error('INVALID_SHELL_INPUT');
     }
   }
-  return cmd.trim();
+  return cmd;
 }
 
 /**
- * Validates whether a command is safe and expected for execution.
+ * Checks if a command is safe to execute
+ * @param cmd The command to check
+ * @returns true if the command is safe
  */
 export function isSafeShellCommand(cmd: string): boolean {
-  return ALLOWED_COMMANDS.some(allowed => cmd.trim().startsWith(allowed));
+  const sanitized = sanitizeShellInput(cmd);
+  return !disallowedCommands.some(disallowed => sanitized.includes(disallowed));
 }
 
 /**
- * Executes a shell command safely, with allowlist enforcement, timeout, and max buffer.
+ * Executes a shell command safely
+ * @param cmd The command to execute
+ * @returns Promise with stdout and stderr
+ * @throws Error if command is unsafe or execution fails
  */
 export async function execAsync(
-  cmd: string,
-  opts: { timeout?: number } = {}
+  cmd: string
 ): Promise<{ stdout: string; stderr: string }> {
   if (!isSafeShellCommand(cmd)) {
-    throw Object.assign(new Error(`Command not permitted: ${cmd}`), {
-      errorType: 'validation',
-      errorCode: 'DISALLOWED_COMMAND'
-    });
+    throw new Error('DISALLOWED_COMMAND');
   }
 
-  sanitizeShellInput(cmd);
-  const execFn = testOverrides.execAsync ?? execPromise;
-  const timeout = opts.timeout ?? GIT_COMMAND_TIMEOUT;
-
-  try {
-    const { stdout, stderr } = await execFn(cmd, {
-      timeout,
-      maxBuffer: MAX_STDOUT_SIZE
-    });
-    return { stdout, stderr };
-  } catch (err: any) {
-    throw Object.assign(new Error(`Shell execution failed: ${cmd}`), {
-      errorType: 'system',
-      errorCode: 'SHELL_EXEC_FAILURE',
-      details: err.message,
-      recovery: 'Check Git availability, permissions, or syntax'
-    });
+  if (testOverrides.execAsync) {
+    return testOverrides.execAsync(cmd);
   }
+
+  return execPromise(cmd);
 }
 
 /**
- * Health check for Git presence and pipeline readiness.
+ * Checks pipeline health by verifying Git availability and branch state
+ * @param traceId Trace ID for logging
+ * @returns true if pipeline is healthy, false otherwise
  */
 export async function checkPipelineHealth(traceId: string): Promise<boolean> {
   try {
-    const { stdout } = await execAsync('git --version');
-    if (!stdout.toLowerCase().includes('git')) {
+    const { stdout: gitVersion } = await execAsync('git --version');
+    if (!gitVersion.toLowerCase().includes('git')) {
       await appendToFixContextAsync(`[${traceId}] Health check failed: git not detected`);
-      recordMetric('health_check_failed', { traceId, reason: 'no_git' });
+      void recordMetric('health_check_failed', { traceId, reason: 'no_git' });
       return false;
     }
 
@@ -110,7 +102,7 @@ export async function checkPipelineHealth(traceId: string): Promise<boolean> {
     return true;
   } catch (err: any) {
     await appendToFixContextAsync(`[${traceId}] Pipeline health check error: ${err.message}`);
-    recordMetric('health_check_failed', { traceId, error: err.message });
+    void recordMetric('health_check_failed', { traceId, error: err.message });
     return false;
   }
 }

@@ -3,9 +3,9 @@
  * @description Tests for auditFix – verifies structural, security, and policy rule enforcement.
  */
 
-import { auditFix } from '../core/codex-auditor';
-import { appendToFixContextAsync } from '../core/fix-context-utils';
-import { recordMetric } from '../core/telemetry';
+import { auditFix } from '../cursor/agents/debug/core/codex-auditor';
+import { appendToFixContextAsync } from '../cursor/agents/debug/context/fix-context-utils';
+import { recordMetric } from '../cursor/agents/debug/utils/telemetry';
 import { jest } from '@jest/globals';
 
 jest.mock('../core/fix-context-utils');

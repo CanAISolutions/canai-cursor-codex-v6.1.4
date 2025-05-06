@@ -5,40 +5,52 @@
  * @codex-verified: v1.0.0
  */
 
-export type DreamStatePayload =
-  | { success: true; data: Record<string, any> }
-  | { success: false; error: { code: string; message: string }; meta?: Record<string, any> };
-
-export function validateDreamStatePayload(payload: any): { valid: boolean; issues: string[] } {
+/**
+ * Validates a DreamState payload
+ * @param payload The payload to validate
+ * @returns Object containing validation result and any issues found
+ */
+export function validateDreamStatePayload(payload: any): {
+  valid: boolean;
+  issues: string[];
+} {
   const issues: string[] = [];
 
-  if (typeof payload !== "object" || payload === null) {
-    issues.push("Payload must be a non-null object.");
+  // Check if payload is a non-null object
+  if (!payload || typeof payload !== 'object') {
+    issues.push('Payload must be a non-null object');
     return { valid: false, issues };
   }
 
-  if (typeof payload.success !== "boolean") {
-    issues.push("Missing or invalid 'success' field (must be boolean).");
+  // Check if success field exists and is boolean
+  if (typeof payload.success !== 'boolean') {
+    issues.push('Missing or invalid success field');
+    return { valid: false, issues };
   }
 
+  // Check success payload structure
   if (payload.success === true) {
-    if (!payload.data || typeof payload.data !== "object" || Array.isArray(payload.data)) {
-      issues.push("Success payload must have a 'data' object.");
+    if (!payload.data || typeof payload.data !== 'object') {
+      issues.push('Success payload must have a data object');
     }
-  } else {
-    if (!payload.error || typeof payload.error !== "object") {
-      issues.push("Error payload must have an 'error' object.");
+  }
+
+  // Check error payload structure
+  if (payload.success === false) {
+    if (!payload.error || typeof payload.error !== 'object') {
+      issues.push('Error payload must have an error object');
     } else {
-      if (typeof payload.error.code !== "string") {
-        issues.push("Error object missing 'code' (string required).");
+      if (!payload.error.code || typeof payload.error.code !== 'string') {
+        issues.push('Error object must have a code string');
       }
-      if (typeof payload.error.message !== "string") {
-        issues.push("Error object missing 'message' (string required).");
+      if (!payload.error.message || typeof payload.error.message !== 'string') {
+        issues.push('Error object must have a message string');
       }
     }
 
-    if (payload.meta && typeof payload.meta !== "object") {
-      issues.push("Optional 'meta' field must be an object if present.");
+    // Check meta field if present
+    if (payload.meta !== undefined && typeof payload.meta !== 'object') {
+      issues.push('meta field must be an object if present');
     }
   }
 

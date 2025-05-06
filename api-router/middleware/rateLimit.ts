@@ -5,45 +5,65 @@
  * @codex-verified: v1.0.0
  */
 
-import { Request, Response, NextFunction } from "express";
-import { handleRateLimitExceeded } from "./handleRateLimitExceeded";
+import { Request, Response, NextFunction } from 'express';
 
-type RateLimitOptions = {
-  windowMs: number;    // Time window in milliseconds
-  maxRequests: number; // Maximum allowed requests per window
+interface RateLimitConfig {
+  windowMs: number;
+  maxRequests: number;
+}
+
+interface RateLimitCounter {
+  count: number;
+  resetTime: number;
+}
+
+const requestCounters = new Map<string, RateLimitCounter>();
+
+const defaultConfig: RateLimitConfig = {
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 100
 };
 
-const requestCounters = new Map<string, { count: number; resetTime: number }>();
+/**
+ * Middleware to implement rate limiting
+ * @param config Rate limit configuration
+ * @returns Express middleware function
+ */
+export function rateLimit(config: Partial<RateLimitConfig> = {}) {
+  const { windowMs, maxRequests } = { ...defaultConfig, ...config };
 
-export function rateLimit(options: RateLimitOptions) {
-  const { windowMs, maxRequests } = options;
-
-  return (req: Request, res: Response, next: NextFunction) => {
-    const key = req.ip; // Basic IP-based rate limiting
-
+  return function(req: Request, res: Response, next: NextFunction): void {
+    const key = req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
     const now = Date.now();
-    const counter = requestCounters.get(key);
 
-    if (!counter || now > counter.resetTime) {
+    const counter = requestCounters.get(key) || { count: 0, resetTime: now + windowMs };
+
+    if (now > counter.resetTime) {
       requestCounters.set(key, {
         count: 1,
         resetTime: now + windowMs
       });
-      return next();
+      next();
+      return;
     }
 
-    if (counter.count < maxRequests) {
-      counter.count += 1;
-      return next();
+    if (counter.count >= maxRequests) {
+      res.status(429).json({
+        success: false,
+        error: {
+          code: 'RateLimitExceeded',
+          message: 'Too many requests',
+          meta: {
+            retryAfter: Math.ceil((counter.resetTime - now) / 1000)
+          }
+        }
+      });
+      return;
     }
 
-    const retryAfterSeconds = Math.ceil((counter.resetTime - now) / 1000);
-
-    handleRateLimitExceeded(req, res, next, {
-      retryAfter: retryAfterSeconds,
-      limit: maxRequests,
-      remaining: 0
-    });
+    counter.count++;
+    requestCounters.set(key, counter);
+    next();
   };
 }
 

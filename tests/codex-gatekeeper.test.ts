@@ -4,10 +4,10 @@
  */
 
 import { jest } from '@jest/globals';
-import { enforceMergeGate, createPipelineError } from '../codex-gatekeeper';
-import { execAsync } from '../shell-utils';
-import { appendToFixContextAsync } from '../fix-context-utils';
-import { recordMetric } from '../telemetry';
+import { enforceMergeGate, createPipelineError } from '../cursor/agents/debug/core/codex-gatekeeper';
+import { execAsync } from '../cursor/agents/debug/utils/shell-utils';
+import { appendToFixContextAsync } from '../cursor/agents/debug/context/fix-context-utils';
+import { recordMetric } from '../cursor/agents/debug/utils/telemetry';
 import fs from 'fs';
 
 jest.mock('../shell-utils');

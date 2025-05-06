@@ -4,6 +4,7 @@
  * Validates command sanitization, allowlist enforcement, mockable exec, and pipeline health.
  */
 
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import {
     sanitizeShellInput,
     isSafeShellCommand,
@@ -12,7 +13,8 @@ import {
     testOverrides,
   } from '../shell-utils';
   
-  import { jest } from '@jest/globals';
+  type ExecResult = { stdout: string; stderr: string };
+  type ExecAsyncFn = (_cmd: string, _opts?: any) => Promise<ExecResult>;
   
   describe('sanitizeShellInput', () => {
     it('allows safe commands', () => {
@@ -42,7 +44,8 @@ import {
   
   describe('execAsync', () => {
     beforeEach(() => {
-      testOverrides.execAsync = jest.fn().mockResolvedValue({ stdout: 'OK', stderr: '' });
+      const mockFn = jest.fn<ExecAsyncFn>().mockResolvedValue({ stdout: 'OK', stderr: '' });
+      testOverrides.execAsync = mockFn;
     });
   
     afterEach(() => {
@@ -66,9 +69,10 @@ import {
   
   describe('checkPipelineHealth', () => {
     beforeEach(() => {
-      testOverrides.execAsync = jest.fn()
+      const mockFn = jest.fn<ExecAsyncFn>()
         .mockImplementationOnce(() => Promise.resolve({ stdout: 'git version 2.39.0', stderr: '' }))
         .mockImplementationOnce(() => Promise.resolve({ stdout: 'main', stderr: '' }));
+      testOverrides.execAsync = mockFn;
     });
   
     afterEach(() => {
@@ -81,16 +85,18 @@ import {
     });
   
     it('warns if in detached HEAD', async () => {
-      testOverrides.execAsync = jest.fn()
+      const mockFn = jest.fn<ExecAsyncFn>()
         .mockImplementationOnce(() => Promise.resolve({ stdout: 'git version 2.39.0', stderr: '' }))
         .mockImplementationOnce(() => Promise.resolve({ stdout: 'HEAD', stderr: '' }));
+      testOverrides.execAsync = mockFn;
   
       const result = await checkPipelineHealth('trace-detached');
       expect(result).toBe(true);
     });
   
     it('fails gracefully if Git is unavailable', async () => {
-      testOverrides.execAsync = jest.fn().mockRejectedValue(new Error('Git not found'));
+      const mockFn = jest.fn<ExecAsyncFn>().mockRejectedValue(new Error('Git not found'));
+      testOverrides.execAsync = mockFn;
   
       const result = await checkPipelineHealth('trace-missing-git');
       expect(result).toBe(false);

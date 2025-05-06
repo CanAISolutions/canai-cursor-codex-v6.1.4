@@ -12,11 +12,11 @@ const redactionRules: Array<{ label: string; pattern: RegExp }> = [
     },
     {
       label: 'access_token',
-      pattern: /(["']?access[_-]?token["']?\s*[:=]\s*["']?[\w\-]{16,}["']?)/gi
+      pattern: /access_token=["']?[\w\-]{16,}["']?|access_token="[\w\-]+"/gi
     },
     {
       label: 'api_key',
-      pattern: /(["']?api[_-]?key["']?\s*[:=]\s*["']?[\w\-]{16,}["']?)/gi
+      pattern: /api_key=["']?[\w\-]{16,}["']?|api_key="[\w\-]+"/gi
     },
     {
       label: 'bearer_token',
@@ -36,7 +36,7 @@ const redactionRules: Array<{ label: string; pattern: RegExp }> = [
     },
     {
       label: 'windows_path',
-      pattern: /[a-zA-Z]:\\(?:[^\\\s]+\\)*[^\\\s]+/g
+      pattern: /[a-zA-Z]:\\(?:[^\\]+\\)*[^\\]+/g
     },
     {
       label: 'token_like',

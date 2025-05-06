@@ -3,7 +3,7 @@
  * @description Unit tests for Codex Edition v4.1.3 – config.ts module
  */
 
-import { loadConfig, testOverrides } from '../config';
+import { loadConfig, testOverrides } from '../cursor/agents/debug/config/config';
 import { jest } from '@jest/globals';
 
 describe('loadConfig', () => {

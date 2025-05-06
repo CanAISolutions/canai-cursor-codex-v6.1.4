@@ -3,16 +3,24 @@
  * @description Validates trust scoring heuristics and AI integration for proposed fixes.
  */
 
-import { scoreFix } from '../trust-scorer';
-import { FixProposal, BugContext, AIProvider } from '../ai-provider';
-import { appendToFixContextAsync } from '../fix-context-utils';
-import { recordMetric } from '../telemetry';
+import { computeTrustScore } from '../cursor/agents/debug/core/trust-scorer';
+import { FixProposal, BugContext } from '../cursor/agents/debug/engines/ai-provider';
+import { appendToFixContextAsync } from '../cursor/agents/debug/context/fix-context-utils';
+import { recordMetric } from '../cursor/agents/debug/utils/telemetry';
 import { jest } from '@jest/globals';
 
-jest.mock('../fix-context-utils');
-jest.mock('../telemetry');
+jest.mock('../cursor/agents/debug/context/fix-context-utils');
+jest.mock('../cursor/agents/debug/utils/telemetry');
 
-describe('scoreFix', () => {
+interface AIProvider {
+  evaluateFixTrustScore: (fix: FixProposal, bug: BugContext, traceId: string) => Promise<number>;
+  ping: () => Promise<void>;
+  detectBug: (log: string, traceId: string) => Promise<BugContext>;
+  proposeFix: (bug: BugContext, traceId: string) => Promise<FixProposal>;
+  generateEscalationTicket: (input: { summary: string; sourceFile?: string; priority?: 'low' | 'medium' | 'high'; traceId?: string; }) => Promise<void>;
+}
+
+describe('computeTrustScore', () => {
   const traceId = 'test-trust';
   const baseFix: FixProposal = {
     patch: 'diff --git a/file.js b/file.js\n--- a/file.js\n+++ b/file.js\n@@ ...',
@@ -30,17 +38,23 @@ describe('scoreFix', () => {
   };
 
   const mockAIProvider: Partial<AIProvider> = {
-    evaluateFixTrustScore: jest.fn().mockResolvedValue(8.0),
+    evaluateFixTrustScore: jest.fn<() => Promise<number>>().mockResolvedValue(8.0),
+    ping: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
+    detectBug: jest.fn<() => Promise<BugContext>>().mockResolvedValue({ message: '', type: 'NullPointer', likelihood: 'high', impact: [] }),
+    proposeFix: jest.fn<() => Promise<FixProposal>>().mockResolvedValue(baseFix),
+    generateEscalationTicket: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     (appendToFixContextAsync as jest.Mock).mockResolvedValue(undefined);
     (recordMetric as jest.Mock).mockReturnValue(undefined);
+    (mockAIProvider.evaluateFixTrustScore as jest.Mock).mockResolvedValue(20.0);
+    (mockAIProvider.evaluateFixTrustScore as jest.Mock).mockRejectedValue(new Error('API error'));
   });
 
   it('returns a high trust score for ideal fix', async () => {
-    const score = await scoreFix(baseFix, baseBug, mockAIProvider as AIProvider, traceId);
+    const score = await computeTrustScore(baseFix, baseBug, { enabled: false, configFile: '', maxErrors: 0, errorPenalty: 0 }, traceId, mockAIProvider as AIProvider);
     expect(score).toBeGreaterThan(8);
     expect(recordMetric).toHaveBeenCalledWith(
       'fix_scored',
@@ -50,31 +64,29 @@ describe('scoreFix', () => {
 
   it('penalizes large patches', async () => {
     const largePatch = { ...baseFix, patch: 'line\n'.repeat(120) };
-    const score = await scoreFix(largePatch, baseBug, mockAIProvider as AIProvider, traceId);
+    const score = await computeTrustScore(largePatch, baseBug, { enabled: false, configFile: '', maxErrors: 0, errorPenalty: 0 }, traceId, mockAIProvider as AIProvider);
     expect(score).toBeLessThan(8);
   });
 
   it('penalizes weak reasoning', async () => {
     const weakFix = { ...baseFix, reason: '' };
-    const score = await scoreFix(weakFix, baseBug, mockAIProvider as AIProvider, traceId);
+    const score = await computeTrustScore(weakFix, baseBug, { enabled: false, configFile: '', maxErrors: 0, errorPenalty: 0 }, traceId, mockAIProvider as AIProvider);
     expect(score).toBeLessThan(8);
   });
 
   it('rewards matching impacted file', async () => {
     const matchFix = { ...baseFix, filepath: 'src/file.js' };
-    const score = await scoreFix(matchFix, baseBug, mockAIProvider as AIProvider, traceId);
+    const score = await computeTrustScore(matchFix, baseBug, { enabled: false, configFile: '', maxErrors: 0, errorPenalty: 0 }, traceId, mockAIProvider as AIProvider);
     expect(score).toBeGreaterThan(5);
   });
 
   it('clamps score within 0–10 range', async () => {
-    (mockAIProvider.evaluateFixTrustScore as jest.Mock).mockResolvedValue(20.0);
-    const score = await scoreFix(baseFix, baseBug, mockAIProvider as AIProvider, traceId);
+    const score = await computeTrustScore(baseFix, baseBug, { enabled: false, configFile: '', maxErrors: 0, errorPenalty: 0 }, traceId, mockAIProvider as AIProvider);
     expect(score).toBeLessThanOrEqual(10);
   });
 
   it('gracefully handles AI failure and logs fallback', async () => {
-    (mockAIProvider.evaluateFixTrustScore as jest.Mock).mockRejectedValue(new Error('API error'));
-    const score = await scoreFix(baseFix, baseBug, mockAIProvider as AIProvider, traceId);
+    const score = await computeTrustScore(baseFix, baseBug, { enabled: false, configFile: '', maxErrors: 0, errorPenalty: 0 }, traceId, mockAIProvider as AIProvider);
     expect(score).toBeGreaterThan(0); // Should still be clamped and non-crashing
     expect(recordMetric).toHaveBeenCalledWith(
       'fix_score_failed',

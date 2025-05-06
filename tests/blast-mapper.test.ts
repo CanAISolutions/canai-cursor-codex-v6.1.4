@@ -1,12 +1,12 @@
-import { detectBug, inferBugContext, BugType } from '../blast-mapper';
-import { AIProvider } from '../ai-provider';
-import { DebugConfig } from '../config';
-import { appendToFixContextAsync } from '../fix-context-utils';
-import { recordMetric } from '../telemetry';
+import { detectBug, inferBugContext, BugType } from '../cursor/agents/debug/core/blast-mapper';
+import { AIProvider } from '../cursor/agents/debug/engines/ai-provider';
+import { DebugConfig } from '../cursor/agents/debug/config/config';
+import { appendToFixContextAsync } from '../cursor/agents/debug/context/fix-context-utils';
+import { recordMetric } from '../cursor/agents/debug/utils/telemetry';
 import { jest } from '@jest/globals';
 
-jest.mock('../fix-context-utils');
-jest.mock('../telemetry');
+jest.mock('../cursor/agents/debug/context/fix-context-utils');
+jest.mock('../cursor/agents/debug/utils/telemetry');
 
 describe('blast-mapper', () => {
   const mockAIProvider: Partial<AIProvider> = {
