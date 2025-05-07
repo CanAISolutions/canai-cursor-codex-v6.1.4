@@ -5,68 +5,77 @@
 
 import { describe, expect, it, beforeEach } from '@jest/globals';
 import { PatternAnalyzer } from '../core/pattern-analyzer';
-import { SystemMetrics } from '../types';
+import { SystemMetrics, PatternAnalysis } from '../types';
 
 describe('PatternAnalyzer', () => {
   let analyzer: PatternAnalyzer;
-  let initialMetrics: SystemMetrics;
+  let mockMetrics: SystemMetrics;
 
   beforeEach(() => {
-    initialMetrics = {
+    mockMetrics = {
       codeQuality: 0.8,
-      testCoverage: 0.8,
-      performance: 0.8,
-      maintainability: 0.8,
-      timestamp: new Date()
+      testCoverage: 0.75,
+      performance: 0.9,
+      maintainability: 0.85,
+      timestamp: new Date().toISOString()
     };
 
-    analyzer = new PatternAnalyzer(initialMetrics);
+    analyzer = new PatternAnalyzer(mockMetrics);
   });
 
   describe('analyzePatterns', () => {
-    it('should analyze code patterns', async () => {
+    it('should analyze patterns in codebase', async () => {
       const codebase = [
-        'function example() { return true; }',
-        'function another() { return false; }'
+        'function test() {}',
+        'class Test {}',
+        'const test = () => {}'
       ];
 
       const patterns = await analyzer.analyzePatterns(codebase);
-
       expect(patterns).toBeDefined();
-      expect(patterns instanceof Map).toBe(true);
+      expect(patterns.size).toBeGreaterThan(0);
+      expect(patterns.has('function-declaration')).toBe(true);
+      expect(patterns.has('class-declaration')).toBe(true);
+      expect(patterns.has('arrow-function')).toBe(true);
     });
 
     it('should handle empty codebase', async () => {
-      const codebase: string[] = [];
-      const patterns = await analyzer.analyzePatterns(codebase);
-
-      expect(patterns).toBeDefined();
-      expect(patterns.size).toBe(0);
+      await expect(analyzer.analyzePatterns([])).rejects.toThrow('Invalid codebase format');
     });
 
-    it('should handle analysis errors', async () => {
-      const codebase = ['invalid code'];
-      
-      await expect(analyzer.analyzePatterns(codebase)).rejects.toThrow('Pattern analysis failed');
+    it('should handle invalid codebase', async () => {
+      await expect(analyzer.analyzePatterns([''])).rejects.toThrow('No patterns found in codebase');
+    });
+
+    it('should detect pattern changes', async () => {
+      const oldPatterns = new Map<string, PatternAnalysis>([
+        ['function-declaration', {
+          occurrences: 1,
+          files: ['file1.ts'],
+          impact: 0.5,
+          suggestions: ['Consider using arrow functions']
+        }]
+      ]);
+
+      const newPatterns = new Map<string, PatternAnalysis>([
+        ['function-declaration', {
+          occurrences: 2,
+          files: ['file1.ts', 'file2.ts'],
+          impact: 0.6,
+          suggestions: ['Consider using arrow functions']
+        }]
+      ]);
+
+      const changes = analyzer.detectPatternChanges(oldPatterns, newPatterns);
+      expect(changes).toBeDefined();
+      expect(changes.size).toBeGreaterThan(0);
     });
   });
 
-  describe('updateMetrics', () => {
-    it('should update system metrics', async () => {
-      const newMetrics: SystemMetrics = {
-        codeQuality: 0.9,
-        testCoverage: 0.9,
-        performance: 0.9,
-        maintainability: 0.9,
-        timestamp: new Date()
-      };
-
-      analyzer.updateMetrics(newMetrics);
-
-      // Verify metrics were updated by analyzing patterns
-      const codebase = ['function example() { return true; }'];
-      const patterns = await analyzer.analyzePatterns(codebase);
-      expect(patterns).toBeDefined();
+  describe('getMetrics', () => {
+    it('should return current metrics', () => {
+      const metrics = analyzer.getMetrics();
+      expect(metrics).toEqual(mockMetrics);
     });
   });
 }); 

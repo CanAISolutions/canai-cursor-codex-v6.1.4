@@ -5,95 +5,75 @@
 
 import { describe, expect, it, beforeEach } from '@jest/globals';
 import { RefactorProposer } from '../core/refactor-proposer';
-import { SystemMetrics, PatternAnalysis } from '../types';
+import { SystemMetrics, PatternAnalysis, ImprovementProposal } from '../types';
 
 describe('RefactorProposer', () => {
   let proposer: RefactorProposer;
-  let initialMetrics: SystemMetrics;
-  let maxComplexity: number;
+  let mockMetrics: SystemMetrics;
 
   beforeEach(() => {
-    initialMetrics = {
+    mockMetrics = {
       codeQuality: 0.8,
-      testCoverage: 0.8,
-      performance: 0.8,
-      maintainability: 0.8,
-      timestamp: new Date()
+      testCoverage: 0.75,
+      performance: 0.9,
+      maintainability: 0.85,
+      timestamp: new Date().toISOString()
     };
-    maxComplexity = 0.8;
 
-    proposer = new RefactorProposer(initialMetrics, maxComplexity);
+    proposer = new RefactorProposer(mockMetrics, 0.8);
   });
 
   describe('generateProposals', () => {
-    it('should generate refactoring proposals', async () => {
-      const patterns = new Map<string, PatternAnalysis>();
-      patterns.set('example-pattern', {
-        pattern: 'example-pattern',
-        occurrences: 5,
-        files: ['file1.ts', 'file2.ts'],
-        impact: 0.7,
-        suggestion: 'Refactor this pattern'
-      });
+    it('should generate valid proposals', async () => {
+      const patterns = new Map<string, PatternAnalysis>([
+        ['function-declaration', {
+          occurrences: 5,
+          files: ['file1.ts', 'file2.ts'],
+          impact: 0.8,
+          suggestions: ['Consider refactoring into smaller functions']
+        }]
+      ]);
 
       const proposals = await proposer.generateProposals(patterns);
-
       expect(proposals).toBeDefined();
       expect(Array.isArray(proposals)).toBe(true);
       expect(proposals.length).toBeGreaterThan(0);
+
+      const proposal = proposals[0];
+      expect(proposal.pattern).toBe('function-declaration');
+      expect(proposal.impact).toBe(0.8);
+      expect(proposal.complexity).toBeLessThanOrEqual(0.8);
+      expect(proposal.files).toHaveLength(2);
+      expect(proposal.suggestions).toHaveLength(1);
     });
 
-    it('should handle empty patterns', async () => {
+    it('should handle empty pattern set', async () => {
       const patterns = new Map<string, PatternAnalysis>();
       const proposals = await proposer.generateProposals(patterns);
-
       expect(proposals).toBeDefined();
       expect(Array.isArray(proposals)).toBe(true);
       expect(proposals.length).toBe(0);
     });
 
-    it('should filter low-impact patterns', async () => {
-      const patterns = new Map<string, PatternAnalysis>();
-      patterns.set('low-impact', {
-        pattern: 'low-impact',
-        occurrences: 2,
-        files: ['file1.ts'],
-        impact: 0.3,
-        suggestion: 'Low impact pattern'
-      });
+    it('should filter out low impact patterns', async () => {
+      const patterns = new Map<string, PatternAnalysis>([
+        ['low-impact', {
+          occurrences: 1,
+          files: ['file1.ts'],
+          impact: 0.3,
+          suggestions: ['Minor improvement']
+        }]
+      ]);
 
       const proposals = await proposer.generateProposals(patterns);
-
-      expect(proposals).toBeDefined();
-      expect(Array.isArray(proposals)).toBe(true);
-      expect(proposals.length).toBe(0);
+      expect(proposals).toHaveLength(0);
     });
   });
 
-  describe('updateMetrics', () => {
-    it('should update system metrics', async () => {
-      const newMetrics: SystemMetrics = {
-        codeQuality: 0.9,
-        testCoverage: 0.9,
-        performance: 0.9,
-        maintainability: 0.9,
-        timestamp: new Date()
-      };
-
-      proposer.updateMetrics(newMetrics);
-
-      // Verify metrics were updated by generating proposals
-      const patterns = new Map<string, PatternAnalysis>();
-      patterns.set('example-pattern', {
-        pattern: 'example-pattern',
-        occurrences: 5,
-        files: ['file1.ts', 'file2.ts'],
-        impact: 0.7,
-        suggestion: 'Refactor this pattern'
-      });
-
-      const proposals = await proposer.generateProposals(patterns);
-      expect(proposals).toBeDefined();
+  describe('getMetrics', () => {
+    it('should return current metrics', () => {
+      const metrics = proposer.getMetrics();
+      expect(metrics).toEqual(mockMetrics);
     });
   });
 }); 

@@ -1,120 +1,87 @@
 /**
- * @file core/refactor-proposer.ts
- * @description Refactor proposer for generating and managing refactoring proposals
+ * @file refactor-proposer.ts
+ * @description Proposes code refactoring based on pattern analysis
  */
 
-import { ImprovementProposal, PatternAnalysis, SystemMetrics } from '../types';
+import { SystemMetrics, PatternAnalysis, ImprovementProposal } from '../types';
 
 export class RefactorProposer {
   private metrics: SystemMetrics;
   private maxComplexity: number;
 
-  constructor(initialMetrics: SystemMetrics, maxComplexity: number) {
-    this.metrics = initialMetrics;
+  constructor(metrics: SystemMetrics, maxComplexity: number) {
+    this.metrics = metrics;
     this.maxComplexity = maxComplexity;
   }
 
   /**
-   * Generates refactoring proposals based on pattern analysis
-   * @param patterns Identified code patterns
-   * @returns Array of improvement proposals
+   * Generates refactoring proposals based on patterns
    */
   public async generateProposals(patterns: Map<string, PatternAnalysis>): Promise<ImprovementProposal[]> {
-    try {
-      const proposals: ImprovementProposal[] = [];
+    const proposals: ImprovementProposal[] = [];
 
-      for (const [pattern, analysis] of patterns) {
-        if (this.shouldProposeRefactor(analysis)) {
-          const proposal = await this.createProposal(pattern, analysis);
-          proposals.push(proposal);
-        }
+    for (const [pattern, analysis] of patterns) {
+      if (analysis.impact > 0.5) {
+        proposals.push({
+          pattern,
+          description: this.generateDescription(pattern, analysis),
+          impact: analysis.impact,
+          complexity: this.calculateComplexity(analysis),
+          files: analysis.files,
+          suggestions: analysis.suggestions
+        });
       }
-
-      return this.prioritizeProposals(proposals);
-    } catch (error) {
-      console.error('Error generating proposals:', error);
-      throw new Error('Proposal generation failed');
     }
+
+    return proposals.sort((a, b) => b.impact - a.impact);
+  }
+
+  private generateDescription(pattern: string, analysis: PatternAnalysis): string {
+    const baseDescription = `Found ${analysis.occurrences} occurrences of ${pattern} pattern`;
+    const impactDescription = `with ${Math.round(analysis.impact * 100)}% impact`;
+    const fileDescription = `across ${analysis.files.length} files`;
+    return `${baseDescription} ${impactDescription} ${fileDescription}`;
+  }
+
+  private calculateComplexity(analysis: PatternAnalysis): number {
+    const baseComplexity = analysis.occurrences * 0.2;
+    const fileComplexity = analysis.files.length * 0.1;
+    const impactComplexity = analysis.impact * 0.3;
+    return Math.min(baseComplexity + fileComplexity + impactComplexity, this.maxComplexity);
   }
 
   /**
-   * Updates system metrics for proposal generation
-   * @param metrics New system metrics
+   * Validates a refactoring proposal
    */
-  public updateMetrics(metrics: SystemMetrics): void {
-    this.metrics = metrics;
-  }
+  public validateProposal(proposal: ImprovementProposal): boolean {
+    if (!proposal.type || !proposal.description) {
+      return false;
+    }
 
-  /**
-   * Determines if a pattern should be refactored
-   * @param analysis Pattern analysis to evaluate
-   * @returns Whether to propose refactoring
-   */
-  private shouldProposeRefactor(analysis: PatternAnalysis): boolean {
-    return (
-      analysis.impact > 0.5 && // High impact
-      analysis.occurrences >= 3 && // Multiple occurrences
-      this.metrics.codeQuality < 0.8 // Room for improvement
-    );
-  }
+    if (typeof proposal.priority !== 'number' || 
+        proposal.priority < 0 || 
+        proposal.priority > 1) {
+      return false;
+    }
 
-  /**
-   * Creates a refactoring proposal for a pattern
-   * @param pattern Pattern identifier
-   * @param analysis Pattern analysis
-   * @returns Improvement proposal
-   */
-  private async createProposal(
-    pattern: string,
-    analysis: PatternAnalysis
-  ): Promise<ImprovementProposal> {
-    // TODO: Implement proposal generation logic
-    // This would include:
-    // 1. Code change generation
-    // 2. Impact assessment
-    // 3. Complexity calculation
-    // 4. Reasoning generation
-
-    return {
-      id: `refactor-${Date.now()}`,
-      type: 'refactor',
-      description: `Refactor ${pattern} pattern`,
-      impact: analysis.impact,
-      complexity: 0.5, // Placeholder
-      changes: [], // Placeholder
-      reasoning: analysis.suggestion,
-      confidence: 0.8, // Placeholder
-      metadata: {
-        pattern,
-        occurrences: analysis.occurrences,
-        files: analysis.files
+    if (proposal.impact) {
+      if (typeof proposal.impact.complexity !== 'number' ||
+          typeof proposal.impact.maintainability !== 'number') {
+        return false;
       }
-    };
+    }
+
+    return true;
   }
 
   /**
-   * Prioritizes proposals based on impact and complexity
-   * @param proposals Array of proposals to prioritize
-   * @returns Prioritized proposals
+   * Updates system metrics
    */
-  private prioritizeProposals(proposals: ImprovementProposal[]): ImprovementProposal[] {
-    return proposals.sort((a, b) => {
-      const scoreA = this.calculatePriorityScore(a);
-      const scoreB = this.calculatePriorityScore(b);
-      return scoreB - scoreA;
-    });
+  public updateMetrics(newMetrics: SystemMetrics): void {
+    this.metrics = newMetrics;
   }
 
-  /**
-   * Calculates priority score for a proposal
-   * @param proposal Proposal to score
-   * @returns Priority score
-   */
-  private calculatePriorityScore(proposal: ImprovementProposal): number {
-    const impactWeight = 0.7;
-    const complexityWeight = 0.3;
-
-    const normalizedComplexity = 1 - proposal.complexity;
-    return proposal.impact * impactWeight + normalizedComplexity * complexityWeight;
+  public getMetrics(): SystemMetrics {
+    return this.metrics;
   }
 } 

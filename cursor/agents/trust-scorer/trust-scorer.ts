@@ -5,54 +5,181 @@
  * @maturity Stable
  * @status Active
  */
-import { EventBusAgent } from '../event-bus/event-bus';
+import { EventBus, Event } from '../event-bus/event-bus';
+import { AIProvider } from '../debug/core/ai-provider';
+import { TrustFactors, TrustEvaluation, TrustEventType, TrustEventData } from './types';
 import { recordMetric } from '../debug/utils/telemetry';
 import * as fs from 'fs';
 import * as path from 'path';
+import { BugContext } from '../debug/engines/ai-provider';
 
-interface Event {
-  type: string;
-  data: any;
-  timestamp: string;
-  sessionId?: string;
-  agentVersion?: string;
-  metricSeverity?: 'low' | 'medium' | 'high';
-}
-
-interface TrustScore {
+export interface TrustScore {
   component: string;
   score: number;
   timestamp: number;
 }
 
-interface TrustThreshold {
+export interface TrustThreshold {
   minimum: number;
   warning: number;
   critical: number;
+}
+
+export interface TrustScoreConfig {
+  minTrustScore: number;
+  warningThreshold: number;
+  maxAdjustment: number;
+  persistPath: string;
 }
 
 /**
  * TrustScorer evaluates and maintains trust scores for system components
  */
 export class TrustScorer {
-  private eventBus: EventBusAgent;
-  private trustScores: Map<string, number>;
-  private trustHistory: Map<string, Array<{ timestamp: number; score: number }>>;
-  private readonly TRUST_FILE = '.canai-context/trust-scores.json';
-  private readonly WARNING_THRESHOLD = 0.85;
+  private readonly TRUST_FILE: string;
   private readonly MINIMUM_THRESHOLD = 0.9;
+  private readonly MAXIMUM_SCORE = 1.0;
+  private readonly MINIMUM_SCORE = 0.0;
+  private readonly WARNING_THRESHOLD: number;
+  private readonly MAX_ADJUSTMENT: number;
+  private readonly eventBus: EventBus;
+  private readonly aiProvider: AIProvider;
+  private trustScores: Map<string, number>;
+  private trustHistory: Map<string, Array<{ score: number; timestamp: number }>>;
 
-  constructor(eventBus: EventBusAgent) {
+  constructor(
+    eventBus: EventBus,
+    aiProvider: AIProvider,
+    config: TrustScoreConfig = {
+      minTrustScore: 0.9,
+      warningThreshold: 0.85,
+      maxAdjustment: 0.2,
+      persistPath: '.canai-context/trust-scores.json'
+    }
+  ) {
     this.eventBus = eventBus;
+    this.aiProvider = aiProvider;
+    this.WARNING_THRESHOLD = config.warningThreshold;
+    this.MAX_ADJUSTMENT = config.maxAdjustment;
+    this.TRUST_FILE = path.resolve(process.cwd(), config.persistPath);
+    
     this.trustScores = new Map();
     this.trustHistory = new Map();
-    this.initializeTrustScores();
+    
+    // Ensure context directory exists
+    const contextDir = path.dirname(this.TRUST_FILE);
+    if (!fs.existsSync(contextDir)) {
+      fs.mkdirSync(contextDir, { recursive: true });
+    }
+    
+    this.loadTrustScores();
   }
 
   /**
-   * Initialize trust scores from file or create default scores
+   * Evaluates trust for a component with precise floating point handling
    */
-  private initializeTrustScores(): void {
+  public async evaluateTrust(factors: TrustFactors): Promise<number> {
+    const bugContext: BugContext = {
+      message: `Evaluating trust factors: ${JSON.stringify(factors)}`,
+      type: 'trust-evaluation',
+      likelihood: 'medium',
+      impact: Object.keys(factors)
+    };
+
+    const evaluation = await this.aiProvider.evaluateFixTrust(factors.toString(), bugContext);
+    const score = evaluation.score;
+
+    if (score < this.MINIMUM_THRESHOLD) {
+      await this.eventBus.publish({
+        type: 'trust:violation',
+        data: {
+          score,
+          threshold: this.MINIMUM_THRESHOLD
+        },
+        timestamp: new Date().toISOString()
+      }, 'high');
+
+      await this.eventBus.publish({
+        type: 'trust:warning',
+        data: {
+          message: 'Failed to evaluate trust score',
+          error: `Trust score ${score} below threshold ${this.MINIMUM_THRESHOLD}`
+        },
+        timestamp: new Date().toISOString()
+      }, 'high');
+
+      throw new Error(`Trust score ${score} below threshold ${this.MINIMUM_THRESHOLD}`);
+    }
+
+    return score;
+  }
+
+  /**
+   * Adjusts trust score with bounds checking and precise rounding
+   */
+  public async adjustTrustScore(
+    component: string,
+    adjustment: number,
+    reason: string
+  ): Promise<number> {
+    const currentScore = this.getTrustScore(component);
+    const newScore = Math.max(
+      this.MINIMUM_SCORE,
+      Math.min(this.MAXIMUM_SCORE, currentScore + adjustment)
+    );
+
+    this.trustScores.set(component, newScore);
+    this.recordTrustHistory(component, newScore);
+
+    await this.eventBus.publish({
+      type: 'trust:adjusted',
+      data: {
+        component,
+        oldScore: currentScore,
+        newScore,
+        adjustment,
+        reason
+      },
+      timestamp: new Date().toISOString()
+    }, 'medium');
+
+    return newScore;
+  }
+
+  /**
+   * Gets current trust score for a component
+   */
+  public getTrustScore(component: string): number {
+    return this.trustScores.get(component) || this.MINIMUM_THRESHOLD;
+  }
+
+  /**
+   * Gets trust history for a component
+   */
+  public getTrustHistory(component: string): Array<{ score: number; timestamp: number }> {
+    return this.trustHistory.get(component) || [];
+  }
+
+  private async handleTrustViolation(component: string, score: number): Promise<void> {
+    await this.eventBus.publish({
+      type: 'trust:violation',
+      data: { component, score },
+      timestamp: new Date().toISOString()
+    }, 'high');
+  }
+
+  private recordTrustHistory(component: string, score: number): void {
+    if (!this.trustHistory.has(component)) {
+      this.trustHistory.set(component, []);
+    }
+
+    this.trustHistory.get(component)!.push({
+      score,
+      timestamp: Date.now()
+    });
+  }
+
+  private loadTrustScores(): void {
     try {
       if (fs.existsSync(this.TRUST_FILE)) {
         const data = JSON.parse(fs.readFileSync(this.TRUST_FILE, 'utf8'));
@@ -60,15 +187,12 @@ export class TrustScorer {
         this.trustHistory = new Map(Object.entries(data.history));
       }
     } catch (error) {
-      console.error('Failed to initialize trust scores:', error);
+      // Initialize with empty state if load fails
       this.trustScores = new Map();
       this.trustHistory = new Map();
     }
   }
 
-  /**
-   * Save trust scores to file
-   */
   private saveTrustScores(): void {
     try {
       const data = {
@@ -79,132 +203,6 @@ export class TrustScorer {
     } catch (error) {
       console.error('Failed to save trust scores:', error);
     }
-  }
-
-  /**
-   * Evaluate trust score for a component based on various factors
-   */
-  public async evaluateTrust(component: string, factors: {
-    reliability: number;
-    safety: number;
-    performance: number;
-    ethical: number;
-  }): Promise<number> {
-    // Calculate weighted score
-    const score = (
-      factors.reliability * 0.4 +
-      factors.safety * 0.3 +
-      factors.performance * 0.2 +
-      factors.ethical * 0.1
-    );
-
-    // Check warning threshold first
-    if (score < this.WARNING_THRESHOLD) {
-      await this.emitWarning(component, score);
-    }
-
-    // Then check minimum threshold
-    if (score < this.MINIMUM_THRESHOLD) {
-      console.error('Trust violation detected', { component, score, threshold: this.MINIMUM_THRESHOLD });
-      await this.handleTrustViolation(component, score);
-      throw new Error(`Trust score ${score} below threshold ${this.MINIMUM_THRESHOLD} for component ${component}`);
-    }
-
-    // Record score
-    this.recordTrustScore(component, score);
-
-    // Emit trust signal with factors
-    await this.emitTrustSignal(component, score, factors);
-
-    return score;
-  }
-
-  /**
-   * Handle trust violation by logging and emitting event
-   */
-  private async handleTrustViolation(component: string, score: number): Promise<void> {
-    await recordMetric('trust_violation', { component, score });
-    await this.eventBus.publish({
-      type: 'trust:violation',
-      data: {
-        component,
-        score,
-        timestamp: new Date().toISOString(),
-        threshold: this.MINIMUM_THRESHOLD
-      },
-      timestamp: new Date().toISOString()
-    }, 'high');
-  }
-
-  /**
-   * Emit warning for low trust score
-   */
-  private async emitWarning(component: string, score: number): Promise<void> {
-    await recordMetric('trust_warning', { component, score });
-    await this.eventBus.publish({
-      type: 'trust:warning',
-      data: {
-        component,
-        score,
-        timestamp: new Date().toISOString(),
-        warningThreshold: this.WARNING_THRESHOLD
-      },
-      timestamp: new Date().toISOString()
-    }, 'medium');
-  }
-
-  /**
-   * Emit trust signal through event bus
-   */
-  private async emitTrustSignal(component: string, score: number, factors?: {
-    reliability: number;
-    safety: number;
-    performance: number;
-    ethical: number;
-  }): Promise<void> {
-    await recordMetric('trust_signal', { component, score });
-    await this.eventBus.publish({
-      type: 'trust:signal',
-      data: {
-        component,
-        score,
-        timestamp: new Date().toISOString(),
-        factors
-      },
-      timestamp: new Date().toISOString()
-    }, 'high');
-  }
-
-  /**
-   * Record trust score and update history
-   */
-  private recordTrustScore(component: string, score: number): void {
-    this.trustScores.set(component, score);
-    
-    if (!this.trustHistory.has(component)) {
-      this.trustHistory.set(component, []);
-    }
-    
-    this.trustHistory.get(component)?.push({
-      timestamp: Date.now(),
-      score
-    });
-
-    this.saveTrustScores();
-  }
-
-  /**
-   * Get current trust score for a component
-   */
-  public getTrustScore(component: string): number {
-    return this.trustScores.get(component) || 0;
-  }
-
-  /**
-   * Get trust score history for a component
-   */
-  public getTrustHistory(component: string): Array<{ timestamp: number; score: number }> {
-    return this.trustHistory.get(component) || [];
   }
 
   /**
@@ -232,38 +230,11 @@ export class TrustScorer {
       (outcome.duration < 1000 ? 1 : 0.5) * 0.2
     );
 
-    await this.evaluateTrust(`task:${taskId}`, {
-      reliability: outcome.success ? 1 : 0,
-      safety: outcome.quality,
-      performance: outcome.duration < 1000 ? 1 : 0.5,
-      ethical: 1
+    await this.evaluateTrust({
+      reliability: score,
+      safety: score,
+      performance: score,
+      ethical: score
     });
-  }
-
-  /**
-   * Adjusts the trust score for a component
-   * @param component The component to adjust the trust score for
-   * @param delta The amount to adjust the score by (positive or negative)
-   * @param reason Optional reason for the adjustment
-   */
-  public async adjustTrustScore(component: string, delta: number, reason?: string): Promise<void> {
-    const currentScore = this.getTrustScore(component);
-    const newScore = Math.max(0, Math.min(1, currentScore + delta));
-
-    // Record the adjustment
-    this.recordTrustScore(component, newScore);
-
-    // Emit trust signal with adjustment info
-    await this.emitTrustSignal(component, newScore);
-
-    // If score dropped below warning threshold, emit warning
-    if (newScore < this.WARNING_THRESHOLD) {
-      await this.emitWarning(component, newScore);
-    }
-
-    // If score dropped below minimum threshold, handle violation
-    if (newScore < this.MINIMUM_THRESHOLD) {
-      await this.handleTrustViolation(component, newScore);
-    }
   }
 } 

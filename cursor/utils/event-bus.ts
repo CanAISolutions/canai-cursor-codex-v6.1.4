@@ -5,54 +5,63 @@
  * Provides a centralized event bus for system-wide event handling.
  */
 
-type EventHandler = (...args: any[]) => void;
+type EventCallback = (data: any) => void | Promise<void>;
 
 export class EventBus {
-  private handlers: Map<string, Set<EventHandler>> = new Map();
+  private handlers: Map<string, Set<EventCallback>>;
 
-  /**
-   * Subscribes to an event
-   */
-  on(event: string, handler: EventHandler): void {
-    if (!this.handlers.has(event)) {
-      this.handlers.set(event, new Set());
-    }
-    this.handlers.get(event)!.add(handler);
+  constructor() {
+    this.handlers = new Map();
   }
 
   /**
-   * Unsubscribes from an event
+   * Register an event handler
    */
-  off(event: string, handler: EventHandler): void {
-    const handlers = this.handlers.get(event);
+  public on(eventType: string, handler: EventCallback): void {
+    if (!this.handlers.has(eventType)) {
+      this.handlers.set(eventType, new Set());
+    }
+    this.handlers.get(eventType)?.add(handler);
+  }
+
+  /**
+   * Remove an event handler
+   */
+  public off(eventType: string, handler: EventCallback): void {
+    this.handlers.get(eventType)?.delete(handler);
+  }
+
+  /**
+   * Emit an event with data
+   */
+  public async emit(eventType: string, data: any): Promise<void> {
+    const handlers = this.handlers.get(eventType);
     if (handlers) {
-      handlers.delete(handler);
-      if (handlers.size === 0) {
-        this.handlers.delete(event);
-      }
+      await Promise.all(
+        Array.from(handlers).map(handler => handler(data))
+      );
     }
   }
 
   /**
-   * Emits an event
+   * Publish an event with priority
    */
-  emit(event: string, ...args: any[]): void {
-    const handlers = this.handlers.get(event);
-    if (handlers) {
-      handlers.forEach(handler => {
-        try {
-          handler(...args);
-        } catch (error) {
-          console.error(`Error in event handler for ${event}:`, error);
-        }
-      });
-    }
+  public async publish(event: {
+    type: string;
+    data: any;
+    timestamp: string;
+  }, priority: 'low' | 'medium' | 'high' = 'medium'): Promise<void> {
+    await this.emit(event.type, {
+      ...event.data,
+      priority,
+      timestamp: event.timestamp
+    });
   }
 
   /**
-   * Clears all event handlers
+   * Clear all event handlers
    */
-  clear(): void {
+  public clear(): void {
     this.handlers.clear();
   }
 } 

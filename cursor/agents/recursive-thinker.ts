@@ -1,3 +1,15 @@
+/**
+ * @TAP-Version v6.1.4
+ * @Codex-Intent "Recursive prompt analysis and improvement"
+ * @EmotionQA true
+ * @FallbackReady true
+ * @purpose Provides recursive analysis and improvement of prompts
+ * @invokedBy promptReplay, smart-revision-loop
+ * @outputs RecursiveAnalysisResult with improvement suggestions
+ * @integration Uses emotional intelligence for tone preservation
+ * @codex Ensures prompts evolve while maintaining emotional resonance
+ */
+
 // recursive-thinker.ts
 // Modular utility for recursive generation and internal output refinement
 // Used in SmartRefineLayer, AI Concierge, and Prompt Intelligence Loop

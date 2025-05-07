@@ -8,6 +8,8 @@ import { FixProposal, BugContext, AIProvider } from "../engines/ai-provider";
 import { recordMetric } from "../utils/telemetry";
 import { appendToFixContextAsync } from "../context/fix-context-utils";
 import { runESLintAnalysis } from "../utils/eslint-runner";
+import { DebugContext } from '../types';
+import { PipelineError } from '../types';
 
 /**
  * Computes a normalized trust score (0–10) for a proposed fix.
@@ -103,4 +105,62 @@ export async function computeTrustScore(
   });
 
   return final;
+}
+
+export interface TrustScorerConfig {
+  minTrustScore: number;
+  maxRetries: number;
+  timeoutMs: number;
+}
+
+export class DebugTrustScorer {
+  private readonly config: TrustScorerConfig;
+  private readonly aiProvider: AIProvider;
+
+  constructor(
+    aiProvider: AIProvider,
+    config: TrustScorerConfig = {
+      minTrustScore: 0.9,
+      maxRetries: 3,
+      timeoutMs: 5000
+    }
+  ) {
+    this.aiProvider = aiProvider;
+    this.config = config;
+  }
+
+  /**
+   * Evaluates trust score for a fix proposal
+   */
+  public async evaluateFixTrust(
+    fixProposal: string,
+    bugContext: DebugContext
+  ): Promise<number> {
+    try {
+      return await this.aiProvider.evaluateFixTrust(fixProposal, bugContext);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to evaluate fix trust: ${message}`);
+    }
+  }
+
+  /**
+   * Validates trust score meets minimum threshold
+   */
+  public validateTrustScore(score: number): boolean {
+    return score >= this.config.minTrustScore;
+  }
+
+  /**
+   * Creates error for trust validation failure
+   */
+  public createTrustError(score: number): PipelineError {
+    return {
+      code: 'TRUST_SCORE_TOO_LOW',
+      message: `Trust score ${score} below minimum threshold ${this.config.minTrustScore}`,
+      errorType: 'validation',
+      severity: 'high',
+      timestamp: Date.now()
+    };
+  }
 }

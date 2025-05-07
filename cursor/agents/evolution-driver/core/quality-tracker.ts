@@ -1,140 +1,104 @@
 /**
- * @file core/quality-tracker.ts
- * @description Quality tracker for monitoring and analyzing code quality trends
+ * @file quality-tracker.ts
+ * @description Tracks and analyzes system quality metrics
  */
 
-import { QualityTrend, SystemMetrics } from '../types';
+import { SystemMetrics, QualityTrend } from '../types';
 
 export class QualityTracker {
-  private trends: Map<keyof SystemMetrics, QualityTrend>;
+  private metrics: SystemMetrics[];
   private minQualityThreshold: number;
-  private readonly maxHistoryLength: number = 100;
+  private trends: QualityTrend[];
 
   constructor(minQualityThreshold: number) {
-    this.trends = new Map();
+    this.metrics = [];
     this.minQualityThreshold = minQualityThreshold;
-    this.initializeTrends();
+    this.trends = [];
   }
 
-  /**
-   * Updates quality metrics and analyzes trends
-   * @param metrics New system metrics
-   * @returns Map of quality trends
-   */
-  public updateMetrics(metrics: SystemMetrics): Map<keyof SystemMetrics, QualityTrend> {
-    try {
-      for (const [key, value] of Object.entries(metrics)) {
-        if (key !== 'timestamp') {
-          this.updateTrend(key as keyof SystemMetrics, value, metrics.timestamp);
-        }
-      }
+  public trackMetrics(metrics: SystemMetrics): void {
+    this.metrics.push(metrics);
 
-      return this.trends;
-    } catch (error) {
-      console.error('Error updating quality metrics:', error);
-      throw new Error('Quality tracking failed');
+    for (const metric of Object.keys(metrics) as Array<keyof SystemMetrics>) {
+      if (metric === 'timestamp') continue;
+
+      const value = metrics[metric];
+      if (typeof value !== 'number') continue;
+
+      this.trackMetric(metric, value);
     }
   }
 
-  /**
-   * Gets the current quality trend for a metric
-   * @param metric Metric to get trend for
-   * @returns Quality trend
-   */
-  public getTrend(metric: keyof SystemMetrics): QualityTrend {
-    const trend = this.trends.get(metric);
-    if (!trend) {
-      throw new Error(`No trend data for metric: ${metric}`);
-    }
-    return trend;
+  public getTrends(): QualityTrend[] {
+    return [...this.trends];
   }
 
-  /**
-   * Checks if any metrics are below quality threshold
-   * @returns Array of metrics below threshold
-   */
-  public getMetricsBelowThreshold(): (keyof SystemMetrics)[] {
-    const belowThreshold: (keyof SystemMetrics)[] = [];
+  private trackMetric(metric: keyof SystemMetrics, value: number): void {
+    const timestamp = new Date().toISOString();
+    const trend = this.calculateTrend(metric, value);
+    const confidence = this.calculateConfidence(metric);
 
-    for (const [metric, trend] of this.trends) {
-      const latestValue = trend.values[trend.values.length - 1];
-      if (latestValue < this.minQualityThreshold) {
-        belowThreshold.push(metric);
-      }
-    }
-
-    return belowThreshold;
+    this.trends.push({
+      metric,
+      trend,
+      confidence,
+      value,
+      timestamp
+    });
   }
 
-  /**
-   * Initializes trend tracking for all metrics
-   */
-  private initializeTrends(): void {
-    const metrics: (keyof SystemMetrics)[] = [
-      'codeQuality',
-      'testCoverage',
-      'performance',
-      'maintainability'
-    ];
+  private calculateTrend(metric: keyof SystemMetrics, value: number): 'improving' | 'stable' | 'degrading' {
+    const recentTrends = this.trends
+      .filter(t => t.metric === metric)
+      .slice(-5);
 
-    for (const metric of metrics) {
-      this.trends.set(metric, {
-        metric,
-        values: [],
-        timestamps: [],
-        trend: 'stable'
-      });
-    }
-  }
-
-  /**
-   * Updates trend data for a metric
-   * @param metric Metric to update
-   * @param value New value
-   * @param timestamp Timestamp of measurement
-   */
-  private updateTrend(
-    metric: keyof SystemMetrics,
-    value: number,
-    timestamp: Date
-  ): void {
-    const trend = this.trends.get(metric);
-    if (!trend) {
-      throw new Error(`No trend data for metric: ${metric}`);
-    }
-
-    // Add new data point
-    trend.values.push(value);
-    trend.timestamps.push(timestamp);
-
-    // Maintain history length
-    if (trend.values.length > this.maxHistoryLength) {
-      trend.values.shift();
-      trend.timestamps.shift();
-    }
-
-    // Update trend direction
-    trend.trend = this.calculateTrend(trend.values);
-  }
-
-  /**
-   * Calculates trend direction from values
-   * @param values Array of metric values
-   * @returns Trend direction
-   */
-  private calculateTrend(values: number[]): 'improving' | 'degrading' | 'stable' {
-    if (values.length < 2) {
+    if (recentTrends.length < 2) {
       return 'stable';
     }
 
-    const recentValues = values.slice(-5);
-    const differences = recentValues.slice(1).map((value, index) => value - recentValues[index]);
-    const averageDifference = differences.reduce((sum, diff) => sum + diff, 0) / differences.length;
+    const values = recentTrends.map(t => t.value);
+    const currentValue = values[values.length - 1];
+    const previousValue = values[values.length - 2];
+    const change = currentValue - previousValue;
+    const threshold = 0.05; // 5% change threshold
 
-    if (Math.abs(averageDifference) < 0.01) {
-      return 'stable';
+    if (change > threshold) return 'improving';
+    if (change < -threshold) return 'degrading';
+    return 'stable';
+  }
+
+  private calculateSlope(values: number[]): number {
+    if (values.length < 2) return 0;
+    const xMean = (values.length - 1) / 2;
+    const yMean = values.reduce((a, b) => a + b, 0) / values.length;
+    
+    let numerator = 0;
+    let denominator = 0;
+    
+    for (let i = 0; i < values.length; i++) {
+      const xDiff = i - xMean;
+      const yDiff = values[i] - yMean;
+      numerator += xDiff * yDiff;
+      denominator += xDiff * xDiff;
     }
+    
+    return denominator === 0 ? 0 : numerator / denominator;
+  }
 
-    return averageDifference > 0 ? 'improving' : 'degrading';
+  private calculateConfidence(metric: keyof SystemMetrics): number {
+    const recentTrends = this.trends
+      .filter(t => t.metric === metric)
+      .slice(-3);
+
+    if (recentTrends.length < 2) return 1.0;
+
+    const values = recentTrends.map(t => t.value);
+    const variations = values.map((val, i) => {
+      if (i === 0) return 0;
+      return Math.abs(val - values[i - 1]);
+    });
+
+    const avgVariation = variations.reduce((a, b) => a + b, 0) / variations.length;
+    return Math.max(0, 1 - avgVariation);
   }
 } 

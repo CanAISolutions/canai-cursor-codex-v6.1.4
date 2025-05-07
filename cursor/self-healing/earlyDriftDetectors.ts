@@ -57,3 +57,9 @@ export async function runEarlyDriftDetectors(): Promise<DriftSignal[]> {
 
   return signals;
 }
+
+// Remove unused event
+// export const DRIFT_DETECTED = 'drift:detected';
+
+// Consolidate into single event
+export const EMOTIONAL_DRIFT_ALERT = 'emotional:drift:alert';

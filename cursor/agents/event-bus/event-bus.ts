@@ -9,54 +9,95 @@ import { appendToFixContextAsync } from '../../context/fix-context-utils';
 import { logInnovationMetric } from '../../utils/telemetry';
 import { loadConfig } from '../../utils/config-manager';
 
-interface Event {
+export type EventCallback = (event: Event) => void | Promise<void>;
+
+export interface Event {
   type: string;
-  data: any;
+  data: unknown;
   timestamp: string;
   sessionId?: string;
   agentVersion?: string;
   metricSeverity?: 'low' | 'medium' | 'high';
 }
 
-export class EventBusAgent {
-  private traceId: string;
-  private subscribers: Record<string, ((event: Event) => void)[]> = {};
-  private sessionId: string;
-  private agentVersion: string;
+export class EventBus {
+  private handlers: Map<string, Set<EventCallback>>;
 
-  constructor(traceId: string) {
-    this.traceId = traceId;
-    const config = loadConfig();
-    this.sessionId = config.SESSION_ID || 'default';
-    this.agentVersion = config.AGENT_VERSION || '1.1.0';
+  constructor() {
+    this.handlers = new Map();
   }
 
-  async publish(event: Event, severity: 'low' | 'medium' | 'high' = 'low'): Promise<void> {
-    try {
-      const enrichedEvent = {
-        ...event,
-        sessionId: this.sessionId,
-        agentVersion: this.agentVersion,
-        metricSeverity: severity,
-      };
-      await appendToFixContextAsync(`[${this.traceId}] Published event: ${event.type}`);
-      await logInnovationMetric('event_published', { type: event.type, severity }, this.traceId);
-      const callbacks = this.subscribers[event.type] || [];
-      for (const callback of callbacks) {
-        callback(enrichedEvent);
+  public on(eventType: string, handler: EventCallback): void {
+    if (!this.handlers.has(eventType)) {
+      this.handlers.set(eventType, new Set());
+    }
+    this.handlers.get(eventType)!.add(handler);
+  }
+
+  public off(eventType: string, handler: EventCallback): void {
+    const handlers = this.handlers.get(eventType);
+    if (handlers) {
+      handlers.delete(handler);
+      if (handlers.size === 0) {
+        this.handlers.delete(eventType);
       }
-    } catch (err) {
-      await appendToFixContextAsync(`[${this.traceId}] Event publish failed: ${(err as Error).message}`);
-      await logInnovationMetric('event_publish_failed', { error: (err as Error).message }, this.traceId);
     }
   }
 
-  async subscribe(type: string, callback: (event: Event) => void): Promise<void> {
-    if (!this.subscribers[type]) {
-      this.subscribers[type] = [];
+  public async emit(eventType: string, data: unknown): Promise<void> {
+    const event: Event = {
+      type: eventType,
+      data,
+      timestamp: new Date().toISOString()
+    };
+
+    const handlers = this.handlers.get(eventType);
+    if (handlers) {
+      await Promise.all(Array.from(handlers).map(handler => handler(event)));
     }
-    this.subscribers[type].push(callback);
-    await appendToFixContextAsync(`[${this.traceId}] Subscribed to event: ${type}`);
-    await logInnovationMetric('event_subscribed', { type }, this.traceId);
+  }
+
+  public async publish(event: Event, priority: 'high' | 'medium' | 'low' = 'medium'): Promise<void> {
+    const handlers = this.handlers.get(event.type);
+    if (handlers) {
+      const promises = Array.from(handlers).map(handler => handler(event));
+      if (priority === 'high') {
+        await Promise.all(promises);
+      } else {
+        Promise.all(promises).catch(error => {
+          console.error('Error in event handler:', error);
+        });
+      }
+    }
+  }
+
+  public subscribe(eventType: string, handler: EventCallback): void {
+    this.on(eventType, handler);
+  }
+
+  public clear(): void {
+    this.handlers.clear();
+  }
+}
+
+export class EventBusAgent extends EventBus {
+  constructor() {
+    super();
+  }
+
+  public async handleEvent(event: Event): Promise<void> {
+    await this.publish(event, event.metricSeverity || 'medium');
+  }
+
+  public async handleError(error: Error): Promise<void> {
+    await this.publish({
+      type: 'error',
+      data: {
+        message: error.message,
+        stack: error.stack
+      },
+      timestamp: new Date().toISOString(),
+      metricSeverity: 'high'
+    }, 'high');
   }
 } 

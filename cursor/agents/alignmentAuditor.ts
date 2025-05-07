@@ -1,15 +1,20 @@
 /**
- * alignmentAuditor.ts
- * 
- * Purpose: Perform real-time system audits to detect and report misalignments in emotional resonance, modularity, Codex adherence, and operational execution.
- * Triggered: On boot, periodic audit intervals, output generation, or UX dispatch events.
- * Enforces: Dream-state preservation, Codex compliance, UX emotional fidelity.
+ * @TAP-Version v6.1.4
+ * @Codex-Intent "System alignment and compliance verification"
+ * @EmotionQA true
+ * @FallbackReady true
+ * @purpose Performs real-time system audits to detect and report misalignments
+ * @invokedBy boot sequence, periodic audits, output generation
+ * @outputs AlignmentAuditResult with compliance status
+ * @integration Uses dream-state utils and modularity checks
+ * @codex Ensures system-wide alignment with Codex standards
  */
 
 import { calculateDreamAlignmentScore } from "../utils/dreamstate-utils";
 import { validateModularIntegrity } from "../utils/modularity-utils";
-import { compareLocalToCanonicalDirectives } from "../codex/codex-memory-utils";
-import { emitSystemLog } from "../system-intel/audit-utils";
+import { compareLocalToCanonicalDirectives } from "../utils/codex-memory-utils";
+import { emitSystemLog } from "../utils/audit-utils";
+import { EventBus } from "../event-bus/eventBus";
 
 interface AlignmentAuditResult {
   aligned: boolean;
@@ -25,7 +30,7 @@ export async function runAlignmentAudit(): Promise<AlignmentAuditResult> {
 
   const dreamAlignment = await calculateDreamAlignmentScore();
   if (dreamAlignment.score < 92) {
-    issues?.push({
+    issues.push({
       type: "emotional",
       description: "Emotional resonance drift detected.",
       suggestedAction: "Recalibrate emotional UX tone outputs.",
@@ -34,7 +39,7 @@ export async function runAlignmentAudit(): Promise<AlignmentAuditResult> {
 
   const modularityIntegrity = await validateModularIntegrity();
   if (!modularityIntegrity.passed) {
-    issues?.push({
+    issues.push({
       type: "modular",
       description: "Detected modular snapshot drift or version inconsistency.",
       suggestedAction: "Rebuild modular snapshot and validate exports.",
@@ -43,7 +48,7 @@ export async function runAlignmentAudit(): Promise<AlignmentAuditResult> {
 
   const codexCompliance = await compareLocalToCanonicalDirectives();
   if (codexCompliance.upgradesDetected) {
-    issues?.push({
+    issues.push({
       type: "codex",
       description: "Codex upgrades available — local directives outdated.",
       suggestedAction: "Initiate Codex upgrade absorption process.",
@@ -59,3 +64,15 @@ export async function runAlignmentAudit(): Promise<AlignmentAuditResult> {
     issues: aligned ? undefined : issues,
   };
 }
+
+// Event handling
+const eventBus = EventBus.getInstance();
+
+function handleCodexAlignment(event: any) {
+  const { aligned, issues } = event;
+  if (!aligned && issues) {
+    emitSystemLog("codex-alignment-issues", { issues });
+  }
+}
+
+eventBus.on('CODEX_ALIGNMENT_VERIFIED', handleCodexAlignment);

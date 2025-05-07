@@ -1,3 +1,15 @@
+/**
+ * @TAP-Version v6.1.4
+ * @Codex-Intent "Output quality and emotional resonance evaluation"
+ * @EmotionQA true
+ * @FallbackReady true
+ * @purpose Evaluates output quality and emotional resonance
+ * @invokedBy smart-prompt-score, emotional-foresight-lite
+ * @outputs OutputEvaluationResult with quality metrics
+ * @integration Uses emotional intelligence for tone assessment
+ * @codex Ensures outputs meet emotional and quality standards
+ */
+
 // output-evaluator.ts
 // Scoring engine to evaluate multiple prompt outputs based on custom criteria
 

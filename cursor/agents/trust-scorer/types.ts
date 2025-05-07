@@ -1,27 +1,38 @@
-export interface TrustEventData {
-  component: string;
+export interface TrustFactors {
+  reliability: number;
+  safety: number;
+  performance: number;
+  ethical: number;
+}
+
+export interface TrustEvaluation {
   score: number;
-  timestamp: string;
+  confidence: number;
+  factors: TrustFactors;
 }
 
-export interface TrustViolationData extends TrustEventData {
-  threshold: number;
-}
+export type TrustEventType = 'trust:signal' | 'trust:warning' | 'trust:violation';
 
-export interface TrustWarningData extends TrustEventData {
-  warningThreshold: number;
+export interface TrustEventData {
+  score: number;
+  confidence: number;
+  factors?: TrustFactors;
 }
 
 export interface TrustSignalData extends TrustEventData {
-  factors?: {
-    reliability: number;
-    safety: number;
-    performance: number;
-    ethical: number;
-  };
+  type: 'signal';
 }
 
-export type TrustEventType = 'trust:violation' | 'trust:warning' | 'trust:signal';
+export interface TrustWarningData extends TrustEventData {
+  type: 'warning';
+  reason: string;
+}
+
+export interface TrustViolationData extends TrustEventData {
+  type: 'violation';
+  reason: string;
+  severity: 'low' | 'medium' | 'high';
+}
 
 export interface TrustEvent {
   type: TrustEventType;

@@ -9,116 +9,101 @@ import { SystemMetrics } from '../types';
 
 describe('QualityTracker', () => {
   let tracker: QualityTracker;
-  let minQualityThreshold: number;
+  const minQualityScore = 0.8;
 
   beforeEach(() => {
-    minQualityThreshold = 0.7;
-    tracker = new QualityTracker(minQualityThreshold);
+    tracker = new QualityTracker(minQualityScore);
   });
 
-  describe('updateMetrics', () => {
-    it('should update quality metrics', () => {
+  describe('trackMetrics', () => {
+    it('should track metrics correctly', () => {
       const metrics: SystemMetrics = {
-        codeQuality: 0.8,
-        testCoverage: 0.8,
-        performance: 0.8,
-        maintainability: 0.8,
-        timestamp: new Date()
+        codeQuality: 0.9,
+        testCoverage: 0.85,
+        performance: 0.95,
+        maintainability: 0.9,
+        timestamp: new Date().toISOString()
       };
 
-      const trends = tracker.updateMetrics(metrics);
-
-      expect(trends).toBeDefined();
-      expect(trends instanceof Map).toBe(true);
-      expect(trends.size).toBe(4); // One for each metric
+      tracker.trackMetrics(metrics);
+      const trends = tracker.getTrends();
+      expect(trends.length).toBeGreaterThan(0);
+      expect(trends[0].metric).toBeDefined();
+      expect(trends[0].value).toBeDefined();
+      expect(trends[0].trend).toBeDefined();
+      expect(trends[0].confidence).toBeDefined();
+      expect(trends[0].timestamp).toBeDefined();
     });
 
-    it('should track trends over time', () => {
-      const metrics1: SystemMetrics = {
-        codeQuality: 0.7,
-        testCoverage: 0.7,
-        performance: 0.7,
-        maintainability: 0.7,
-        timestamp: new Date()
-      };
+    it('should detect degrading metrics', () => {
+      // First metrics
+      tracker.trackMetrics({
+        codeQuality: 0.9,
+        testCoverage: 0.85,
+        performance: 0.95,
+        maintainability: 0.9,
+        timestamp: new Date().toISOString()
+      });
 
-      const metrics2: SystemMetrics = {
+      // Second metrics with degraded values
+      tracker.trackMetrics({
         codeQuality: 0.8,
-        testCoverage: 0.8,
-        performance: 0.8,
+        testCoverage: 0.75,
+        performance: 0.85,
         maintainability: 0.8,
-        timestamp: new Date()
-      };
+        timestamp: new Date().toISOString()
+      });
 
-      tracker.updateMetrics(metrics1);
-      const trends = tracker.updateMetrics(metrics2);
-
-      for (const [metric, trend] of trends) {
-        expect(trend.metric).toBe(metric);
-        expect(trend.values.length).toBe(2);
-        expect(trend.timestamps.length).toBe(2);
-        expect(trend.trend).toBe('improving');
-      }
-    });
-  });
-
-  describe('getTrend', () => {
-    it('should get trend for a metric', () => {
-      const metrics: SystemMetrics = {
-        codeQuality: 0.8,
-        testCoverage: 0.8,
-        performance: 0.8,
-        maintainability: 0.8,
-        timestamp: new Date()
-      };
-
-      tracker.updateMetrics(metrics);
-      const trend = tracker.getTrend('codeQuality');
-
-      expect(trend).toBeDefined();
-      expect(trend.metric).toBe('codeQuality');
-      expect(trend.values).toHaveLength(1);
-      expect(trend.timestamps).toHaveLength(1);
-      expect(trend.trend).toBe('stable');
+      const trends = tracker.getTrends();
+      const degradingMetrics = trends.filter(t => t.trend === 'degrading');
+      expect(degradingMetrics.length).toBeGreaterThan(0);
     });
 
-    it('should throw error for invalid metric', () => {
-      expect(() => tracker.getTrend('invalid' as keyof SystemMetrics)).toThrow();
+    it('should detect improving metrics', () => {
+      // First metrics
+      tracker.trackMetrics({
+        codeQuality: 0.8,
+        testCoverage: 0.75,
+        performance: 0.85,
+        maintainability: 0.8,
+        timestamp: new Date().toISOString()
+      });
+
+      // Second metrics with improved values
+      tracker.trackMetrics({
+        codeQuality: 0.9,
+        testCoverage: 0.85,
+        performance: 0.95,
+        maintainability: 0.9,
+        timestamp: new Date().toISOString()
+      });
+
+      const trends = tracker.getTrends();
+      const improvingMetrics = trends.filter(t => t.trend === 'improving');
+      expect(improvingMetrics.length).toBeGreaterThan(0);
     });
   });
 
-  describe('getMetricsBelowThreshold', () => {
-    it('should identify metrics below threshold', () => {
+  describe('getTrends', () => {
+    it('should return valid trend data', () => {
       const metrics: SystemMetrics = {
-        codeQuality: 0.6, // Below threshold
-        testCoverage: 0.8,
-        performance: 0.6, // Below threshold
-        maintainability: 0.8,
-        timestamp: new Date()
+        codeQuality: 0.9,
+        testCoverage: 0.85,
+        performance: 0.95,
+        maintainability: 0.9,
+        timestamp: new Date().toISOString()
       };
 
-      tracker.updateMetrics(metrics);
-      const belowThreshold = tracker.getMetricsBelowThreshold();
+      tracker.trackMetrics(metrics);
+      const trends = tracker.getTrends();
 
-      expect(belowThreshold).toContain('codeQuality');
-      expect(belowThreshold).toContain('performance');
-      expect(belowThreshold).not.toContain('testCoverage');
-      expect(belowThreshold).not.toContain('maintainability');
-    });
-
-    it('should return empty array when all metrics are above threshold', () => {
-      const metrics: SystemMetrics = {
-        codeQuality: 0.8,
-        testCoverage: 0.8,
-        performance: 0.8,
-        maintainability: 0.8,
-        timestamp: new Date()
-      };
-
-      tracker.updateMetrics(metrics);
-      const belowThreshold = tracker.getMetricsBelowThreshold();
-
-      expect(belowThreshold).toHaveLength(0);
+      expect(trends.every(t => 
+        t.metric && 
+        typeof t.value === 'number' && 
+        t.timestamp && 
+        ['improving', 'stable', 'degrading'].includes(t.trend) &&
+        typeof t.confidence === 'number'
+      )).toBe(true);
     });
   });
 }); 

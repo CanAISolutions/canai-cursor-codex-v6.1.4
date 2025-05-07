@@ -6,8 +6,7 @@
 
 import { recordMetric } from './telemetry';
 import { maskSensitive } from './maskSensitive';
-import { DebugConfig } from '../config/config';
-import { PipelineError } from '../types';
+import { DebugConfig, LogValidatorInput, PipelineError } from '../types';
 
 /**
  * Validates and normalizes a raw log input.
@@ -20,14 +19,14 @@ import { PipelineError } from '../types';
 export function validateLog(rawLog: string, config: DebugConfig, traceId: string): string {
   if (typeof rawLog !== 'string' || rawLog.trim().length === 0) {
     recordMetric('invalid_log_format', { traceId, reason: 'empty' });
-    throw pipelineError('Log is empty or not a string', 'INVALID_LOG_FORMAT', 'validation');
+    throw pipelineError('Log is empty or not a string', 'INVALID_LOG_FORMAT', 'validation', 'medium');
   }
 
   const normalizedLog = rawLog.replace(/\r\n/g, '\n').trim();
 
   if (normalizedLog.length > (config.maxLogSize ?? 1_000_000)) {
     recordMetric('log_too_large', { traceId, size: normalizedLog.length });
-    throw pipelineError('Log exceeds maxLogSize', 'LOG_SIZE_EXCEEDED', 'validation');
+    throw pipelineError('Log exceeds maxLogSize', 'LOG_SIZE_EXCEEDED', 'validation', 'high');
   }
 
   // Optional structure check for debug context
@@ -44,86 +43,67 @@ export function validateLog(rawLog: string, config: DebugConfig, traceId: string
  */
 function pipelineError(
   message: string,
-  errorCode: string,
-  errorType: PipelineError['errorType']
+  code: string,
+  errorType: PipelineError['errorType'],
+  severity: PipelineError['severity']
 ): PipelineError {
   return {
-    name: 'PipelineError',
+    code,
     message,
-    errorCode,
-    errorType
+    errorType,
+    severity,
+    timestamp: Date.now()
   };
 }
 
 /**
- * Validates a log entry against the debug configuration
- * @param logEntry The log entry to validate
- * @param config The debug configuration
- * @returns Object containing validation result and any issues found
+ * Validates if a log level is allowed by config
+ */
+function isLogLevelAllowed(level: string, configLevel: string): boolean {
+  const levels = ['error', 'warn', 'info', 'debug', 'trace'];
+  const levelIndex = levels.indexOf(level);
+  const configIndex = levels.indexOf(configLevel);
+  return levelIndex <= configIndex;
+}
+
+/**
+ * Validates a log entry against debug configuration
  */
 export function validateLogEntry(
-  logEntry: any,
+  logEntry: LogValidatorInput,
   config: DebugConfig
-): { valid: boolean; issues: string[] } {
-  const issues: string[] = [];
-
-  // Check if log entry is an object
-  if (!logEntry || typeof logEntry !== 'object') {
-    issues.push('Log entry must be an object');
-    return { valid: false, issues };
-  }
-
+): PipelineError | null {
   // Check required fields
-  if (!logEntry.timestamp || !(logEntry.timestamp instanceof Date)) {
-    issues.push('Log entry must have a valid timestamp');
+  if (!logEntry.message) {
+    return pipelineError(
+      'Log entry must have a message',
+      'INVALID_LOG_ENTRY',
+      'validation',
+      'medium'
+    );
   }
 
-  if (!logEntry.level || !['debug', 'info', 'warn', 'error'].includes(logEntry.level)) {
-    issues.push('Log entry must have a valid level');
-  }
-
-  if (!logEntry.message || typeof logEntry.message !== 'string') {
-    issues.push('Log entry must have a message string');
-  }
-
-  // Check if log level is allowed by config
+  // Check log level
   if (logEntry.level && !isLogLevelAllowed(logEntry.level, config.logLevel)) {
-    issues.push(`Log level ${logEntry.level} is not allowed by current config`);
+    return pipelineError(
+      `Log level ${logEntry.level} not allowed by config level ${config.logLevel}`,
+      'INVALID_LOG_LEVEL',
+      'validation',
+      'low'
+    );
   }
 
   // Check error object if present
-  if (logEntry.error && !isValidError(logEntry.error)) {
-    issues.push('Log entry error object is invalid');
+  if (logEntry.error) {
+    if (!logEntry.error.code || !logEntry.error.message) {
+      return pipelineError(
+        'Error object must have code and message',
+        'INVALID_ERROR_OBJECT',
+        'validation',
+        'medium'
+      );
+    }
   }
 
-  return {
-    valid: issues.length === 0,
-    issues
-  };
-}
-
-/**
- * Checks if a log level is allowed by the current config
- * @param level The log level to check
- * @param configLevel The configured log level
- * @returns true if the level is allowed
- */
-function isLogLevelAllowed(level: string, configLevel: string): boolean {
-  const levels = ['debug', 'info', 'warn', 'error'];
-  const levelIndex = levels.indexOf(level);
-  const configIndex = levels.indexOf(configLevel);
-  return levelIndex >= configIndex;
-}
-
-/**
- * Validates an error object
- * @param error The error object to validate
- * @returns true if the error object is valid
- */
-function isValidError(error: any): boolean {
-  if (!error || typeof error !== 'object') return false;
-  if (!error.message || typeof error.message !== 'string') return false;
-  if (error.code && typeof error.code !== 'string') return false;
-  if (error.stack && typeof error.stack !== 'string') return false;
-  return true;
+  return null;
 }

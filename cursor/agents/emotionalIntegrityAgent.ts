@@ -54,3 +54,9 @@ export async function monitorEmotionalIntegrity(): Promise<EmotionalIntegrityRes
     issues: optimal ? undefined : issues,
   };
 }
+
+// Remove unused event
+// export const EMOTION_VALIDATED = 'emotion:validated';
+
+// Consolidate into single event
+export const EMOTIONAL_INTEGRITY_CHECKED = 'emotional:integrity:checked';
