@@ -11,9 +11,19 @@ import { AgentMemory } from '../agent-oversight/agent-memory';
 import { AgentSelector, AgentSelection } from './agent-selector';
 import { MetaControlContext } from './meta-controller';
 
+interface MockAgentMemory {
+  getAgentRecord: jest.Mock;
+  updateAgentRecord: jest.Mock;
+  getSystemMetrics: jest.Mock;
+  updateSystemMetrics: jest.Mock;
+  recordTrustEvent: jest.Mock;
+  recordRecoveryAttempt: jest.Mock;
+  cleanupOldRecords: jest.Mock;
+}
+
 describe('AgentSelector', () => {
   let eventBus: EventBus;
-  let agentMemory: AgentMemory;
+  let agentMemory: MockAgentMemory;
   let agentSelector: AgentSelector;
 
   const createTestContext = (): MetaControlContext => ({
@@ -82,8 +92,39 @@ describe('AgentSelector', () => {
   });
 
   beforeEach(() => {
-    eventBus = new EventBus();
-    agentMemory = new AgentMemory();
+    eventBus = {
+      publish: jest.fn().mockResolvedValue(undefined),
+      on: jest.fn(),
+      off: jest.fn(),
+      once: jest.fn(),
+      removeAllListeners: jest.fn()
+    } as unknown as EventBus;
+    agentMemory = {
+      getAgentRecord: jest.fn().mockResolvedValue({
+        agentName: 'test-agent',
+        trustScore: 0.8,
+        trustHistory: [],
+        failureRate: 0,
+        lastUsed: Date.now(),
+        status: 'active',
+        metadata: {},
+        avgTrustDelta: 0,
+        trustVolatility: 0,
+        sessionsTracked: 0,
+        recoveryAttempts: 0,
+        recentTriggers: []
+      }),
+      updateAgentRecord: jest.fn().mockResolvedValue(undefined),
+      getSystemMetrics: jest.fn().mockResolvedValue({
+        trustScore: 0.8,
+        resourceUsage: 0.6,
+        alignmentScore: 0.9
+      }),
+      updateSystemMetrics: jest.fn().mockResolvedValue(undefined),
+      recordTrustEvent: jest.fn().mockResolvedValue(undefined),
+      recordRecoveryAttempt: jest.fn().mockResolvedValue(undefined),
+      cleanupOldRecords: jest.fn().mockResolvedValue(undefined)
+    } as unknown as AgentMemory;
     agentSelector = new AgentSelector(eventBus, agentMemory);
   });
 

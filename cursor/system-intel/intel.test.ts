@@ -21,13 +21,70 @@ import * as path from 'path';
 jest.mock('fs');
 jest.mock('path');
 
+// Mock interfaces for better type safety and test clarity
+interface MockTrustScorer extends Partial<TrustScorer> {
+  getTrustScore: jest.Mock;
+  adjustTrustScore: jest.Mock;
+  getTrustHistory: jest.Mock;
+  getTrustTrend: jest.Mock;
+  getTrustVolatility: jest.Mock;
+  getTrustStability: jest.Mock;
+  TRUST_FILE: string;
+  MINIMUM_THRESHOLD: number;
+  MAXIMUM_SCORE: number;
+  MINIMUM_SCORE: number;
+  HISTORY_WINDOW: number;
+  MIN_SAMPLES: number;
+  scoreHistory: Array<{ timestamp: number; score: number }>;
+}
+
+interface MockHeartbeatMonitor extends Partial<HeartbeatMonitor> {
+  getAgentStatus: jest.Mock;
+  getActiveAgents: jest.Mock;
+  getAgentHistory: jest.Mock;
+  getAgentTrends: jest.Mock;
+  recordHeartbeat: jest.Mock;
+  agents: Set<string>;
+  PING_INTERVAL: number;
+  RESPONSIVENESS_THRESHOLD: number;
+  WARNING_THRESHOLD: number;
+  MAX_HISTORY_SIZE: number;
+  heartbeatHistory: Map<string, Array<{ timestamp: number; status: string }>>;
+}
+
+interface MockEvolutionManager extends Partial<EvolutionTriggerManager> {
+  handleEvent: jest.Mock;
+  getTriggerHistory: jest.Mock;
+  getTriggerTrends: jest.Mock;
+  recordTrigger: jest.Mock;
+  triggers: Map<string, any>;
+  DEFAULT_TIMEOUT: number;
+  monitoringInterval: NodeJS.Timeout;
+  trustTracker: any;
+  MAX_HISTORY_SIZE: number;
+  triggerHistory: Array<{ timestamp: number; type: string; data: any }>;
+}
+
+interface MockResourceMonitor extends Partial<ResourceMonitor> {
+  getAgentResourceUsage: jest.Mock;
+  getResourceHistory: jest.Mock;
+  getResourceTrends: jest.Mock;
+  recordResourceEvent: jest.Mock;
+  DEFAULT_CPU_WARNING: number;
+  DEFAULT_CPU_CRITICAL: number;
+  DEFAULT_MEMORY_WARNING: number;
+  DEFAULT_MEMORY_CRITICAL: number;
+  MAX_HISTORY_SIZE: number;
+  resourceHistory: Map<string, Array<{ timestamp: number; usage: any }>>;
+}
+
 describe('System Intel Module', () => {
   let intelAggregator: IntelAggregator;
   let eventBus: EventBus;
-  let trustScorer: TrustScorer;
-  let heartbeatMonitor: HeartbeatMonitor;
-  let evolutionManager: EvolutionTriggerManager;
-  let resourceMonitor: ResourceMonitor;
+  let trustScorer: MockTrustScorer;
+  let heartbeatMonitor: MockHeartbeatMonitor;
+  let evolutionManager: MockEvolutionManager;
+  let resourceMonitor: MockResourceMonitor;
   let statusSurface: AgentStatusSurface;
   let snapshotEmitter: SnapshotEmitter;
   let trustTimeline: TrustTimeline;
@@ -36,40 +93,81 @@ describe('System Intel Module', () => {
     eventBus = new EventBus();
     trustScorer = {
       getTrustScore: jest.fn().mockResolvedValue(0.9),
-      adjustTrustScore: jest.fn()
-    } as any;
+      adjustTrustScore: jest.fn(),
+      getTrustHistory: jest.fn().mockResolvedValue([]),
+      getTrustTrend: jest.fn().mockResolvedValue({ trend: 'stable', averageDelta: 0 }),
+      getTrustVolatility: jest.fn().mockResolvedValue(0.1),
+      getTrustStability: jest.fn().mockResolvedValue(0.95),
+      TRUST_FILE: 'trust.json',
+      MINIMUM_THRESHOLD: 0.7,
+      MAXIMUM_SCORE: 1.0,
+      MINIMUM_SCORE: 0.0,
+      HISTORY_WINDOW: 3600000,
+      MIN_SAMPLES: 10,
+      scoreHistory: []
+    } as unknown as MockTrustScorer;
+
     heartbeatMonitor = {
       getAgentStatus: jest.fn().mockResolvedValue({
         lastHeartbeat: new Date().toISOString(),
         isActive: true
       }),
-      getActiveAgents: jest.fn().mockResolvedValue(['agent-1', 'agent-2'])
-    } as any;
+      getActiveAgents: jest.fn().mockResolvedValue(['agent-1', 'agent-2']),
+      getAgentHistory: jest.fn().mockResolvedValue([]),
+      getAgentTrends: jest.fn().mockResolvedValue({ trend: 'stable', averageDelta: 0 }),
+      recordHeartbeat: jest.fn(),
+      agents: new Set(['agent-1', 'agent-2']),
+      PING_INTERVAL: 5000,
+      RESPONSIVENESS_THRESHOLD: 10000,
+      WARNING_THRESHOLD: 15000,
+      MAX_HISTORY_SIZE: 1000,
+      heartbeatHistory: new Map()
+    } as unknown as MockHeartbeatMonitor;
+
     evolutionManager = {
-      handleEvent: jest.fn()
-    } as any;
+      handleEvent: jest.fn(),
+      getTriggerHistory: jest.fn().mockResolvedValue([]),
+      getTriggerTrends: jest.fn().mockResolvedValue({ trend: 'stable', averageDelta: 0 }),
+      recordTrigger: jest.fn(),
+      triggers: new Map(),
+      DEFAULT_TIMEOUT: 30000,
+      monitoringInterval: setInterval(() => {}, 1000),
+      trustTracker: {},
+      MAX_HISTORY_SIZE: 1000,
+      triggerHistory: []
+    } as unknown as MockEvolutionManager;
+
     resourceMonitor = {
       getAgentResourceUsage: jest.fn().mockResolvedValue({
         cpu: 0.5,
         memory: 0.5,
         responseTime: 100
-      })
-    } as any;
+      }),
+      getResourceHistory: jest.fn().mockResolvedValue([]),
+      getResourceTrends: jest.fn().mockResolvedValue({ trend: 'stable', averageDelta: 0 }),
+      recordResourceEvent: jest.fn(),
+      DEFAULT_CPU_WARNING: 0.7,
+      DEFAULT_CPU_CRITICAL: 0.9,
+      DEFAULT_MEMORY_WARNING: 0.7,
+      DEFAULT_MEMORY_CRITICAL: 0.9,
+      MAX_HISTORY_SIZE: 1000,
+      resourceHistory: new Map()
+    } as unknown as MockResourceMonitor;
 
     statusSurface = new AgentStatusSurface(
-      trustScorer,
-      heartbeatMonitor,
-      resourceMonitor
+      trustScorer as unknown as TrustScorer,
+      heartbeatMonitor as unknown as HeartbeatMonitor,
+      resourceMonitor as unknown as ResourceMonitor
     );
     snapshotEmitter = new SnapshotEmitter();
     trustTimeline = new TrustTimeline();
 
     intelAggregator = new IntelAggregator(
       eventBus,
-      trustScorer,
-      heartbeatMonitor,
-      evolutionManager,
-      resourceMonitor
+      trustScorer as unknown as TrustScorer,
+      heartbeatMonitor as unknown as HeartbeatMonitor,
+      evolutionManager as unknown as EvolutionTriggerManager,
+      resourceMonitor as unknown as ResourceMonitor
     );
   });
 
@@ -83,49 +181,60 @@ describe('System Intel Module', () => {
     });
 
     it('should handle trust signal events', async () => {
-      const event = {
+      await eventBus.publish({
+        type: 'trust:signal',
+        timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 0.95
         }
-      };
+      }, 'medium');
 
-      await eventBus.emit('trust:signal', event);
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].trustScore).toBe(0.95);
+      expect(trustScorer.getTrustHistory).toHaveBeenCalled();
+      expect(trustScorer.getTrustTrend).toHaveBeenCalled();
     });
 
     it('should handle trust warning events', async () => {
-      const event = {
+      await eventBus.publish({
+        type: 'trust:warning',
+        timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 0.75
         }
-      };
+      }, 'high');
 
-      await eventBus.emit('trust:warning', event);
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].status).toBe('warning');
       expect(metrics.agents['agent-1'].trustScore).toBe(0.75);
+      expect(trustScorer.getTrustVolatility).toHaveBeenCalled();
+      expect(trustScorer.getTrustStability).toHaveBeenCalled();
     });
 
     it('should handle trust violation events', async () => {
-      const event = {
+      await eventBus.publish({
+        type: 'trust:violation',
+        timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 0.5
         }
-      };
+      }, 'high');
 
-      await eventBus.emit('trust:violation', event);
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].status).toBe('critical');
       expect(metrics.recentViolations).toHaveLength(1);
       expect(metrics.systemHealth).toBe('critical');
+      expect(trustScorer.getTrustHistory).toHaveBeenCalled();
+      expect(trustScorer.getTrustTrend).toHaveBeenCalled();
     });
 
     it('should handle heartbeat events', async () => {
-      const event = {
+      await eventBus.publish({
+        type: 'heartbeat:ping',
+        timestamp: new Date().toISOString(),
         data: {
           agentId: 'agent-1',
           metrics: {
@@ -135,57 +244,157 @@ describe('System Intel Module', () => {
             }
           }
         }
-      };
+      }, 'medium');
 
-      await eventBus.emit('heartbeat:ping', event);
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].status).toBe('healthy');
       expect(metrics.agents['agent-1'].resourceUsage).toEqual({
         cpu: 0.6,
         memory: 0.7
       });
+      expect(heartbeatMonitor.getAgentHistory).toHaveBeenCalled();
+      expect(heartbeatMonitor.getAgentTrends).toHaveBeenCalled();
     });
 
     it('should handle evolution events', async () => {
-      const event = {
+      await eventBus.publish({
+        type: 'evolution:triggered',
+        timestamp: new Date().toISOString(),
         data: {
           agentId: 'agent-1',
           triggerType: 'performance'
         }
-      };
+      }, 'high');
 
-      await eventBus.emit('evolution:triggered', event);
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].lastTrigger).toBe('performance');
+      expect(evolutionManager.getTriggerHistory).toHaveBeenCalled();
+      expect(evolutionManager.getTriggerTrends).toHaveBeenCalled();
     });
 
     it('should recover from metric ingestion failures', async () => {
-      // Simulate a failed metric ingestion
-      const failedEvent = {
+      await eventBus.publish({
+        type: 'trust:signal',
+        timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 'invalid' // Invalid score type
         }
-      };
+      }, 'medium');
 
-      // Should not throw error
-      await eventBus.emit('trust:signal', failedEvent);
-
-      // Verify system remains stable
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.systemHealth).toBe('stable');
 
-      // Verify subsequent valid events are processed
-      const validEvent = {
+      await eventBus.publish({
+        type: 'trust:signal',
+        timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 0.9
         }
-      };
+      }, 'medium');
 
-      await eventBus.emit('trust:signal', validEvent);
       const updatedMetrics = intelAggregator.getCurrentMetrics();
       expect(updatedMetrics.agents['agent-1'].trustScore).toBe(0.9);
+    });
+
+    it('should handle concurrent metric updates', async () => {
+      const events = [
+        {
+          type: 'trust:signal',
+          timestamp: new Date().toISOString(),
+          data: {
+            component: 'agent-1',
+            score: 0.95
+          }
+        },
+        {
+          type: 'trust:signal',
+          timestamp: new Date().toISOString(),
+          data: {
+            component: 'agent-2',
+            score: 0.85
+          }
+        }
+      ];
+
+      await Promise.all(events.map(event => eventBus.publish(event, 'medium')));
+      const metrics = intelAggregator.getCurrentMetrics();
+      expect(metrics.agents['agent-1'].trustScore).toBe(0.95);
+      expect(metrics.agents['agent-2'].trustScore).toBe(0.85);
+    });
+
+    it('should maintain violation history size limit', async () => {
+      const events = Array.from({ length: 1100 }, (_, i) => ({
+        type: 'trust:violation',
+        timestamp: new Date().toISOString(),
+        data: {
+          component: `agent-${i}`,
+          score: 0.3
+        }
+      }));
+
+      await Promise.all(events.map(event => eventBus.publish(event, 'high')));
+      const metrics = intelAggregator.getCurrentMetrics();
+      expect(metrics.recentViolations).toHaveLength(1000); // Should be capped
+    });
+
+    it('should handle resource threshold violations', async () => {
+      await eventBus.publish({
+        type: 'heartbeat:ping',
+        timestamp: new Date().toISOString(),
+        data: {
+          agentId: 'agent-1',
+          metrics: {
+            resourceUsage: {
+              cpu: 0.95, // Above critical threshold
+              memory: 0.85 // Above warning threshold
+            }
+          }
+        }
+      }, 'high');
+
+      const metrics = intelAggregator.getCurrentMetrics();
+      expect(metrics.agents['agent-1'].status).toBe('critical');
+      expect(metrics.agents['agent-1'].resourceUsage).toEqual({
+        cpu: 0.95,
+        memory: 0.85
+      });
+      expect(resourceMonitor.getResourceHistory).toHaveBeenCalled();
+      expect(resourceMonitor.getResourceTrends).toHaveBeenCalled();
+    });
+
+    it('should handle evolution trigger failures', async () => {
+      await eventBus.publish({
+        type: 'evolution:failed',
+        timestamp: new Date().toISOString(),
+        data: {
+          agentId: 'agent-1',
+          triggerType: 'performance',
+          error: 'Trigger failed'
+        }
+      }, 'high');
+
+      const metrics = intelAggregator.getCurrentMetrics();
+      expect(metrics.agents['agent-1'].lastError).toBe('Trigger failed');
+      expect(metrics.agents['agent-1'].status).toBe('warning');
+    });
+
+    it('should handle heartbeat timeouts', async () => {
+      const oldTimestamp = new Date(Date.now() - 20000).toISOString(); // 20 seconds ago
+      await eventBus.publish({
+        type: 'heartbeat:timeout',
+        timestamp: new Date().toISOString(),
+        data: {
+          agentId: 'agent-1',
+          lastHeartbeat: oldTimestamp,
+          isActive: false
+        }
+      }, 'high');
+
+      const metrics = intelAggregator.getCurrentMetrics();
+      expect(metrics.agents['agent-1'].status).toBe('warning');
+      expect(metrics.agents['agent-1'].lastHeartbeat).toBe(oldTimestamp);
     });
   });
 
@@ -230,6 +439,23 @@ describe('System Intel Module', () => {
       (trustScorer.getTrustScore as jest.Mock).mockResolvedValueOnce(0.5);
       const criticalMetrics = await statusSurface.getAgentStatus('agent-1');
       expect(criticalMetrics.status).toBe('critical');
+    });
+
+    it('should handle monitor failures gracefully', async () => {
+      (trustScorer.getTrustScore as jest.Mock).mockRejectedValueOnce(new Error('Trust score error'));
+      (heartbeatMonitor.getAgentStatus as jest.Mock).mockRejectedValueOnce(new Error('Heartbeat error'));
+      (resourceMonitor.getAgentResourceUsage as jest.Mock).mockRejectedValueOnce(new Error('Resource error'));
+
+      const metrics = await statusSurface.getAgentStatus('agent-1');
+      expect(metrics).toMatchObject({
+        status: 'unknown',
+        trustScore: 1.0,
+        resourceUsage: {
+          cpu: 0,
+          memory: 0,
+          responseTime: 0
+        }
+      });
     });
   });
 
@@ -303,6 +529,23 @@ describe('System Intel Module', () => {
       expect(snapshot?.agents['agent-2'].status).toBe('critical');
       expect(snapshot?.systemHealth).toBe('critical');
     });
+
+    it('should handle file system errors gracefully', async () => {
+      (fs.promises.writeFile as jest.Mock).mockRejectedValueOnce(new Error('Write error'));
+      (fs.promises.readdir as jest.Mock).mockRejectedValueOnce(new Error('Read error'));
+
+      const metrics: SystemIntelMetrics = {
+        timestamp: new Date().toISOString(),
+        agents: {},
+        recentViolations: [],
+        trustTimeline: [],
+        systemHealth: 'stable'
+      };
+
+      await expect(snapshotEmitter.emitSnapshot(metrics)).resolves.not.toThrow();
+      const snapshot = await snapshotEmitter.getLatestSnapshot();
+      expect(snapshot).toBeNull();
+    });
   });
 
   describe('TrustTimeline', () => {
@@ -354,6 +597,31 @@ describe('System Intel Module', () => {
 
       expect(shortTermTrend.volatility).toBeGreaterThan(0);
       expect(longTermTrend.volatility).toBeGreaterThan(shortTermTrend.volatility);
+    });
+
+    it('should handle concurrent delta recordings', async () => {
+      const deltas = [
+        { agentId: 'agent-1', score: 0.9 },
+        { agentId: 'agent-2', score: 0.85 },
+        { agentId: 'agent-1', score: 0.8 }
+      ];
+
+      await Promise.all(deltas.map(d => trustTimeline.recordDelta(d.agentId, d.score)));
+      const agent1Deltas = await trustTimeline.getRecentDeltas('agent-1');
+      const agent2Deltas = await trustTimeline.getRecentDeltas('agent-2');
+
+      expect(agent1Deltas).toHaveLength(2);
+      expect(agent2Deltas).toHaveLength(1);
+      expect(agent1Deltas[1].currentScore).toBe(0.8);
+      expect(agent2Deltas[0].currentScore).toBe(0.85);
+    });
+
+    it('should handle invalid time ranges gracefully', async () => {
+      const endTime = new Date(Date.now() - 3600000).toISOString();
+      const startTime = new Date().toISOString(); // Invalid: end before start
+
+      const deltas = await trustTimeline.getDeltasInRange(startTime, endTime, 'agent-1');
+      expect(deltas).toHaveLength(0);
     });
   });
 }); 

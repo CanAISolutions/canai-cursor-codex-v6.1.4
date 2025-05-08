@@ -8,7 +8,7 @@
 
 import { EventBus } from '../utils/event-bus';
 import { AgentMemory } from '../agent-oversight/agent-memory';
-import { MetaControlContext } from './meta-controller';
+import { TrustScorer } from '../agents/trust-scorer/trust-scorer';
 
 export interface AlignmentPlan {
   priority: number;
@@ -67,6 +67,7 @@ export class CodexAligner {
 
   constructor(
     private readonly eventBus: EventBus,
+    private readonly trustScorer: TrustScorer,
     private readonly agentMemory: AgentMemory
   ) {
     this.setupEventListeners();
@@ -77,249 +78,203 @@ export class CodexAligner {
     this.eventBus.on('correction:applied', this.handleCorrectionApplied.bind(this));
   }
 
-  public async createAlignmentPlan(context: MetaControlContext): Promise<AlignmentPlan> {
-    const plan: AlignmentPlan = {
-      priority: this.calculatePriority(context),
-      corrections: [],
-      expectedOutcome: {
-        alignmentScore: 0,
-        trustImpact: 0,
-        resourceImpact: 0
-      }
-    };
-
-    // Analyze deviations and create corrections
-    const deviations = this.analyzeDeviations(context);
-    for (const deviation of deviations) {
-      plan.corrections.push(this.createCorrection(deviation));
+  public async validatePromptAlignment(prompt: { content: string; metadata: Record<string, any> }): Promise<boolean> {
+    const { content, metadata } = prompt;
+    const isAligned = this.validateContent(content, metadata, this.guidelines.promptGuidelines);
+    
+    if (!isAligned) {
+      await this.eventBus.publish({
+        type: 'alignment:deviation',
+        data: {
+          type: 'prompt',
+          content,
+          metadata,
+          timestamp: Date.now()
+        },
+        timestamp: new Date().toISOString()
+      }, 'high');
     }
-
-    // Calculate expected outcomes
-    plan.expectedOutcome = this.calculateExpectedOutcome(plan.corrections);
-
-    return plan;
+    
+    return isAligned;
   }
 
-  public async executeAlignmentPlan(plan: AlignmentPlan): Promise<void> {
+  public async validateResponseAlignment(response: { content: string; metadata: Record<string, any> }): Promise<boolean> {
+    const { content, metadata } = response;
+    const isAligned = this.validateContent(content, metadata, this.guidelines.responseGuidelines);
+    
+    if (!isAligned) {
+      await this.eventBus.publish({
+        type: 'alignment:deviation',
+        data: {
+          type: 'response',
+          content,
+          metadata,
+          timestamp: Date.now()
+        },
+        timestamp: new Date().toISOString()
+      }, 'high');
+    }
+    
+    return isAligned;
+  }
+
+  public async validateBehaviorAlignment(behavior: { action: string; metadata: Record<string, any> }): Promise<boolean> {
+    const { action, metadata } = behavior;
+    const isAligned = this.validateContent(action, metadata, this.guidelines.behaviorGuidelines);
+    
+    if (!isAligned) {
+      await this.eventBus.publish({
+        type: 'alignment:deviation',
+        data: {
+          type: 'behavior',
+          action,
+          metadata,
+          timestamp: Date.now()
+        },
+        timestamp: new Date().toISOString()
+      }, 'high');
+    }
+    
+    return isAligned;
+  }
+
+  public async enforceAlignment(content: { type: string; data: { content: string; metadata: Record<string, any> } }): Promise<boolean> {
     try {
-      this.eventBus.emit('alignment:started', {
-        plan,
-        timestamp: Date.now()
-      });
-
-      for (const correction of plan.corrections) {
-        await this.applyCorrection(correction);
+      const { type, data } = content;
+      const guidelines = this.getGuidelinesForType(type);
+      
+      if (!guidelines) {
+        throw new Error(`Unknown content type: ${type}`);
       }
 
-      this.eventBus.emit('alignment:completed', {
-        plan,
-        timestamp: Date.now()
-      });
+      const alignedContent = this.alignContent(data.content, data.metadata, guidelines);
+      
+      await this.eventBus.publish({
+        type: 'alignment:enforced',
+        data: {
+          type,
+          originalContent: data.content,
+          alignedContent,
+          timestamp: Date.now()
+        },
+        timestamp: new Date().toISOString()
+      }, 'medium');
+
+      return true;
     } catch (error) {
-      this.handleError(error, plan);
+      await this.eventBus.publish({
+        type: 'alignment:error',
+        data: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          content,
+          timestamp: Date.now()
+        },
+        timestamp: new Date().toISOString()
+      }, 'high');
+      return false;
     }
   }
 
-  private analyzeDeviations(context: MetaControlContext): Array<{
-    type: 'prompt' | 'response' | 'behavior';
-    severity: number;
-    details: Record<string, any>;
+  public async getAlignmentMetrics(): Promise<{
+    alignmentScore: number;
+    deviationMetrics: {
+      promptDeviation: number;
+      responseDeviation: number;
+      behaviorDeviation: number;
+    };
   }> {
-    const deviations: Array<{
-      type: 'prompt' | 'response' | 'behavior';
-      severity: number;
-      details: Record<string, any>;
-    }> = [];
-
-    const { codexAlignment } = context;
-
-    // Check prompt deviations
-    if (codexAlignment.deviationMetrics.promptDeviation > 0.2) {
-      deviations.push({
-        type: 'prompt',
-        severity: codexAlignment.deviationMetrics.promptDeviation,
-        details: {
-          missingElements: this.guidelines.promptGuidelines.requiredElements.filter(
-            element => !context.codexAlignment.correctionHistory.some(
-              correction => correction.correction.includes(element)
-            )
-          )
+    try {
+      const metrics = await this.agentMemory.getSystemMetrics();
+      return {
+        alignmentScore: metrics.alignmentScore || 0,
+        deviationMetrics: {
+          promptDeviation: 0,
+          responseDeviation: 0,
+          behaviorDeviation: 0
         }
-      });
-    }
-
-    // Check response deviations
-    if (codexAlignment.deviationMetrics.responseDeviation > 0.2) {
-      deviations.push({
-        type: 'response',
-        severity: codexAlignment.deviationMetrics.responseDeviation,
-        details: {
-          missingElements: this.guidelines.responseGuidelines.requiredElements.filter(
-            element => !context.codexAlignment.correctionHistory.some(
-              correction => correction.correction.includes(element)
-            )
-          )
+      };
+    } catch (error) {
+      return {
+        alignmentScore: 0,
+        deviationMetrics: {
+          promptDeviation: 0,
+          responseDeviation: 0,
+          behaviorDeviation: 0
         }
-      });
+      };
     }
-
-    // Check behavior deviations
-    if (codexAlignment.deviationMetrics.behaviorDeviation > 0.2) {
-      deviations.push({
-        type: 'behavior',
-        severity: codexAlignment.deviationMetrics.behaviorDeviation,
-        details: {
-          missingPatterns: this.guidelines.behaviorGuidelines.requiredPatterns.filter(
-            pattern => !context.codexAlignment.correctionHistory.some(
-              correction => correction.correction.includes(pattern)
-            )
-          )
-        }
-      });
-    }
-
-    return deviations;
   }
 
-  private createCorrection(deviation: {
-    type: 'prompt' | 'response' | 'behavior';
-    severity: number;
-    details: Record<string, any>;
-  }): AlignmentPlan['corrections'][0] {
-    const { type, severity, details } = deviation;
+  private validateContent(content: string, metadata: Record<string, any>, guidelines: any): boolean {
+    // Check content length
+    if (content.length > guidelines.maxLength) {
+      return false;
+    }
 
+    // Check required elements
+    if (guidelines.requiredElements) {
+      for (const element of guidelines.requiredElements) {
+        if (!content.includes(element)) {
+          return false;
+        }
+      }
+    }
+
+    // Check prohibited elements
+    if (guidelines.prohibitedElements) {
+      for (const element of guidelines.prohibitedElements) {
+        if (content.includes(element)) {
+          return false;
+        }
+      }
+    }
+
+    // Check metadata tone
+    if (metadata.tone === 'casual' && metadata.context === 'business') {
+      return false;
+    }
+
+    return true;
+  }
+
+  private alignContent(content: string, metadata: Record<string, any>, guidelines: any): string {
+    let alignedContent = content;
+
+    // Enforce length limit
+    if (alignedContent.length > guidelines.maxLength) {
+      alignedContent = alignedContent.substring(0, guidelines.maxLength);
+    }
+
+    // Add missing required elements
+    if (guidelines.requiredElements) {
+      for (const element of guidelines.requiredElements) {
+        if (!alignedContent.includes(element)) {
+          alignedContent += `\n${element}`;
+        }
+      }
+    }
+
+    // Remove prohibited elements
+    if (guidelines.prohibitedElements) {
+      for (const element of guidelines.prohibitedElements) {
+        alignedContent = alignedContent.replace(new RegExp(element, 'g'), '');
+      }
+    }
+
+    return alignedContent;
+  }
+
+  private getGuidelinesForType(type: string): any {
     switch (type) {
       case 'prompt':
-        return {
-          type: 'prompt',
-          target: 'system',
-          parameters: {
-            maxLength: this.guidelines.promptGuidelines.maxLength,
-            requiredElements: details.missingElements,
-            prohibitedElements: this.guidelines.promptGuidelines.prohibitedElements
-          }
-        };
+        return this.guidelines.promptGuidelines;
       case 'response':
-        return {
-          type: 'response',
-          target: 'system',
-          parameters: {
-            maxLength: this.guidelines.responseGuidelines.maxLength,
-            requiredElements: details.missingElements,
-            prohibitedElements: this.guidelines.responseGuidelines.prohibitedElements
-          }
-        };
+        return this.guidelines.responseGuidelines;
       case 'behavior':
-        return {
-          type: 'behavior',
-          target: 'system',
-          parameters: {
-            maxResponseTime: this.guidelines.behaviorGuidelines.maxResponseTime,
-            requiredPatterns: details.missingPatterns,
-            prohibitedPatterns: this.guidelines.behaviorGuidelines.prohibitedPatterns
-          }
-        };
+        return this.guidelines.behaviorGuidelines;
       default:
-        throw new Error(`Unknown deviation type: ${type}`);
+        return null;
     }
-  }
-
-  private async applyCorrection(correction: AlignmentPlan['corrections'][0]): Promise<void> {
-    this.eventBus.emit('correction:applying', {
-      correction,
-      timestamp: Date.now()
-    });
-
-    // Wait for cooldown period
-    await new Promise(resolve => setTimeout(resolve, this.CORRECTION_COOLDOWN));
-
-    // Apply the correction
-    switch (correction.type) {
-      case 'prompt':
-        await this.applyPromptCorrection(correction);
-        break;
-      case 'response':
-        await this.applyResponseCorrection(correction);
-        break;
-      case 'behavior':
-        await this.applyBehaviorCorrection(correction);
-        break;
-    }
-  }
-
-  private async applyPromptCorrection(correction: AlignmentPlan['corrections'][0]): Promise<void> {
-    // Implement prompt correction logic
-    // This could involve:
-    // 1. Updating prompt templates
-    // 2. Adding required elements
-    // 3. Removing prohibited elements
-  }
-
-  private async applyResponseCorrection(correction: AlignmentPlan['corrections'][0]): Promise<void> {
-    // Implement response correction logic
-    // This could involve:
-    // 1. Updating response templates
-    // 2. Adding required elements
-    // 3. Removing prohibited elements
-  }
-
-  private async applyBehaviorCorrection(correction: AlignmentPlan['corrections'][0]): Promise<void> {
-    // Implement behavior correction logic
-    // This could involve:
-    // 1. Updating response time limits
-    // 2. Adding required patterns
-    // 3. Removing prohibited patterns
-  }
-
-  private calculatePriority(context: MetaControlContext): number {
-    const { codexAlignment } = context;
-    let priority = 0;
-
-    // Alignment score impact
-    if (codexAlignment.alignmentScore < 0.7) priority += 3;
-    else if (codexAlignment.alignmentScore < 0.8) priority += 2;
-    else if (codexAlignment.alignmentScore < 0.9) priority += 1;
-
-    // Deviation impacts
-    if (codexAlignment.deviationMetrics.promptDeviation > 0.3) priority += 2;
-    if (codexAlignment.deviationMetrics.responseDeviation > 0.3) priority += 2;
-    if (codexAlignment.deviationMetrics.behaviorDeviation > 0.3) priority += 2;
-
-    return Math.min(priority, 9); // Cap at 9
-  }
-
-  private calculateExpectedOutcome(
-    corrections: AlignmentPlan['corrections']
-  ): AlignmentPlan['expectedOutcome'] {
-    let alignmentScore = 0;
-    let trustImpact = 0;
-    let resourceImpact = 0;
-
-    for (const correction of corrections) {
-      switch (correction.type) {
-        case 'prompt':
-          alignmentScore += 0.2;
-          trustImpact += 0.1;
-          resourceImpact += 0.05;
-          break;
-        case 'response':
-          alignmentScore += 0.3;
-          trustImpact += 0.2;
-          resourceImpact += 0.1;
-          break;
-        case 'behavior':
-          alignmentScore += 0.4;
-          trustImpact += 0.3;
-          resourceImpact += 0.15;
-          break;
-      }
-    }
-
-    return {
-      alignmentScore: Math.min(alignmentScore, 1),
-      trustImpact: Math.min(trustImpact, 1),
-      resourceImpact: Math.min(resourceImpact, 1)
-    };
   }
 
   private async handleAlignmentRequired(event: any): Promise<void> {
@@ -329,12 +284,5 @@ export class CodexAligner {
   private async handleCorrectionApplied(event: any): Promise<void> {
     // Implementation for correction application handling
   }
-
-  private async handleError(error: any, plan: AlignmentPlan): Promise<void> {
-    this.eventBus.emit('alignment:error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      plan,
-      timestamp: Date.now()
-    });
-  }
+} 
 } 

@@ -191,4 +191,25 @@ export class AgentMemory {
     }
     return [...agent.trustHistory];
   }
+
+  public async getAgentRecord(agentId: string): Promise<AgentOversightRecord | undefined> {
+    return this.memoryCache.get(agentId);
+  }
+
+  public async getSystemMetrics(): Promise<{
+    trustScore: number;
+    resourceUsage: number;
+    alignmentScore: number;
+  }> {
+    const agents = await this.getAllAgents();
+    const avgTrustScore = agents.reduce((sum, agent) => sum + agent.trustScore, 0) / agents.length;
+    const avgResourceUsage = agents.reduce((sum, agent) => sum + (agent.metadata.resourceUsage || 0), 0) / agents.length;
+    const avgAlignmentScore = agents.reduce((sum, agent) => sum + (agent.metadata.alignmentScore || 0), 0) / agents.length;
+
+    return {
+      trustScore: avgTrustScore || 0,
+      resourceUsage: avgResourceUsage || 0,
+      alignmentScore: avgAlignmentScore || 0
+    };
+  }
 } 

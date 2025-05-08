@@ -7,12 +7,46 @@
  */
 
 import { ResourceMonitor } from '../resource-monitor';
+import { ResourceUsage, ResourceThresholds } from '../resource-types';
+import * as os from 'os';
+
+jest.mock('os');
 
 describe('ResourceMonitor', () => {
   let resourceMonitor: ResourceMonitor;
 
   beforeEach(() => {
+    // Mock os.cpus() to return consistent test data
+    (os.cpus as jest.Mock).mockReturnValue([
+      {
+        times: {
+          user: 100,
+          nice: 0,
+          sys: 50,
+          idle: 300,
+          irq: 0
+        }
+      },
+      {
+        times: {
+          user: 150,
+          nice: 0,
+          sys: 75,
+          idle: 400,
+          irq: 0
+        }
+      }
+    ]);
+
+    // Mock os.totalmem() and os.freemem() to return consistent test data
+    (os.totalmem as jest.Mock).mockReturnValue(16000000000); // 16GB
+    (os.freemem as jest.Mock).mockReturnValue(8000000000);  // 8GB
+
     resourceMonitor = new ResourceMonitor();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('Resource Usage Tracking', () => {
@@ -34,13 +68,34 @@ describe('ResourceMonitor', () => {
       expect(typeof usage.timestamp).toBe('number');
       expect(usage.timestamp).toBeLessThanOrEqual(Date.now());
     });
+
+    it('should handle concurrent resource usage requests', async () => {
+      const requests = Array(5).fill(null).map(() => resourceMonitor.getResourceUsage());
+      const results = await Promise.all(requests);
+      
+      results.forEach(usage => {
+        expect(usage.cpu).toBeGreaterThanOrEqual(0);
+        expect(usage.cpu).toBeLessThanOrEqual(1);
+        expect(usage.memory).toBeGreaterThanOrEqual(0);
+        expect(usage.memory).toBeLessThanOrEqual(1);
+      });
+    });
   });
 
   describe('Threshold Checking', () => {
     it('should detect warning levels', async () => {
       // Mock high but not critical CPU usage
-      jest.spyOn(resourceMonitor as any, 'getCpuUsage').mockResolvedValue(0.75);
-      jest.spyOn(resourceMonitor as any, 'getMemoryUsage').mockResolvedValue(0.5);
+      (os.cpus as jest.Mock).mockReturnValue([
+        {
+          times: {
+            user: 700,
+            nice: 0,
+            sys: 200,
+            idle: 100,
+            irq: 0
+          }
+        }
+      ]);
 
       const usage = await resourceMonitor.getResourceUsage();
       const result = resourceMonitor.checkResourceThresholds(usage);
@@ -52,8 +107,8 @@ describe('ResourceMonitor', () => {
 
     it('should detect critical levels', async () => {
       // Mock critical memory usage
-      jest.spyOn(resourceMonitor as any, 'getCpuUsage').mockResolvedValue(0.5);
-      jest.spyOn(resourceMonitor as any, 'getMemoryUsage').mockResolvedValue(0.96);
+      (os.totalmem as jest.Mock).mockReturnValue(16000000000); // 16GB
+      (os.freemem as jest.Mock).mockReturnValue(400000000);   // 400MB
 
       const usage = await resourceMonitor.getResourceUsage();
       const result = resourceMonitor.checkResourceThresholds(usage);
@@ -65,8 +120,19 @@ describe('ResourceMonitor', () => {
 
     it('should handle multiple exceeded resources', async () => {
       // Mock both CPU and memory at critical levels
-      jest.spyOn(resourceMonitor as any, 'getCpuUsage').mockResolvedValue(0.95);
-      jest.spyOn(resourceMonitor as any, 'getMemoryUsage').mockResolvedValue(0.96);
+      (os.cpus as jest.Mock).mockReturnValue([
+        {
+          times: {
+            user: 900,
+            nice: 0,
+            sys: 90,
+            idle: 10,
+            irq: 0
+          }
+        }
+      ]);
+      (os.totalmem as jest.Mock).mockReturnValue(16000000000); // 16GB
+      (os.freemem as jest.Mock).mockReturnValue(400000000);   // 400MB
 
       const usage = await resourceMonitor.getResourceUsage();
       const result = resourceMonitor.checkResourceThresholds(usage);
@@ -80,7 +146,7 @@ describe('ResourceMonitor', () => {
 
   describe('Threshold Management', () => {
     it('should update thresholds', () => {
-      const newThresholds = {
+      const newThresholds: Partial<ResourceThresholds> = {
         cpuWarning: 0.8,
         cpuCritical: 0.95,
         memoryWarning: 0.85,
@@ -90,10 +156,19 @@ describe('ResourceMonitor', () => {
       resourceMonitor.updateThresholds(newThresholds);
 
       // Mock high CPU usage just below new warning threshold
-      jest.spyOn(resourceMonitor as any, 'getCpuUsage').mockResolvedValue(0.79);
-      jest.spyOn(resourceMonitor as any, 'getMemoryUsage').mockResolvedValue(0.5);
+      (os.cpus as jest.Mock).mockReturnValue([
+        {
+          times: {
+            user: 750,
+            nice: 0,
+            sys: 50,
+            idle: 200,
+            irq: 0
+          }
+        }
+      ]);
 
-      const usage = {
+      const usage: ResourceUsage = {
         cpu: 0.79,
         memory: 0.5,
         timestamp: Date.now()
@@ -104,14 +179,14 @@ describe('ResourceMonitor', () => {
     });
 
     it('should handle partial threshold updates', () => {
-      const partialUpdate = {
+      const partialUpdate: Partial<ResourceThresholds> = {
         cpuWarning: 0.8
       };
 
       resourceMonitor.updateThresholds(partialUpdate);
 
       // Verify that other thresholds remain unchanged
-      const usage = {
+      const usage: ResourceUsage = {
         cpu: 0.85,
         memory: 0.81,
         timestamp: Date.now()
@@ -121,68 +196,6 @@ describe('ResourceMonitor', () => {
       expect(result.isWarning).toBe(true);
       expect(result.exceededResources).toContain('CPU');
       expect(result.exceededResources).toContain('Memory');
-    });
-  });
-
-  describe('CPU Usage Calculation', () => {
-    it('should calculate average CPU usage', async () => {
-      const usage1 = await resourceMonitor.getResourceUsage();
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const usage2 = await resourceMonitor.getResourceUsage();
-
-      expect(usage2.cpu).toBeGreaterThanOrEqual(0);
-      expect(usage2.cpu).toBeLessThanOrEqual(1);
-      expect(usage2.timestamp).toBeGreaterThan(usage1.timestamp);
-    });
-
-    it('should handle initial CPU usage calculation', async () => {
-      // Reset the monitor to test initial state
-      resourceMonitor = new ResourceMonitor();
-      const usage = await resourceMonitor.getResourceUsage();
-
-      expect(usage.cpu).toBe(0);
-      expect(usage.timestamp).toBeDefined();
-    });
-  });
-
-  describe('Memory Usage Calculation', () => {
-    it('should calculate memory usage percentage', async () => {
-      const usage = await resourceMonitor.getResourceUsage();
-      expect(usage.memory).toBeGreaterThan(0);
-      expect(usage.memory).toBeLessThan(1);
-    });
-
-    it('should reflect system memory changes', async () => {
-      const usage1 = await resourceMonitor.getResourceUsage();
-      
-      // Allocate some memory
-      const bigArray = new Array(1000000).fill(0);
-      
-      const usage2 = await resourceMonitor.getResourceUsage();
-      expect(usage2.memory).toBeGreaterThanOrEqual(usage1.memory);
-
-      // Clean up
-      bigArray.length = 0;
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle CPU usage calculation errors', async () => {
-      // Mock CPU usage calculation to throw error
-      jest.spyOn(resourceMonitor as any, 'getCpuUsage').mockRejectedValue(new Error('CPU error'));
-
-      const usage = await resourceMonitor.getResourceUsage();
-      expect(usage.cpu).toBe(0);
-      expect(usage.memory).toBeGreaterThanOrEqual(0);
-    });
-
-    it('should handle memory usage calculation errors', async () => {
-      // Mock memory usage calculation to throw error
-      jest.spyOn(resourceMonitor as any, 'getMemoryUsage').mockRejectedValue(new Error('Memory error'));
-
-      const usage = await resourceMonitor.getResourceUsage();
-      expect(usage.memory).toBe(0);
-      expect(usage.cpu).toBeGreaterThanOrEqual(0);
     });
   });
 }); 

@@ -23,8 +23,8 @@ export class EvolutionPathfinderAgent extends StrategicAgent {
   public shouldActivate(context: StrategyContext): boolean {
     const { systemMetrics } = context;
     return (
-      systemMetrics.stagnationFlags >= 1 ||
-      systemMetrics.evolutionTriggers >= 2 ||
+      systemMetrics.stagnationFlags > 1 ||
+      systemMetrics.evolutionTriggers < 2 ||
       systemMetrics.trustScore < this.TRUST_THRESHOLD
     );
   }

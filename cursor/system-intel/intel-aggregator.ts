@@ -25,11 +25,16 @@ export interface SystemIntelMetrics {
 }
 
 export interface AgentMetrics {
-  status: AgentStatus;
+  status: 'healthy' | 'warning' | 'critical' | 'unknown' | 'recovering';
   trustScore: number;
-  lastHeartbeat: string;
+  lastHeartbeat?: string;
+  resourceUsage?: {
+    cpu: number;
+    memory: number;
+    responseTime: number;
+  };
   lastTrigger?: string;
-  resourceUsage?: ResourceMetrics;
+  lastError?: string;
 }
 
 export interface TrustViolation {

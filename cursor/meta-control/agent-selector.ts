@@ -51,10 +51,14 @@ export class AgentSelector {
       const selections = await this.evaluateAgents(context);
       const selectedAgents = this.filterAndPrioritizeSelections(selections);
       
-      this.eventBus.emit('selection:completed', {
-        selections: selectedAgents,
-        timestamp: Date.now()
-      });
+      await this.eventBus.publish({
+        type: 'selection:completed',
+        data: {
+          selections: selectedAgents,
+          timestamp: Date.now()
+        },
+        timestamp: new Date().toISOString()
+      }, 'medium');
 
       return selectedAgents.map(selection => selection.agentId);
     } catch (error) {
@@ -218,9 +222,13 @@ export class AgentSelector {
   }
 
   private async handleError(error: any): Promise<void> {
-    this.eventBus.emit('selection:error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: Date.now()
-    });
+    await this.eventBus.publish({
+      type: 'selection:error',
+      data: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: Date.now()
+      },
+      timestamp: new Date().toISOString()
+    }, 'high');
   }
 } 

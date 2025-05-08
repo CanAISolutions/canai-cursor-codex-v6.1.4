@@ -8,7 +8,7 @@ import { StrategicAgent, StrategyContext, StrategyResult } from '../strategic-ag
  * based on system performance and recovery attempt patterns.
  */
 export class RecoveryOptimizerAgent extends StrategicAgent {
-  private readonly RECOVERY_ATTEMPT_THRESHOLD = 3;
+  protected readonly RECOVERY_ATTEMPT_THRESHOLD = 3;
   private readonly PATTERN_SUBSTITUTION_THRESHOLD = 2;
   private readonly TRUST_VOLATILITY_THRESHOLD = 0.15;
 
@@ -52,7 +52,7 @@ export class RecoveryOptimizerAgent extends StrategicAgent {
       
       // Execute optimization action
       const action = {
-        type: 'recovery:optimize',
+        type: 'recovery_optimization',
         target: 'system',
         parameters: {
           thresholdAdjustment: thresholds,

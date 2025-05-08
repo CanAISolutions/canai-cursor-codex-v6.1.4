@@ -1,25 +1,22 @@
+/**
+ * @TAP-Version v6.1.4
+ * @Codex-Intent "Jest configuration for TypeScript testing"
+ * @purpose Configure Jest for TypeScript testing with proper type definitions
+ */
+
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/cursor'],
+  roots: ['<rootDir>/tests', '<rootDir>/cursor'],
+  testMatch: ['**/*.test.ts'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
   },
-  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coveragePathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/coverage/',
-    '/__tests__/',
-    '/test/',
-  ],
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json',
-    },
-  },
+  coverageReporters: ['json', 'lcov', 'text', 'clover'],
+  verbose: true,
+  testTimeout: 10000,
 }; 

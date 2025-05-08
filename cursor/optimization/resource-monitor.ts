@@ -96,6 +96,48 @@ export class ResourceMonitor {
    * Updates resource thresholds
    */
   updateThresholds(newThresholds: Partial<ResourceThresholds>): void {
+    // Validate threshold values
+    Object.entries(newThresholds).forEach(([key, value]) => {
+      if (typeof value !== 'number' || isNaN(value) || value < 0 || value > 1) {
+        throw new Error(`Invalid threshold value for ${key}: ${value}. Must be a number between 0 and 1.`);
+      }
+    });
+
+    // Validate warning vs critical thresholds
+    if (newThresholds.cpuWarning !== undefined && newThresholds.cpuCritical !== undefined) {
+      if (newThresholds.cpuWarning >= newThresholds.cpuCritical) {
+        throw new Error('CPU warning threshold must be less than critical threshold');
+      }
+    }
+    if (newThresholds.memoryWarning !== undefined && newThresholds.memoryCritical !== undefined) {
+      if (newThresholds.memoryWarning >= newThresholds.memoryCritical) {
+        throw new Error('Memory warning threshold must be less than critical threshold');
+      }
+    }
+
+    // Validate against existing thresholds
+    if (newThresholds.cpuWarning !== undefined && this.thresholds.cpuCritical !== undefined) {
+      if (newThresholds.cpuWarning >= this.thresholds.cpuCritical) {
+        throw new Error('CPU warning threshold must be less than critical threshold');
+      }
+    }
+    if (newThresholds.cpuCritical !== undefined && this.thresholds.cpuWarning !== undefined) {
+      if (this.thresholds.cpuWarning >= newThresholds.cpuCritical) {
+        throw new Error('CPU warning threshold must be less than critical threshold');
+      }
+    }
+    if (newThresholds.memoryWarning !== undefined && this.thresholds.memoryCritical !== undefined) {
+      if (newThresholds.memoryWarning >= this.thresholds.memoryCritical) {
+        throw new Error('Memory warning threshold must be less than critical threshold');
+      }
+    }
+    if (newThresholds.memoryCritical !== undefined && this.thresholds.memoryWarning !== undefined) {
+      if (this.thresholds.memoryWarning >= newThresholds.memoryCritical) {
+        throw new Error('Memory warning threshold must be less than critical threshold');
+      }
+    }
+
+    // Update thresholds
     this.thresholds.cpuWarning = newThresholds.cpuWarning ?? this.thresholds.cpuWarning;
     this.thresholds.cpuCritical = newThresholds.cpuCritical ?? this.thresholds.cpuCritical;
     this.thresholds.memoryWarning = newThresholds.memoryWarning ?? this.thresholds.memoryWarning;
@@ -106,55 +148,75 @@ export class ResourceMonitor {
    * Gets current CPU usage
    */
   private async getCpuUsage(): Promise<number> {
-    const cpus = os.cpus();
-    const currentCpuTime = cpus.reduce((acc, cpu) => {
-      return acc + Object.values(cpu.times).reduce((sum, time) => sum + time, 0);
-    }, 0);
+    try {
+      const cpus = os.cpus();
+      const currentCpuTime = cpus.reduce((acc, cpu) => {
+        return acc + Object.values(cpu.times).reduce((sum, time) => sum + time, 0);
+      }, 0);
 
-    const currentCpuUsage = cpus.map(cpu => {
-      const total = Object.values(cpu.times).reduce((sum, time) => sum + time, 0);
-      const idle = cpu.times.idle;
-      return 1 - (idle / total);
-    });
+      const currentCpuUsage = cpus.map(cpu => {
+        const total = Object.values(cpu.times).reduce((sum, time) => sum + time, 0);
+        const idle = cpu.times.idle;
+        return total === 0 ? 0 : 1 - (idle / total);
+      });
 
-    if (this.lastCpuTime === 0) {
+      if (this.lastCpuTime === 0) {
+        this.lastCpuTime = currentCpuTime;
+        this.lastCpuUsage = currentCpuUsage;
+        return 0;
+      }
+
+      const cpuUsage = currentCpuUsage.map((usage, i) => {
+        const lastUsage = this.lastCpuUsage[i] || 0;
+        return (usage + lastUsage) / 2;
+      });
+
       this.lastCpuTime = currentCpuTime;
       this.lastCpuUsage = currentCpuUsage;
+
+      const avgUsage = cpuUsage.reduce((sum, usage) => sum + usage, 0) / cpuUsage.length;
+      return isNaN(avgUsage) || !isFinite(avgUsage) ? 0 : Math.min(1, Math.max(0, avgUsage));
+    } catch (error) {
+      console.error('Error calculating CPU usage:', error);
       return 0;
     }
-
-    const cpuUsage = currentCpuUsage.map((usage, i) => {
-      const lastUsage = this.lastCpuUsage[i] || 0;
-      return (usage + lastUsage) / 2;
-    });
-
-    this.lastCpuTime = currentCpuTime;
-    this.lastCpuUsage = currentCpuUsage;
-
-    return cpuUsage.reduce((sum, usage) => sum + usage, 0) / cpuUsage.length;
   }
 
   /**
    * Gets current memory usage
    */
   private async getMemoryUsage(): Promise<number> {
-    const totalMemory = os.totalmem();
-    const freeMemory = os.freemem();
-    return 1 - (freeMemory / totalMemory);
+    try {
+      const totalMemory = os.totalmem();
+      if (totalMemory === 0) return 0;
+
+      const freeMemory = os.freemem();
+      const usage = 1 - (freeMemory / totalMemory);
+      return Math.min(1, Math.max(0, usage));
+    } catch (error) {
+      console.error('Error calculating memory usage:', error);
+      return 0;
+    }
   }
 
   /**
    * Initializes CPU usage tracking
    */
   private initializeCpuUsage(): void {
-    const cpus = os.cpus();
-    this.lastCpuTime = cpus.reduce((acc, cpu) => {
-      return acc + Object.values(cpu.times).reduce((sum, time) => sum + time, 0);
-    }, 0);
-    this.lastCpuUsage = cpus.map(cpu => {
-      const total = Object.values(cpu.times).reduce((sum, time) => sum + time, 0);
-      const idle = cpu.times.idle;
-      return 1 - (idle / total);
-    });
+    try {
+      const cpus = os.cpus();
+      this.lastCpuTime = cpus.reduce((acc, cpu) => {
+        return acc + Object.values(cpu.times).reduce((sum, time) => sum + time, 0);
+      }, 0);
+      this.lastCpuUsage = cpus.map(cpu => {
+        const total = Object.values(cpu.times).reduce((sum, time) => sum + time, 0);
+        const idle = cpu.times.idle;
+        return total === 0 ? 0 : 1 - (idle / total);
+      });
+    } catch (error) {
+      console.error('Error initializing CPU usage:', error);
+      this.lastCpuTime = 0;
+      this.lastCpuUsage = [];
+    }
   }
 } 
