@@ -9,6 +9,8 @@ import { calculateEmotionalResonanceScore } from "./dreamstate-utils";
 import { evaluateModularCohesion } from "./modularity-utils";
 import { checkDirectiveCoverage } from "./codex-memory-utils";
 import { checkUXConsistency } from "./ux-consistency-utils";
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 export interface AuditReport {
   timestamp: number;
@@ -45,4 +47,44 @@ export async function runAudit(systemSnapshot: string): Promise<AuditReport> {
     uxConsistencyScore,
     summary,
   };
+}
+
+interface SystemLogEntry {
+  type: string;
+  path: string;
+  content: string;
+  timestamp: string;
+}
+
+/**
+ * Emit a system log entry to the specified path
+ */
+export async function emitSystemLog(type: string, data: { path: string; content: string }): Promise<void> {
+  const entry: SystemLogEntry = {
+    type,
+    path: data.path,
+    content: data.content,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    // Ensure directory exists
+    const dir = path.dirname(data.path);
+    await fs.mkdir(dir, { recursive: true });
+
+    // Append to file
+    await fs.appendFile(
+      data.path,
+      entry.content + '\n',
+      'utf8'
+    );
+
+    // Log to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[System Log] ${type}: ${data.path}`);
+    }
+  } catch (error) {
+    console.error(`Failed to emit system log: ${error}`);
+    throw error;
+  }
 }

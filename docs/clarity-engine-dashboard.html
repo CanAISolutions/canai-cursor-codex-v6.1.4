@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CanAI Clarity Engine Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3A69E0;
+            --accent-color: #26D9C1;
+            --font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 2rem;
+            background: #f8f9fa;
+            color: #2d3748;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .metric-card h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin: 1rem 0;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chart-container h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
+        .trend-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            margin-left: 0.5rem;
+        }
+
+        .trend-up {
+            background: #C6F6D5;
+            color: #2F855A;
+        }
+
+        .trend-down {
+            background: #FED7D7;
+            color: #C53030;
+        }
+
+        .action-queue {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .action-queue h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .queue-item:last-child {
+            border-bottom: none;
+        }
+
+        .severity-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 1rem;
+        }
+
+        .severity-critical {
+            background: #F56565;
+        }
+
+        .severity-high {
+            background: #ED8936;
+        }
+
+        .severity-medium {
+            background: #ECC94B;
+        }
+
+        .metric-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-trend {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+
+        .red-team {
+            background: #FFF3F3;
+        }
+
+        .metric-link {
+            margin-top: 0.5rem;
+        }
+
+        .red-team-section {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .red-team-section h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 1rem;
+        }
+
+        .rt-fail-trends {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>CanAI Clarity Engine Dashboard</h1>
+            <p>Empowerment Through Ease.</p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">System Health Score</div>
+                <div class="metric-value" id="healthScore">--</div>
+                <div class="metric-trend" id="healthScoreTrend"></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Trust Score</div>
+                <div class="metric-value" id="trustScore">--</div>
+                <div class="metric-trend" id="trustScoreTrend"></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Memory Fidelity</div>
+                <div class="metric-value" id="memoryFidelity">--</div>
+                <div class="metric-trend" id="memoryFidelityTrend"></div>
+            </div>
+            <div class="metric-card red-team">
+                <div class="metric-title">Red Team Risk Index (RT-RI)</div>
+                <div class="metric-value" id="rtRi">--</div>
+                <div class="metric-trend" id="rtRiTrend"></div>
+                <div class="metric-link"><a id="rtRiReportLink" href="#" target="_blank">Latest Red Team Report</a></div>
+            </div>
+        </div>
+
+        <div class="red-team-section">
+            <h2>Red Team Fail Trends</h2>
+            <div id="rtFailTrends">Loading...</div>
+        </div>
+
+        <div class="chart-container">
+            <h2>Drift Trendlines</h2>
+            <div id="driftChart"></div>
+        </div>
+
+        <div class="chart-container">
+            <h2>Persona Impact Map</h2>
+            <div id="personaMap"></div>
+        </div>
+
+        <div class="action-queue">
+            <h2>Action Queue</h2>
+            <div id="queueItems"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose'
+        });
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('clarity-engine-dashboard.json');
+                const data = await response.json();
+                updateDashboard(data);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Update dashboard with data
+        function updateDashboard(data) {
+            // Update metrics
+            document.getElementById('healthScore').textContent = data.healthScore.toFixed(1);
+            document.getElementById('trustScore').textContent = data.trustScore.toFixed(1);
+            document.getElementById('memoryFidelity').textContent = data.memoryFidelity.toFixed(1) + '%';
+
+            // Create drift chart
+            createDriftChart(data.driftTrends);
+
+            // Create persona map
+            createPersonaMap(data.personaImpact);
+
+            // Update action queue
+            updateActionQueue(data.actionQueue);
+
+            // Update Red Team section
+            updateRedTeamSection();
+        }
+
+        // Create drift chart using D3
+        function createDriftChart(data) {
+            const margin = {top: 20, right: 30, bottom: 30, left: 40};
+            const width = 800 - margin.left - margin.right;
+            const height = 400 - margin.top - margin.bottom;
+
+            const svg = d3.select('#driftChart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Add chart implementation here
+        }
+
+        // Create persona map using D3
+        function createPersonaMap(data) {
+            const margin = {top: 20, right: 30, bottom: 30, left: 40};
+            const width = 800 - margin.left - margin.right;
+            const height = 400 - margin.top - margin.bottom;
+
+            const svg = d3.select('#personaMap')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Add map implementation here
+        }
+
+        // Update action queue
+        function updateActionQueue(queue) {
+            const queueContainer = document.getElementById('queueItems');
+            queueContainer.innerHTML = '';
+
+            queue.forEach(item => {
+                const queueItem = document.createElement('div');
+                queueItem.className = 'queue-item';
+                
+                const severityIndicator = document.createElement('div');
+                severityIndicator.className = `severity-indicator severity-${item.severity.toLowerCase()}`;
+                
+                const itemContent = document.createElement('div');
+                itemContent.innerHTML = `
+                    <strong>${item.title}</strong>
+                    <p>${item.description}</p>
+                `;
+
+                queueItem.appendChild(severityIndicator);
+                queueItem.appendChild(itemContent);
+                queueContainer.appendChild(queueItem);
+            });
+        }
+
+        // Load dashboard data on page load
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+
+        async function updateRedTeamSection() {
+            // Fetch latest red team summary (assume endpoint or static file)
+            try {
+                const summaryRes = await fetch('../red-team/reports/latest-summary.md');
+                const summaryText = await summaryRes.text();
+                // Parse RT-RI and fail trends from summary (simple regex for demo)
+                const rtRiMatch = summaryText.match(/Red Team Risk Index \(RT-RI\): ([^\n]+)/);
+                const rtRi = rtRiMatch ? rtRiMatch[1].trim() : '--';
+                document.getElementById('rtRi').textContent = rtRi;
+                // Trend
+                const trendMatch = summaryText.match(/Trend:\s*([^\n]+)/);
+                const trend = trendMatch ? trendMatch[1].trim() : '--';
+                document.getElementById('rtRiTrend').textContent = trend;
+                // Link
+                document.getElementById('rtRiReportLink').href = '../red-team/reports/latest-summary.md';
+                // Fail trends (extract table rows)
+                const failRows = summaryText.match(/\| (hall|inj|fall)[^\n]+/g) || [];
+                let failHtml = '<table><tr><th>Test ID</th><th>Type</th><th>Severity</th><th>Description</th><th>Failure Reason</th></tr>';
+                for (const row of failRows) failHtml += `<tr>${row.split('|').slice(1,6).map(cell => `<td>${cell.trim()}</td>`).join('')}</tr>`;
+                failHtml += '</table>';
+                document.getElementById('rtFailTrends').innerHTML = failRows.length ? failHtml : 'No recent failures.';
+            } catch (e) {
+                document.getElementById('rtFailTrends').textContent = 'Unable to load Red Team data.';
+            }
+        }
+    </script>
+</body>
+</html> 

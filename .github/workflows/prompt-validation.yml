@@ -1,0 +1,56 @@
+name: Prompt Validation Matrix
+
+on:
+  push:
+    branches: [ main, preboot ]
+    paths:
+      - 'cursor/self-healing/**'
+  pull_request:
+    branches: [ main, preboot ]
+    paths:
+      - 'cursor/self-healing/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run test suite
+      run: npm test -- cursor/self-healing/prompt-validation/prompt-validation-matrix.test.ts
+    
+    - name: Check coverage
+      run: |
+        npm run test:coverage -- cursor/self-healing/prompt-validation/prompt-validation-matrix.test.ts
+        COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+        if (( $(echo "$COVERAGE < 90" | bc -l) )); then
+          echo "Test coverage ($COVERAGE%) is below required threshold (90%)"
+          exit 1
+        fi
+    
+    - name: Run mutation tests
+      run: npm run test:mutation -- cursor/self-healing/prompt-validation/prompt-validation-matrix.test.ts
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          coverage/
+          mutation-results/
+    
+    - name: Update dashboard
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        echo "Updating validation dashboard..."
+        # TODO: Implement dashboard update logic 

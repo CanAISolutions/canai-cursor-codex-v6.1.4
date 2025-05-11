@@ -1,44 +1,73 @@
-// 🔒 Trust Score Calculator
-// Purpose: Calculate and validate trust scores for system events
-// Codex-Enforced • Phase 2.5 • Trust Score: 4.2
+/**
+ * @file cursor/validators/trust-score.ts
+ * @description Trust score calculator for measuring system trustworthiness
+ * @version 6.2.1
+ */
 
-export interface TrustScoreResult {
-  score: number;
-  factors: {
-    [key: string]: number;
-  };
-  threshold: number;
-  passed: boolean;
+import { EventBus } from '../../event-bus/eventBus';
+
+interface TrustMetrics {
+  consistency: number;
+  reliability: number;
+  transparency: number;
+  safety: number;
 }
 
 export class TrustScoreCalculator {
+  private eventBus: EventBus;
   private readonly TRUST_THRESHOLD = 4.2;
+  private readonly METRICS_WEIGHTS = {
+    consistency: 0.3,
+    reliability: 0.3,
+    transparency: 0.2,
+    safety: 0.2
+  };
 
-  async calculate(event: any): Promise<number> {
-    // Implement trust score calculation
-    // This is a placeholder that returns a valid score
-    return 4.5;
+  constructor() {
+    this.eventBus = EventBus.getInstance();
+    this.setupEventListeners();
   }
 
-  private calculateRiskFactor(event: any): number {
-    // Implement risk factor calculation
-    // This is a placeholder
-    return 0.1;
+  private setupEventListeners(): void {
+    this.eventBus.on('trust.metrics.update', this.handleMetricsUpdate.bind(this));
   }
 
-  private calculateReputationFactor(event: any): number {
-    // Implement reputation factor calculation
-    // This is a placeholder
-    return 0.9;
+  public async calculateTrustScore(): Promise<number> {
+    const metrics = await this.getCurrentMetrics();
+    return this.computeTrustScore(metrics);
   }
 
-  private calculateHistoryFactor(event: any): number {
-    // Implement history factor calculation
-    // This is a placeholder
-    return 0.8;
+  private computeTrustScore(metrics: TrustMetrics): number {
+    const weightedSum = Object.entries(metrics).reduce((sum, [key, value]) => {
+      return sum + (value * this.METRICS_WEIGHTS[key as keyof TrustMetrics]);
+    }, 0);
+
+    return Math.min(5, Math.max(0, weightedSum));
   }
 
-  private validateThreshold(score: number): boolean {
+  private async getCurrentMetrics(): Promise<TrustMetrics> {
+    // Implementation would fetch current metrics from storage
+    return {
+      consistency: 4.5,
+      reliability: 4.3,
+      transparency: 4.0,
+      safety: 4.8
+    };
+  }
+
+  private async handleMetricsUpdate(data: any): Promise<void> {
+    const { metrics } = data;
+    const trustScore = this.computeTrustScore(metrics);
+
+    if (trustScore < this.TRUST_THRESHOLD) {
+      await this.eventBus.emit('trust.threshold.breach', {
+        score: trustScore,
+        threshold: this.TRUST_THRESHOLD
+      });
+    }
+  }
+
+  public async validateTrustScore(score: number): Promise<boolean> {
     return score >= this.TRUST_THRESHOLD;
   }
 } 

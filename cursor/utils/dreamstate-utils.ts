@@ -278,4 +278,82 @@ function calculateConfidence(vadScores: { valence: number; arousal: number; domi
  */
 function normalizeScore(score: number): number {
   return Math.max(0, Math.min(1, score));
+}
+
+/**
+ * dreamstate-utils.ts
+ * 
+ * Purpose: Provide utilities for calculating emotional resonance and dream state metrics.
+ * Used by: Self-Refine Trigger Layer, Emotional Intelligence Engine
+ */
+
+export interface EmotionalResonanceResult {
+  score: number;
+  factors: {
+    tone: number;
+    empathy: number;
+    clarity: number;
+  };
+}
+
+/**
+ * Calculate emotional resonance score for a given input
+ */
+export function calculateEmotionalResonanceScore(input: string): EmotionalResonanceResult {
+  // Basic implementation - can be enhanced with more sophisticated analysis
+  const toneScore = calculateToneScore(input);
+  const empathyScore = calculateEmpathyScore(input);
+  const clarityScore = calculateClarityScore(input);
+
+  const overallScore = (toneScore + empathyScore + clarityScore) / 3;
+
+  return {
+    score: overallScore,
+    factors: {
+      tone: toneScore,
+      empathy: empathyScore,
+      clarity: clarityScore
+    }
+  };
+}
+
+function calculateToneScore(input: string): number {
+  // Simple tone analysis based on positive/negative word presence
+  const positiveWords = ['great', 'excellent', 'wonderful', 'helpful', 'clear'];
+  const negativeWords = ['bad', 'poor', 'unclear', 'confusing', 'difficult'];
+
+  const words = input.toLowerCase().split(/\s+/);
+  const positiveCount = words.filter(w => positiveWords.includes(w)).length;
+  const negativeCount = words.filter(w => negativeWords.includes(w)).length;
+
+  return Math.max(0, Math.min(1, (positiveCount - negativeCount + 5) / 10));
+}
+
+function calculateEmpathyScore(input: string): number {
+  // Simple empathy analysis based on empathetic phrase presence
+  const empatheticPhrases = [
+    'i understand',
+    'i see',
+    'let me help',
+    'i can assist',
+    'i appreciate'
+  ];
+
+  const lowerInput = input.toLowerCase();
+  const matches = empatheticPhrases.filter(phrase => lowerInput.includes(phrase)).length;
+
+  return Math.max(0, Math.min(1, matches / empatheticPhrases.length));
+}
+
+function calculateClarityScore(input: string): number {
+  // Simple clarity analysis based on structure and formatting
+  const hasStructure = /#{1,3}\s/.test(input);
+  const hasLists = /[-*]\s/.test(input);
+  const hasCodeBlocks = /```/.test(input);
+  const hasParagraphs = /\n\n/.test(input);
+
+  const structureScore = [hasStructure, hasLists, hasCodeBlocks, hasParagraphs]
+    .filter(Boolean).length / 4;
+
+  return structureScore;
 } 
