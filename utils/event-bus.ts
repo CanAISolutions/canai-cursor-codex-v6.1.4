@@ -1,30 +1,60 @@
 /**
- * EventBus - Provides a simple event emitter/subscriber system
- * Allows components to communicate through events
+ * Event Bus for handling system-wide events
+ * 
+ * Purpose: Provides a centralized event handling system for cross-component
+ *          communication and state management.
+ * 
+ * TAP-Status: Locked
+ * Codex: v2.7.8
+ * Trust Score: 4.2
  */
+
+type EventHandler = (data: any) => void;
+
 export class EventBus {
-  private listeners: Map<string, Set<Function>>;
+  private handlers: Map<string, EventHandler[]>;
 
   constructor() {
-    this.listeners = new Map();
+    this.handlers = new Map();
   }
 
   /**
-   * Emits an event with optional data
-   * @param event The event name to emit
-   * @param data Optional data to pass with the event
+   * Subscribe to an event
+   * @param event Event name to subscribe to
+   * @param handler Function to call when event is emitted
    */
-  public emit(event: string, data?: any): void {
-    const eventListeners = this.listeners.get(event);
-    if (eventListeners) {
-      eventListeners.forEach(listener => {
-        try {
-          listener(data);
-        } catch (error) {
-          console.error(`Error in event listener for ${event}:`, error);
-        }
-      });
+  subscribe(event: string, handler: EventHandler): void {
+    if (!this.handlers.has(event)) {
+      this.handlers.set(event, []);
     }
+    this.handlers.get(event)!.push(handler);
+  }
+
+  /**
+   * Unsubscribe from an event
+   * @param event Event name to unsubscribe from
+   * @param handler Handler function to remove
+   */
+  unsubscribe(event: string, handler: EventHandler): void {
+    if (!this.handlers.has(event)) return;
+    
+    const handlers = this.handlers.get(event)!;
+    const index = handlers.indexOf(handler);
+    if (index !== -1) {
+      handlers.splice(index, 1);
+    }
+  }
+
+  /**
+   * Emit an event
+   * @param event Event name to emit
+   * @param data Data to pass to handlers
+   */
+  emit(event: string, data: any): void {
+    if (!this.handlers.has(event)) return;
+    
+    const handlers = this.handlers.get(event)!;
+    handlers.forEach(handler => handler(data));
   }
 
   /**
@@ -34,19 +64,16 @@ export class EventBus {
    * @returns A function to unsubscribe from the event
    */
   public on(event: string, listener: Function): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
+    if (!this.handlers.has(event)) {
+      this.handlers.set(event, []);
     }
     
-    const eventListeners = this.listeners.get(event)!;
-    eventListeners.add(listener);
+    const eventHandlers = this.handlers.get(event)!;
+    eventHandlers.push(listener as EventHandler);
 
     // Return unsubscribe function
     return () => {
-      eventListeners.delete(listener);
-      if (eventListeners.size === 0) {
-        this.listeners.delete(event);
-      }
+      this.unsubscribe(event, listener as EventHandler);
     };
   }
 
@@ -56,12 +83,12 @@ export class EventBus {
    * @param listener The callback function to remove
    */
   public off(event: string, listener: Function): void {
-    const eventListeners = this.listeners.get(event);
-    if (eventListeners) {
-      eventListeners.delete(listener);
-      if (eventListeners.size === 0) {
-        this.listeners.delete(event);
-      }
+    if (!this.handlers.has(event)) return;
+    
+    const eventHandlers = this.handlers.get(event)!;
+    const index = eventHandlers.indexOf(listener as EventHandler);
+    if (index !== -1) {
+      eventHandlers.splice(index, 1);
     }
   }
 
@@ -85,7 +112,7 @@ export class EventBus {
    * @returns The number of listeners
    */
   public listenerCount(event: string): number {
-    return this.listeners.get(event)?.size || 0;
+    return this.handlers.get(event)?.length || 0;
   }
 
   /**
@@ -93,7 +120,7 @@ export class EventBus {
    * @param event The event name to clear
    */
   public removeAllListeners(event: string): void {
-    this.listeners.delete(event);
+    this.handlers.delete(event);
   }
 
   /**
@@ -101,6 +128,6 @@ export class EventBus {
    * @returns Array of event names
    */
   public eventNames(): string[] {
-    return Array.from(this.listeners.keys());
+    return Array.from(this.handlers.keys());
   }
 } 

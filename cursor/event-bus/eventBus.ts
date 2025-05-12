@@ -1,12 +1,11 @@
 /**
- * @TAP-Version v6.1.4
- * @Codex-Intent "Provide event bus for system-wide event handling"
- * @EmotionQA true
- * @FallbackReady true
- * @purpose Central event bus for system event handling
+ * Event Bus
+ * 
+ * Central event management system for CanAI's interaction layer.
+ * Handles event emission, subscription, and logging.
  */
 
-type EventHandler = (event: any) => void;
+type EventHandler = (data: any) => Promise<void>;
 
 interface EventSubscription {
   handler: EventHandler;
@@ -16,15 +15,21 @@ interface EventSubscription {
 export class EventBus {
   private static instance: EventBus;
   private handlers: Map<string, EventSubscription[]>;
+  private eventLog: Array<{
+    event: string;
+    data: any;
+    timestamp: string;
+  }>;
 
   private constructor() {
     this.handlers = new Map();
+    this.eventLog = [];
   }
 
   /**
-   * Gets the singleton instance of EventBus
+   * Get singleton instance
    */
-  public static getInstance(): EventBus {
+  static getInstance(): EventBus {
     if (!EventBus.instance) {
       EventBus.instance = new EventBus();
     }
@@ -32,88 +37,99 @@ export class EventBus {
   }
 
   /**
-   * Subscribes to an event
+   * Subscribe to an event
    */
-  public on(event: string, handler: EventHandler): void {
-    this.subscribe(event, handler, false);
+  on(event: string, handler: EventHandler): void {
+    this.addHandler(event, handler, false);
   }
 
   /**
-   * Subscribes to an event once
+   * Subscribe to an event once
    */
-  public once(event: string, handler: EventHandler): void {
-    this.subscribe(event, handler, true);
+  once(event: string, handler: EventHandler): void {
+    this.addHandler(event, handler, true);
   }
 
   /**
-   * Unsubscribes from an event
+   * Unsubscribe from an event
    */
-  public off(event: string, handler: EventHandler): void {
+  off(event: string, handler: EventHandler): void {
     const subscriptions = this.handlers.get(event);
-    if (!subscriptions) return;
-
-    const index = subscriptions.findIndex(sub => sub.handler === handler);
-    if (index !== -1) {
-      subscriptions.splice(index, 1);
-    }
-
-    if (subscriptions.length === 0) {
-      this.handlers.delete(event);
+    if (subscriptions) {
+      const index = subscriptions.findIndex(sub => sub.handler === handler);
+      if (index !== -1) {
+        subscriptions.splice(index, 1);
+      }
     }
   }
 
   /**
-   * Emits an event
+   * Emit an event
    */
-  public emit(event: string, data?: any): void {
-    const subscriptions = this.handlers.get(event);
-    if (!subscriptions) return;
+  async emit(event: string, data: any): Promise<void> {
+    // Log event
+    this.logEvent(event, data);
 
-    // Create a copy of the array to avoid issues with handlers modifying the array
-    const handlersToCall = [...subscriptions];
-
-    handlersToCall.forEach(subscription => {
+    // Get handlers
+    const subscriptions = this.handlers.get(event) || [];
+    
+    // Execute handlers
+    const promises = subscriptions.map(async (subscription) => {
       try {
-        subscription.handler(data);
-      } catch (error) {
+        await subscription.handler(data);
+        
+        // Remove one-time handlers
+        if (subscription.once) {
+          this.off(event, subscription.handler);
+        }
+      } catch (error: unknown) {
         console.error(`Error in event handler for ${event}:`, error);
       }
-
-      // Remove one-time handlers
-      if (subscription.once) {
-        this.off(event, subscription.handler);
-      }
     });
+
+    await Promise.all(promises);
   }
 
   /**
-   * Clears all event handlers
+   * Get event log
    */
-  public clear(): void {
-    this.handlers.clear();
+  getEventLog(): Array<{
+    event: string;
+    data: any;
+    timestamp: string;
+  }> {
+    return [...this.eventLog];
   }
 
   /**
-   * Gets the number of handlers for an event
+   * Clear event log
    */
-  public listenerCount(event: string): number {
-    const subscriptions = this.handlers.get(event);
-    return subscriptions ? subscriptions.length : 0;
+  clearEventLog(): void {
+    this.eventLog = [];
   }
 
   /**
-   * Gets all registered event names
+   * Add event handler
    */
-  public eventNames(): string[] {
-    return Array.from(this.handlers.keys());
-  }
-
-  private subscribe(event: string, handler: EventHandler, once: boolean): void {
-    if (!this.handlers.has(event)) {
-      this.handlers.set(event, []);
-    }
-
-    const subscriptions = this.handlers.get(event)!;
+  private addHandler(event: string, handler: EventHandler, once: boolean): void {
+    const subscriptions = this.handlers.get(event) || [];
     subscriptions.push({ handler, once });
+    this.handlers.set(event, subscriptions);
+  }
+
+  /**
+   * Log event
+   */
+  private logEvent(event: string, data: any): void {
+    this.eventLog.push({
+      event,
+      data,
+      timestamp: new Date().toISOString()
+    });
+
+    // Keep log size manageable
+    if (this.eventLog.length > 1000) {
+      this.eventLog = this.eventLog.slice(-1000);
+    }
   }
 } 

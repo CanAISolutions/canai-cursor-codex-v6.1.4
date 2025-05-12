@@ -90,7 +90,50 @@ interface SlackMessage {
 
 interface NotionPage {
   parent: { database_id: string };
-  properties: Record<string, any>;
+  properties: {
+    Title: { title: { text: { content: string } }[] };
+    Status: { select: { name: string } };
+    'Total Prompts': { number: number };
+    'Passing Prompts': { number: number };
+    'Average Coverage': { number: number };
+    'Critical Issues': { number: number };
+    'Health Score': { number: number };
+    'Score Trend': { rich_text: { text: { content: string } }[] };
+    'Delta Score': { number: number };
+    'Coverage Score': { number: number };
+    'Persona Score': { number: number };
+    'Severity': { select: { name: string } };
+    'Prompt Type': { select: { name: string } };
+    'Timestamp': { date: { start: string } };
+    'Trend Sparkline': { rich_text: { text: { content: string } }[] };
+  };
+}
+
+interface AlertThreshold {
+  score: number;
+  dropThreshold: number;
+  frequency: number;
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface UsageMetrics {
+  sessionCount: number;
+  failureCount: number;
+  lastFailure: string;
+  averageResponseTime: number;
+}
+
+interface NotionAlertPage {
+  parent: { database_id: string };
+  properties: {
+    Title: { title: { text: { content: string } }[] };
+    Status: { select: { name: string } };
+    'Alert Type': { select: { name: string } };
+    'Severity': { select: { name: string } };
+    'Current Score': { number: number };
+    'Change': { number: number };
+    'Timestamp': { date: { start: string } };
+  };
 }
 
 export class PromptHealthDashboard {
@@ -128,6 +171,40 @@ export class PromptHealthDashboard {
     delta: 0.4,
     coverage: 0.3,
     persona: 0.3
+  };
+
+  private readonly USAGE_THRESHOLDS: Record<string, AlertThreshold> = {
+    business_plan: {
+      score: 0.85,
+      dropThreshold: 0.15,
+      frequency: 10,
+      priority: 'high'
+    },
+    site_audit: {
+      score: 0.80,
+      dropThreshold: 0.20,
+      frequency: 20,
+      priority: 'medium'
+    },
+    social_content: {
+      score: 0.75,
+      dropThreshold: 0.25,
+      frequency: 50,
+      priority: 'low'
+    }
+  };
+
+  private readonly HEALTH_SCORE_ALERTS = {
+    critical: {
+      threshold: 0.70,
+      dropThreshold: 0.20,
+      message: '🚨 Critical health score alert'
+    },
+    warning: {
+      threshold: 0.80,
+      dropThreshold: 0.15,
+      message: '⚠️ Health score warning'
+    }
   };
 
   constructor(eventBus: EventBus) {
@@ -285,72 +362,24 @@ export class PromptHealthDashboard {
    * Calculate trends with alerts
    */
   private async calculateTrends(promptPath: string): Promise<{
-    trends: {
-      deltaTrend: 'improving' | 'stable' | 'regressing';
-      personaTrend: 'improving' | 'stable' | 'regressing';
-      testTrend: 'improving' | 'stable' | 'regressing';
-    };
-    alerts: TrendAlert[];
+    deltaTrend: 'improving' | 'stable' | 'regressing';
+    personaTrend: 'improving' | 'stable' | 'regressing';
+    testTrend: 'improving' | 'stable' | 'regressing';
   }> {
-    const alerts: TrendAlert[] = [];
     const currentMetrics = await this.getPromptMetrics(promptPath);
     const previousMetrics = await this.getPreviousMetrics(promptPath);
     
-    // Calculate delta trend
-    const deltaChange = currentMetrics.metrics.lastDelta - previousMetrics.metrics.lastDelta;
-    if (Math.abs(deltaChange) >= this.DELTA_ALERT_THRESHOLD) {
-      alerts.push({
-        type: 'delta',
-        severity: deltaChange < 0 ? 'critical' : 'warning',
-        message: `Delta ${deltaChange < 0 ? 'dropped' : 'increased'} by ${Math.abs(deltaChange * 100).toFixed(1)}%`,
-        metric: {
-          current: currentMetrics.metrics.lastDelta,
-          previous: previousMetrics.metrics.lastDelta,
-          change: deltaChange
-        },
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Calculate persona trend
-    const personaChange = currentMetrics.metrics.personaConfidence - previousMetrics.metrics.personaConfidence;
-    if (Math.abs(personaChange) >= this.PERSONA_ALERT_THRESHOLD) {
-      alerts.push({
-        type: 'persona',
-        severity: personaChange < 0 ? 'critical' : 'warning',
-        message: `Persona confidence ${personaChange < 0 ? 'dropped' : 'increased'} by ${Math.abs(personaChange * 100).toFixed(1)}%`,
-        metric: {
-          current: currentMetrics.metrics.personaConfidence,
-          previous: previousMetrics.metrics.personaConfidence,
-          change: personaChange
-        },
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Calculate test trend
-    const coverageChange = currentMetrics.testStatus.coverage - previousMetrics.testStatus.coverage;
-    if (Math.abs(coverageChange) >= this.COVERAGE_ALERT_THRESHOLD) {
-      alerts.push({
-        type: 'coverage',
-        severity: coverageChange < 0 ? 'critical' : 'warning',
-        message: `Test coverage ${coverageChange < 0 ? 'dropped' : 'increased'} by ${Math.abs(coverageChange).toFixed(1)}%`,
-        metric: {
-          current: currentMetrics.testStatus.coverage,
-          previous: previousMetrics.testStatus.coverage,
-          change: coverageChange
-        },
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    const trends = {
-      deltaTrend: this.getTrendDirection(deltaChange),
-      personaTrend: this.getTrendDirection(personaChange),
-      testTrend: this.getTrendDirection(coverageChange)
+    return {
+      deltaTrend: this.getTrendDirection(
+        currentMetrics.metrics.lastDelta - previousMetrics.metrics.lastDelta
+      ),
+      personaTrend: this.getTrendDirection(
+        currentMetrics.metrics.personaConfidence - previousMetrics.metrics.personaConfidence
+      ),
+      testTrend: this.getTrendDirection(
+        currentMetrics.testStatus.coverage - previousMetrics.testStatus.coverage
+      )
     };
-    
-    return { trends, alerts };
   }
 
   /**
@@ -518,29 +547,22 @@ export class PromptHealthDashboard {
   /**
    * Emit to Slack
    */
-  private async emitToSlack(channel: string, markdown: string): Promise<void> {
+  private async emitToSlack(channel: string, message: string): Promise<void> {
     if (!this.SLACK_TOKEN) {
       console.error('Slack token not configured');
       return;
     }
 
     try {
-      const message: SlackMessage = {
+      const slackMessage: SlackMessage = {
         channel,
-        text: 'Weekly Prompt Health Digest',
+        text: message,
         blocks: [
-          {
-            type: 'header',
-            text: {
-              type: 'plain_text',
-              text: '📊 Weekly Prompt Health Digest'
-            }
-          },
           {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: markdown
+              text: message
             }
           }
         ]
@@ -552,7 +574,7 @@ export class PromptHealthDashboard {
           'Authorization': `Bearer ${this.SLACK_TOKEN}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(message)
+        body: JSON.stringify(slackMessage)
       });
 
       if (!response.ok) {
@@ -579,6 +601,10 @@ export class PromptHealthDashboard {
     }
 
     try {
+      const healthScore = this.calculateHealthScore(digest.promptHealth[0]);
+      const trendSparkline = await this.generateTrendSparkline(digest.promptHealth[0]);
+      const severity = this.calculateSeverity(healthScore.overall, digest.promptHealth[0]);
+
       const page: NotionPage = {
         parent: { database_id: this.NOTION_DATABASE_ID },
         properties: {
@@ -609,7 +635,49 @@ export class PromptHealthDashboard {
             number: digest.summary.criticalIssues
           },
           'Health Score': {
-            number: this.calculateHealthScore(digest.promptHealth[0]).overall
+            number: healthScore.overall
+          },
+          'Score Trend': {
+            rich_text: [
+              {
+                text: {
+                  content: this.getTrendEmoji(healthScore.trend)
+                }
+              }
+            ]
+          },
+          'Delta Score': {
+            number: healthScore.components.delta
+          },
+          'Coverage Score': {
+            number: healthScore.components.coverage
+          },
+          'Persona Score': {
+            number: healthScore.components.persona
+          },
+          'Severity': {
+            select: {
+              name: severity
+            }
+          },
+          'Prompt Type': {
+            select: {
+              name: this.getPromptType(digest.promptHealth[0].promptPath)
+            }
+          },
+          'Timestamp': {
+            date: {
+              start: digest.timestamp
+            }
+          },
+          'Trend Sparkline': {
+            rich_text: [
+              {
+                text: {
+                  content: trendSparkline
+                }
+              }
+            ]
           }
         }
       };
@@ -636,6 +704,46 @@ export class PromptHealthDashboard {
       console.error('Failed to emit to Notion:', error);
       throw error;
     }
+  }
+
+  private async generateTrendSparkline(metrics: PromptHealthMetrics): Promise<string> {
+    const sparklineChars = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+    const history = await this.getScoreHistory(metrics.promptPath);
+    const normalizedScores = this.normalizeScores(history);
+    
+    return normalizedScores
+      .map(score => sparklineChars[Math.floor(score * (sparklineChars.length - 1))])
+      .join('');
+  }
+
+  private normalizeScores(scores: number[]): number[] {
+    const min = Math.min(...scores);
+    const max = Math.max(...scores);
+    const range = max - min;
+    
+    return scores.map(score => (score - min) / range);
+  }
+
+  private getTrendEmoji(trend: 'improving' | 'stable' | 'regressing'): string {
+    switch (trend) {
+      case 'improving': return '📈';
+      case 'stable': return '➡️';
+      case 'regressing': return '📉';
+    }
+  }
+
+  private calculateSeverity(score: number, metrics: PromptHealthMetrics): string {
+    if (score < 0.7) return 'Critical';
+    if (score < 0.8) return 'High';
+    if (score < 0.9) return 'Medium';
+    return 'Low';
+  }
+
+  private getPromptType(promptPath: string): string {
+    if (promptPath.includes('business_plan')) return 'Business Plan';
+    if (promptPath.includes('site_audit')) return 'Site Audit';
+    if (promptPath.includes('social_content')) return 'Social Content';
+    return 'Other';
   }
 
   /**
@@ -748,5 +856,223 @@ ${digest.promptHealth.map(metric => `
    */
   private async emitDashboardUpdate(validation: any): Promise<void> {
     // In real implementation, this would update dashboard
+  }
+
+  private async checkAlertThresholds(metrics: PromptHealthMetrics, usage: UsageMetrics): Promise<void> {
+    const promptType = this.getPromptType(metrics.promptPath);
+    const threshold = this.USAGE_THRESHOLDS[promptType.toLowerCase()];
+    const healthScore = this.calculateHealthScore(metrics);
+
+    // Check usage-based thresholds
+    if (usage.sessionCount >= threshold.frequency) {
+      const failureRate = usage.failureCount / usage.sessionCount;
+      if (failureRate > (1 - threshold.score)) {
+        await this.emitAlert({
+          type: 'usage',
+          severity: threshold.priority,
+          message: `High failure rate (${(failureRate * 100).toFixed(1)}%) for ${promptType} prompts`,
+          metric: {
+            current: failureRate,
+            threshold: 1 - threshold.score,
+            change: failureRate - (1 - threshold.score)
+          },
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    // Check health score alerts
+    if (healthScore.overall < this.HEALTH_SCORE_ALERTS.critical.threshold) {
+      await this.emitAlert({
+        type: 'health',
+        severity: 'critical',
+        message: this.HEALTH_SCORE_ALERTS.critical.message,
+        metric: {
+          current: healthScore.overall,
+          threshold: this.HEALTH_SCORE_ALERTS.critical.threshold,
+          change: healthScore.overall - this.HEALTH_SCORE_ALERTS.critical.threshold
+        },
+        timestamp: new Date().toISOString()
+      });
+    } else if (healthScore.overall < this.HEALTH_SCORE_ALERTS.warning.threshold) {
+      await this.emitAlert({
+        type: 'health',
+        severity: 'warning',
+        message: this.HEALTH_SCORE_ALERTS.warning.message,
+        metric: {
+          current: healthScore.overall,
+          threshold: this.HEALTH_SCORE_ALERTS.warning.threshold,
+          change: healthScore.overall - this.HEALTH_SCORE_ALERTS.warning.threshold
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Check for significant drops
+    const previousScore = await this.getPreviousHealthScore(metrics.promptPath);
+    if (previousScore) {
+      const drop = previousScore - healthScore.overall;
+      if (drop > threshold.dropThreshold) {
+        await this.emitAlert({
+          type: 'drop',
+          severity: threshold.priority,
+          message: `Significant health score drop (${(drop * 100).toFixed(1)}%) for ${promptType} prompts`,
+          metric: {
+            current: healthScore.overall,
+            previous: previousScore,
+            change: drop
+          },
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+  }
+
+  private async emitAlert(alert: {
+    type: string;
+    severity: string;
+    message: string;
+    metric: {
+      current: number;
+      threshold?: number;
+      previous?: number;
+      change: number;
+    };
+    timestamp: string;
+  }): Promise<void> {
+    // Emit to Slack
+    const slackMessage = this.formatAlertMessage(alert);
+    await this.emitToSlack('#founder-alerts', slackMessage);
+
+    // Emit to Notion
+    await this.emitAlertToNotion(alert);
+
+    // Emit system log
+    await emitSystemLog('alert', {
+      path: '/dashboard/alerts.log.md',
+      content: JSON.stringify({
+        type: alert.type,
+        message: alert.message,
+        severity: alert.severity,
+        timestamp: alert.timestamp,
+        metric: alert.metric
+      }, null, 2)
+    });
+  }
+
+  private formatAlertMessage(alert: {
+    type: string;
+    severity: string;
+    message: string;
+    metric: {
+      current: number;
+      threshold?: number;
+      previous?: number;
+      change: number;
+    };
+    timestamp: string;
+  }): string {
+    return `
+${alert.message}
+Type: ${alert.type}
+Severity: ${alert.severity}
+Current Score: ${(alert.metric.current * 100).toFixed(1)}%
+${alert.metric.threshold ? `Threshold: ${(alert.metric.threshold * 100).toFixed(1)}%` : ''}
+${alert.metric.previous ? `Previous Score: ${(alert.metric.previous * 100).toFixed(1)}%` : ''}
+Change: ${(alert.metric.change * 100).toFixed(1)}%
+Timestamp: ${new Date(alert.timestamp).toLocaleString()}
+    `.trim();
+  }
+
+  private async emitAlertToNotion(alert: {
+    type: string;
+    severity: string;
+    message: string;
+    metric: {
+      current: number;
+      threshold?: number;
+      previous?: number;
+      change: number;
+    };
+    timestamp: string;
+  }): Promise<void> {
+    if (!this.NOTION_TOKEN || !this.NOTION_DATABASE_ID) return;
+
+    const page: NotionAlertPage = {
+      parent: { database_id: this.NOTION_DATABASE_ID },
+      properties: {
+        Title: {
+          title: [
+            {
+              text: {
+                content: alert.message
+              }
+            }
+          ]
+        },
+        Status: {
+          select: {
+            name: 'Active'
+          }
+        },
+        'Alert Type': {
+          select: {
+            name: alert.type
+          }
+        },
+        'Severity': {
+          select: {
+            name: alert.severity
+          }
+        },
+        'Current Score': {
+          number: alert.metric.current
+        },
+        'Change': {
+          number: alert.metric.change
+        },
+        'Timestamp': {
+          date: {
+            start: alert.timestamp
+          }
+        }
+      }
+    };
+
+    try {
+      await fetch('https://api.notion.com/v1/pages', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.NOTION_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28'
+        },
+        body: JSON.stringify(page)
+      });
+    } catch (error) {
+      console.error('Failed to emit alert to Notion:', error);
+    }
+  }
+
+  private async getScoreHistory(promptPath: string): Promise<number[]> {
+    try {
+      const historyFile = path.join(this.ARCHIVE_DIR, `${promptPath.replace(/\//g, '_')}_history.json`);
+      const content = await fs.readFile(historyFile, 'utf-8');
+      const history = JSON.parse(content);
+      return history.scores;
+    } catch (error) {
+      console.error('Failed to read score history:', error);
+      return [];
+    }
+  }
+
+  private async getPreviousHealthScore(promptPath: string): Promise<number | null> {
+    try {
+      const history = await this.getScoreHistory(promptPath);
+      return history.length > 0 ? history[history.length - 1] : null;
+    } catch (error) {
+      console.error('Failed to get previous health score:', error);
+      return null;
+    }
   }
 } 

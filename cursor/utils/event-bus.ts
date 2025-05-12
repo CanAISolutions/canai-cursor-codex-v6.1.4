@@ -1,67 +1,73 @@
 /**
- * utils/event-bus.ts
- * 
- * Purpose:
- * Provides a centralized event bus for system-wide event handling.
+ * EventBus utility for system-wide event handling
+ * @version 2.7.9
  */
 
-type EventCallback = (data: any) => void | Promise<void>;
+type EventHandler = (...args: any[]) => void;
 
-export class EventBus {
-  private handlers: Map<string, Set<EventCallback>>;
+class EventBusClass {
+  private handlers: Map<string, EventHandler[]>;
 
   constructor() {
     this.handlers = new Map();
   }
 
   /**
-   * Register an event handler
+   * Subscribe to an event
+   * @param event - The event to subscribe to
+   * @param handler - The handler function
    */
-  public on(eventType: string, handler: EventCallback): void {
-    if (!this.handlers.has(eventType)) {
-      this.handlers.set(eventType, new Set());
+  on(event: string, handler: EventHandler): void {
+    if (!this.handlers.has(event)) {
+      this.handlers.set(event, []);
     }
-    this.handlers.get(eventType)?.add(handler);
+    this.handlers.get(event)!.push(handler);
   }
 
   /**
-   * Remove an event handler
+   * Unsubscribe from an event
+   * @param event - The event to unsubscribe from
+   * @param handler - The handler function to remove
    */
-  public off(eventType: string, handler: EventCallback): void {
-    this.handlers.get(eventType)?.delete(handler);
-  }
-
-  /**
-   * Emit an event with data
-   */
-  public async emit(eventType: string, data: any): Promise<void> {
-    const handlers = this.handlers.get(eventType);
-    if (handlers) {
-      await Promise.all(
-        Array.from(handlers).map(handler => handler(data))
-      );
+  off(event: string, handler: EventHandler): void {
+    if (!this.handlers.has(event)) return;
+    const handlers = this.handlers.get(event)!;
+    const index = handlers.indexOf(handler);
+    if (index !== -1) {
+      handlers.splice(index, 1);
     }
   }
 
   /**
-   * Publish an event with priority
+   * Emit an event
+   * @param event - The event to emit
+   * @param args - The arguments to pass to handlers
    */
-  public async publish(event: {
-    type: string;
-    data: any;
-    timestamp: string;
-  }, priority: 'low' | 'medium' | 'high' = 'medium'): Promise<void> {
-    await this.emit(event.type, {
-      ...event.data,
-      priority,
-      timestamp: event.timestamp
+  emit(event: string, ...args: any[]): void {
+    if (!this.handlers.has(event)) return;
+    this.handlers.get(event)!.forEach(handler => {
+      try {
+        handler(...args);
+      } catch (error) {
+        console.error(`Error in event handler for ${event}:`, error);
+      }
     });
   }
 
   /**
-   * Clear all event handlers
+   * Clear all handlers for an event
+   * @param event - The event to clear
    */
-  public clear(): void {
+  clear(event: string): void {
+    this.handlers.delete(event);
+  }
+
+  /**
+   * Clear all events and handlers
+   */
+  clearAll(): void {
     this.handlers.clear();
   }
-} 
+}
+
+export const EventBus = new EventBusClass(); 

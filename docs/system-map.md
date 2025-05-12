@@ -9,6 +9,8 @@
 | Folder              | Purpose                                                                  | Audit Rules                                                                                      | Owner              |
 | ------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------ |
 | `/cursor/`          | Agents, engines, overlays, system logic. Primary AI orchestration layer. | All files must be exported, tested, and emotionally aligned. `/cursor/exports/` must be tracked. | Cursor + Cofounder |
+| `/cursor/intelligence/` | Mirror intelligence, pattern detection, drift tracking.              | Must maintain emotional alignment and trust score thresholds. All patterns must be logged.        | Cursor             |
+| `/cursor/stressbox/`   | Stress testing, validation, simulation suites.                        | Must cover all critical paths. All scenarios must be logged and versioned.                       | Cursor             |
 | `/api/`             | Core API endpoints (declarative, request-safe logic).                    | Must be typed, versioned, and fully covered.                                                     | Cofounder          |
 | `/api-router/`      | Custom routing/middleware. (Should merge with `/api`).                   | Flagged for merge.                                                                               | Cofounder          |
 | `/agents/`          | Legacy or modular agent logic.                                           | Must be tested and either merged into `/cursor/` or removed.                                     | Cursor             |
@@ -60,6 +62,8 @@
 
 * All `/scripts/` must have type annotations and CLI-safe usage.
 
+* System-critical coordination files (`mirror-replay-suite.ts`, `improvement-queue.ts`, `event-bus.ts`) must be tracked and versioned.
+
 > If Cursor or any AI agent cannot explain the purpose of a folder, it must halt execution and request clarification.
 
 ---
@@ -68,3 +72,45 @@ This map defines your authority, your limits, and your responsibility.
 If you are Cursor, you are now expected to enforce this structure and validate all assumptions against it.
 
 **Codex-enforced. Checkpoint-locked. Auditable. Real.**
+
+## Analytics Layer
+The analytics layer provides real-time intelligence and monitoring capabilities for the CanAI system.
+
+### Components
+- `/analytics/session.ts`: SessionAnalytics Engine
+  - Tracks emotional depth, trust score, override count, time-to-confirmation
+  - Supports time-series and cohort comparisons
+  - Emits analytics metadata through event bus
+
+- `/analytics/prompt-performance.ts`: PromptPerformance Tracker
+  - Aggregates prompt metrics (confirmation rate, revision rate, tone conflict rate)
+  - Exports monthly and rolling 30-day statistics
+  - Tracks delta confidence and performance trends
+
+- `/analytics/lifecycle-touchpoints.ts`: Lifecycle Touchpoint Metrics
+  - Tracks Spark usage, Vision Catcher triggers, reused enrichment
+  - Correlates lifecycle event timestamps with UX confirmation outcomes
+  - Monitors tone reuse and impact on system performance
+
+- `/analytics/feedback-heatmap.ts`: FeedbackDelta Heatmap
+  - Tracks field edits and confidence gaps across sessions
+  - Clusters edits by field, tone, and confidence gap
+  - Flags fields requiring Smart Default tuning
+
+- `/analytics/dashboard.ts`: Live Intelligence Dashboard
+  - Internal use only: Markdown or JSON output
+  - Flags promptTypes with trust dips, edit surges, or signal decay
+  - Summarizes top risk sessions and tone conflicts
+
+### Integration Points
+- Event Bus: All analytics components emit and listen for ANALYTICS_META_UPDATED events
+- Prompt Logs: Analytics metadata is stored in PromptLogs.analyticsMeta
+- System Health: Dashboard metrics feed into system health monitoring
+- Smart Defaults: Feedback heatmap data informs Smart Default tuning
+
+### Audit Rules
+1. All analytics components must emit ANALYTICS_META_UPDATED events
+2. Analytics data must be versioned and timestamped
+3. Risk levels must be calculated using standardized thresholds
+4. Dashboard exports must be in both Markdown and JSON formats
+5. All metrics must be normalized to [0,1] range where applicable
