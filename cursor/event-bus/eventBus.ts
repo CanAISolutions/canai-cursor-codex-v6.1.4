@@ -3,6 +3,15 @@
  * 
  * Central event management system for CanAI's interaction layer.
  * Handles event emission, subscription, and logging.
+ *
+ * Event Payload Structure:
+ * {
+ *   event: string; // Event name
+ *   data: any; // Event payload (should include source, version, etc.)
+ *   source: string; // Source module or identifier
+ *   version: string; // Event version (e.g., 'v1.0')
+ *   timestamp: string; // ISO timestamp
+ * }
  */
 
 type EventHandler = (data: any) => Promise<void>;
@@ -10,6 +19,13 @@ type EventHandler = (data: any) => Promise<void>;
 interface EventSubscription {
   handler: EventHandler;
   once: boolean;
+}
+
+// Helper to safely emit system logs if available
+function emitSystemLogIfAvailable(type: string, data: any) {
+  if (typeof global !== 'undefined' && typeof (global as any).emitSystemLog === 'function') {
+    (global as any).emitSystemLog(type, data);
+  }
 }
 
 export class EventBus {
@@ -20,6 +36,7 @@ export class EventBus {
     data: any;
     timestamp: string;
   }>;
+  private static EVENT_VERSION = 'v1.0';
 
   private constructor() {
     this.handlers = new Map();
@@ -65,28 +82,67 @@ export class EventBus {
 
   /**
    * Emit an event
+   * @param event Event name
+   * @param data Event payload (should include source)
+   * @param source Source module or identifier
    */
-  async emit(event: string, data: any): Promise<void> {
+  async emit(event: string, data: any, source: string = 'unknown'): Promise<void> {
+    // Compose event payload
+    const payload = {
+      ...data,
+      source,
+      version: EventBus.EVENT_VERSION,
+      timestamp: new Date().toISOString(),
+    };
     // Log event
-    this.logEvent(event, data);
+    this.logEvent(event, payload);
 
     // Get handlers
     const subscriptions = this.handlers.get(event) || [];
-    
-    // Execute handlers
+    if (subscriptions.length === 0) {
+      // Log broken pipe scenario to system-intel (if available)
+      emitSystemLogIfAvailable('event-bus-broken-pipe', {
+        event,
+        source,
+        timestamp: payload.timestamp,
+      });
+    }
+    // Execute handlers with retry logic
     const promises = subscriptions.map(async (subscription) => {
-      try {
-        await subscription.handler(data);
-        
-        // Remove one-time handlers
-        if (subscription.once) {
-          this.off(event, subscription.handler);
+      let attempts = 0;
+      let success = false;
+      let lastError: unknown = null;
+      while (attempts < 2 && !success) {
+        try {
+          await subscription.handler(payload);
+          success = true;
+          // Remove one-time handlers
+          if (subscription.once) {
+            this.off(event, subscription.handler);
+          }
+        } catch (error: unknown) {
+          attempts++;
+          lastError = error;
+          // Log handler error to system-intel (if available)
+          emitSystemLogIfAvailable('event-bus-handler-error', {
+            event,
+            source,
+            error: error instanceof Error ? error.message : String(error),
+            attempts,
+            timestamp: payload.timestamp,
+          });
         }
-      } catch (error: unknown) {
-        console.error(`Error in event handler for ${event}:`, error);
+      }
+      if (!success && lastError) {
+        // Final failure after retry
+        emitSystemLogIfAvailable('event-bus-handler-failed', {
+          event,
+          source,
+          error: lastError instanceof Error ? lastError.message : String(lastError),
+          timestamp: payload.timestamp,
+        });
       }
     });
-
     await Promise.all(promises);
   }
 
@@ -124,9 +180,8 @@ export class EventBus {
     this.eventLog.push({
       event,
       data,
-      timestamp: new Date().toISOString()
+      timestamp: data.timestamp || new Date().toISOString(),
     });
-
     // Keep log size manageable
     if (this.eventLog.length > 1000) {
       this.eventLog = this.eventLog.slice(-1000);

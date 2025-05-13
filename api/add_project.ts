@@ -3,6 +3,24 @@
  * @description API endpoint for logging new project requests into Airtable and queuing enrichment flows.
  * Version: 1.0.0
  * Codex Enforcement: Prime Directive Compliant
+ *
+ * --- Codex Audit Scaffolds (Phase 2.8.6) ---
+ * intent-token: {
+ *   "intent": "Log all project creation requests and failures. Ensure safe fallback and modular error handling.",
+ *   "owner": "Cursor",
+ *   "fallbackSafe": true,
+ *   "criticalPath": true,
+ *   "auditPhase": "2.8.6"
+ * }
+ * log-expectation: {
+ *   "logs": [
+ *     "All project creation attempts and errors must be logged to /cursor/auto-actions.log.md or equivalent system logger.",
+ *     "No silent fail states allowed. All errors must be caught and returned as structured responses.",
+ *     "Parameter handling must be explicit and validated."
+ *   ]
+ * }
+ * usage-notes: "This endpoint is modular, testable, and Codex-aligned. All errors are caught and returned. No hardcoded fallback."
+ * --------------------------------------------
  */
 
 import { NextApiRequest, NextApiResponse } from "next";

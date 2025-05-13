@@ -38,10 +38,13 @@ export class TrustScoreCalculator {
   }
 
   private computeTrustScore(metrics: TrustMetrics): number {
+    // Codex-safe fallback: trust score computation skipped due to invalid input
+    if (!metrics || typeof metrics !== 'object') {
+      return 0;
+    }
     const weightedSum = Object.entries(metrics).reduce((sum, [key, value]) => {
       return sum + (value * this.METRICS_WEIGHTS[key as keyof TrustMetrics]);
     }, 0);
-
     return Math.min(5, Math.max(0, weightedSum));
   }
 
