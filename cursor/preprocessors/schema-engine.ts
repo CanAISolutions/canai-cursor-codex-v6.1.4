@@ -15,6 +15,7 @@
 import { EmotionalValidator } from '../validators/emotional-validator';
 import { EventBus } from '../event-bus/eventBus';
 import { emitSystemLog } from '../utils/audit-utils';
+import { runtimeEnforceChecklistGuard } from '../runtime-hooks/enforce-checklist-guard';
 
 // Field-level metadata for structured intent
 export interface StructuredField<T> {
@@ -102,6 +103,21 @@ export class SchemaEngine {
       visionCatcherInput?: string;
     }
   ): Promise<StructuredIntent> {
+    // --- Codex Enforcement Guard (Schema Mutation Entry) ---
+    // This will eventually be mounted at the entry of all schema mutation flows (/flows/schema/),
+    // blocking any mutation if enforcement is not complete. Activation requires schema intelligence,
+    // session anchoring, and Codex contract registry lock.
+    const enforcementResult = await runtimeEnforceChecklistGuard({
+      flow: 'schema',
+      extra: { interpreted, opts }
+    });
+    if (enforcementResult.status === 'blocked') {
+      // Log Codex intent and halt mutation
+      throw new Error(
+        `[Codex Enforcement] Schema mutation blocked: ${enforcementResult.fallbackMessage}`
+      );
+    }
+
     const errors: string[] = [];
     const injectedFields: string[] = [];
     const allFields: string[] = [

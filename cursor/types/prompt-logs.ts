@@ -170,6 +170,22 @@ export interface PromptLogs {
       promptTypesAtRisk: string[];
     };
   };
+  /**
+   * Indicates if user consent was explicitly given for this prompt/session
+   */
+  consentGiven?: boolean;
+  /**
+   * Indicates if a deletion request was made for this prompt/session
+   */
+  deletionRequested?: boolean;
+  /**
+   * Type of compliance-related agent action (consent, deletion, or activity)
+   */
+  agentActionType?: 'consent' | 'deletion' | 'activity' | null;
+  /**
+   * Additional details about the compliance-related agent action
+   */
+  agentActionDetails?: string;
 }
 
 export interface FeedbackDelta {

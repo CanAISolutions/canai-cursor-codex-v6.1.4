@@ -60,7 +60,7 @@ interface StressReport {
 
 export class StressBox {
   private eventBus: EventBus;
-  private readonly REPORTS_DIR = path.join(process.cwd(), 'stressbox', 'reports', 'intent-mirror');
+  private readonly REPORTS_DIR = path.join(process.cwd(), 'cursor', 'stressbox', 'reports', 'intent-mirror');
   private readonly BASELINE_VERSION = 'v6.1.4';
 
   // Risk thresholds
@@ -442,11 +442,10 @@ export class StressBox {
    */
   private async saveReport(report: StressReport): Promise<void> {
     try {
-      // Create timestamp-based report file
-      const timestamp = new Date().toISOString();
-      const reportPath = path.join(this.REPORTS_DIR, `${report.promptType}-${timestamp}.json`);
+      // Use static filename for results
+      const reportPath = path.join(this.REPORTS_DIR, 'stressbox-results.json');
 
-      // Ensure the directory exists
+      // Ensure the directory exists (fix: create all parent directories)
       await fs.mkdir(path.dirname(reportPath), { recursive: true });
       
       // Write report
@@ -457,7 +456,7 @@ export class StressBox {
         path: reportPath,
         content: JSON.stringify({
           promptType: report.promptType,
-          timestamp,
+          timestamp: report.timestamp,
           summary: report.summary
         })
       });

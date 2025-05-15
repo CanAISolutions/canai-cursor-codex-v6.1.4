@@ -9,6 +9,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Configuration, OpenAIApi } from "openai";
 import { composePrompt } from "../prompts/composePrompt";
 import { enforceHttpMethod, safeTrim } from "../utils/requestHelpers";
+import { enforceChecklistStatusGuard } from '../cursor/monitoring/enforceChecklistStatusGuard';
 
 // Required environment variable
 const config = new Configuration({
@@ -26,7 +27,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     enforceHttpMethod(req, ["POST"]);
 
-    const { promptType, input } = req.body;
+    const { promptType, input, sessionId, userId } = req.body;
+
+    // --- Enforcement Guard ---
+    const enforcementResult = await enforceChecklistStatusGuard({
+      sessionId,
+      promptId: promptType,
+      userId,
+      flow: 'prompt_handler',
+      extra: { input }
+    });
+    if (enforcementResult.status === 'blocked') {
+      return res.status(423).json({
+        success: false,
+        error: {
+          code: 'ENFORCEMENT_BREACH',
+          message: enforcementResult.fallbackMessage,
+          failedItems: enforcementResult.failedItems,
+        },
+        enforcement: enforcementResult
+      });
+    }
 
     // --- Basic Input Validation ---
     const safePromptType = safeTrim(promptType);

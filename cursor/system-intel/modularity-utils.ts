@@ -16,7 +16,7 @@ export interface ModularityScoreReport {
     const signals = {
       overCoupledFiles: systemSnapshot.includes("import '../../../'"),
       exportBloat: systemSnapshot.split("export ").length > 15,
-      misalignedNames: systemSnapshot.includes("utils" && "fixer"),
+      misalignedNames: systemSnapshot.includes("utils") && systemSnapshot.includes("fixer"),
     };
   
     let score = 1;

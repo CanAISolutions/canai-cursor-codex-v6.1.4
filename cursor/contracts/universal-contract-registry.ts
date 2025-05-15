@@ -6,6 +6,10 @@
 // Future: Scales to 20+ platforms, governs all schema evolution
 
 import { EventBus } from '../event-bus/eventBus';
+import fs from 'fs';
+import path from 'path';
+
+const CONTRACT_REGISTRY_LOG = path.resolve(__dirname, '../system-intel/contract-registry-log.json');
 
 /**
  * ContractRegistryEntry — Canonical contract definition with versioning
@@ -61,6 +65,8 @@ export class UniversalContractRegistry {
     if (!entry.adapters || entry.adapters.length === 0) {
       entry.adapters = this.generateAdapterStubs(entry.platform);
     }
+    // Emit full registry state to contract-registry-log.json (append-safe, version-controlled)
+    this.emitRegistryState();
   }
 
   /**
@@ -107,6 +113,59 @@ export class UniversalContractRegistry {
         lastUpdated: Date.now(),
         adapters: []
       });
+    }
+  }
+
+  /**
+   * Emits the full contract registry state to /cursor/system-intel/contract-registry-log.json
+   */
+  private emitRegistryState(): void {
+    const state = Array.from(this.contracts.values());
+    let log: any[] = [];
+    try {
+      if (fs.existsSync(CONTRACT_REGISTRY_LOG)) {
+        log = JSON.parse(fs.readFileSync(CONTRACT_REGISTRY_LOG, 'utf-8'));
+      }
+    } catch (e) {
+      log = [];
+    }
+    log.push({
+      timestamp: new Date().toISOString(),
+      state,
+      version: 'v1.0.0',
+    });
+    fs.writeFileSync(CONTRACT_REGISTRY_LOG, JSON.stringify(log, null, 2));
+  }
+
+  /**
+   * CI diff check: compares the current registry log to a source-of-truth and throws if any contract/field/alias is missing or unregistered
+   * WHAT: Ensures all modules, fields, aliases, and contracts are fully registered and version-controlled
+   * WHY: Blocks unregistered contract/field changes in CI, enforcing Codex contract registry lock
+   * HOW: Throws on any diff, for CI enforcement
+   */
+  public static ciDiffCheck(sourceOfTruth: ContractRegistryEntry[]): void {
+    let log: any[] = [];
+    try {
+      if (fs.existsSync(CONTRACT_REGISTRY_LOG)) {
+        log = JSON.parse(fs.readFileSync(CONTRACT_REGISTRY_LOG, 'utf-8'));
+      }
+    } catch (e) {
+      log = [];
+    }
+    const latest = log.length > 0 ? log[log.length - 1].state : [];
+    const missing = sourceOfTruth.filter(truthEntry =>
+      !latest.some((regEntry: ContractRegistryEntry) =>
+        regEntry.id === truthEntry.id &&
+        regEntry.version === truthEntry.version &&
+        JSON.stringify(regEntry.schema) === JSON.stringify(truthEntry.schema)
+      )
+    );
+    if (missing.length > 0) {
+      throw new Error(
+        `[Codex CI] Contract registry diff detected. Missing or unregistered contracts/fields: ${missing
+          .map(e => e.id)
+          .join(', ')}. Registry lock enforcement failed.`
+      );
     }
   }
 }
