@@ -18,7 +18,13 @@ describe('HeartbeatReporter', () => {
   let evolutionTriggerManager: EvolutionTriggerManager;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = {
+      emit: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn(),
+      once: jest.fn(),
+      removeAllListeners: jest.fn(),
+    } as any;
     trustScorer = {
       adjustTrustScore: jest.fn().mockResolvedValue(undefined)
     } as any;

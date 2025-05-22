@@ -1,12 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { RaceMemoryMockV1, RaceEventLog } from './_mocks/race-memory-mock';
-
 /**
  * raceConditionResilience — Validates safe memory behavior under concurrent agent access
  * WHAT: Simulates two agents writing/reading shared memory with delay/randomness.
  * WHY: To guarantee no memory corruption, safe reconciliation, and Codex-aligned trust under race conditions.
  * HOW: Uses version-tagged mocks, logs all events, and asserts safe, deterministic outcomes.
  */
+import { RaceMemoryMockV1, RaceEventLog } from './_mocks/race-memory-mock';
+
 describe('raceConditionResilience (integration)', () => {
   it('should prevent memory corruption and reconcile final state deterministically [mock:v1]', async () => {
     // Arrange: Create a version-tagged race memory mock
@@ -65,7 +64,7 @@ describe('raceConditionResilience (integration)', () => {
     // Assert: Conflict is logged and resolved, user-facing message is Codex-aligned
     expect(eventLog.some(e => e.type === 'lock-conflict')).toBe(true);
     expect(eventLog.some(e => e.type === 'conflict-resolved')).toBe(true);
-    expect(eventLog.some(e => e.type === 'user-message' && /resolving your update/i.test(e.message))).toBe(true);
+    expect(eventLog.some(e => e.type === 'user-message' && typeof e.message === 'string' && /resolving your update/i.test(e.message || ''))).toBe(true);
   });
 
   it('should fail loudly if race-induced inconsistencies are not caught [mock:v1]', async () => {

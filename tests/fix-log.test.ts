@@ -6,6 +6,7 @@
 import { runCursorDebugAgent } from '../cursor/agents/debug/cursor-debug-agent';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { loadConfig } from 'config/loadConfig';
 
 const CONTEXT_DIR = '.canai-context';
 const FIX_LOG = 'fix.log';
@@ -37,7 +38,7 @@ describe('FixContext + Telemetry Logging', () => {
 
     const sample = JSON.parse(lines[lines.length - 1]);
     expect(sample).toHaveProperty('timestamp');
-    expect(sample).toHaveProperty('metricName');
+    expect(sample).toHaveProperty('event');
     expect(sample).toHaveProperty('traceId');
   });
 });

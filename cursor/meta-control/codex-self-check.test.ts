@@ -5,19 +5,19 @@
  * Tests the CodexSelfCheckBlock class for proper validation and correction.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../../utils/event-bus';
 import { AgentMemory } from '../agent-oversight/agent-memory';
 import { MetaControlMetricsTracker } from './metrics-tracker';
 import { CodexSelfCheckBlock } from './codex-self-check';
 
 describe('CodexSelfCheckBlock', () => {
-  let eventBus: EventBus;
+  let eventBus: any;
   let agentMemory: AgentMemory;
   let metricsTracker: MetaControlMetricsTracker;
   let codexSelfCheck: CodexSelfCheckBlock;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus;
     agentMemory = new AgentMemory(eventBus);
     metricsTracker = new MetaControlMetricsTracker(eventBus, agentMemory);
     codexSelfCheck = new CodexSelfCheckBlock(eventBus, agentMemory, metricsTracker);

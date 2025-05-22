@@ -6,7 +6,7 @@
  * Provides centralized event emission for registry operations.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { RegistryEvent, RegistryEventType } from './prompt-registry-schema';
 
 export class RegistryEventEmitter {
@@ -15,8 +15,8 @@ export class RegistryEventEmitter {
   /**
    * Emits a registry event
    */
-  emitEvent(type: RegistryEventType, data: Omit<RegistryEvent['data'], 'timestamp'>): void {
-    this.eventBus.emit(type, {
+  async emitEvent(type: RegistryEventType, data: Omit<RegistryEvent['data'], 'timestamp'>): Promise<void> {
+    await this.eventBus.emit(type, {
       type,
       data: {
         ...data,
@@ -28,8 +28,8 @@ export class RegistryEventEmitter {
   /**
    * Emits a prompt loaded event
    */
-  emitPromptLoaded(promptId: string, version: string, metadata: RegistryEvent['data']['metadata']): void {
-    this.emitEvent('registry.prompt.loaded', {
+  async emitPromptLoaded(promptId: string, version: string, metadata: RegistryEvent['data']['metadata']): Promise<void> {
+    await this.emitEvent('registry.prompt.loaded', {
       promptId,
       version,
       metadata
@@ -39,8 +39,8 @@ export class RegistryEventEmitter {
   /**
    * Emits a prompt invalid event
    */
-  emitPromptInvalid(promptId: string, reason: string): void {
-    this.emitEvent('registry.prompt.invalid', {
+  async emitPromptInvalid(promptId: string, reason: string): Promise<void> {
+    await this.emitEvent('registry.prompt.invalid', {
       promptId,
       reason
     });
@@ -49,8 +49,8 @@ export class RegistryEventEmitter {
   /**
    * Emits a prompt evolved event
    */
-  emitPromptEvolved(promptId: string, version: string, metadata: RegistryEvent['data']['metadata']): void {
-    this.emitEvent('registry.prompt.evolved', {
+  async emitPromptEvolved(promptId: string, version: string, metadata: RegistryEvent['data']['metadata']): Promise<void> {
+    await this.emitEvent('registry.prompt.evolved', {
       promptId,
       version,
       metadata
@@ -60,8 +60,8 @@ export class RegistryEventEmitter {
   /**
    * Emits a prompt deprecated event
    */
-  emitPromptDeprecated(promptId: string, reason: string): void {
-    this.emitEvent('registry.prompt.deprecated', {
+  async emitPromptDeprecated(promptId: string, reason: string): Promise<void> {
+    await this.emitEvent('registry.prompt.deprecated', {
       promptId,
       reason
     });

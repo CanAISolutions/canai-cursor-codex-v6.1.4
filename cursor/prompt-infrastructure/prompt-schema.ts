@@ -5,7 +5,7 @@
  * Defines core types and interfaces for prompt management, evolution, and scoring.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 
 // Core prompt types
 export type PromptType = 

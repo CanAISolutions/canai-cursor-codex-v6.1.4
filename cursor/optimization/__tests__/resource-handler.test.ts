@@ -14,10 +14,16 @@ import { SmartRevisionLoop } from '../../self-healing/smart-revision-loop';
 import { EnhancedVisionProcessor } from '../../vision-injection/enhanced-vision-processor';
 
 jest.mock('../resource-monitor');
-jest.mock('../performance-optimizer');
-jest.mock('../../agents/trust-scorer/evolution-tracker');
-jest.mock('../../self-healing/smart-revision-loop');
-jest.mock('../../vision-injection/enhanced-vision-processor');
+// jest.mock('../performance-optimizer');
+
+// Manual mock for PerformanceOptimizer to avoid constructor signature drift
+class MockPerformanceOptimizer {
+  clearAllCaches = jest.fn();
+  reduceCacheSize = jest.fn();
+  optimizeCacheSettings = jest.fn();
+  // Add any other methods used in the tests as needed
+  constructor(trustTracker: any, revisionLoop: any, visionProcessor: any) {}
+}
 
 describe('ResourceHandler', () => {
   let resourceHandler: ResourceHandler;
@@ -32,11 +38,12 @@ describe('ResourceHandler', () => {
     trustTracker = new TrustEvolutionTracker('test', 1) as jest.Mocked<TrustEvolutionTracker>;
     revisionLoop = new SmartRevisionLoop() as jest.Mocked<SmartRevisionLoop>;
     visionProcessor = new EnhancedVisionProcessor() as jest.Mocked<EnhancedVisionProcessor>;
-    performanceOptimizer = new PerformanceOptimizer(
+    // Use manual mock for PerformanceOptimizer to avoid constructor drift
+    performanceOptimizer = new MockPerformanceOptimizer(
       trustTracker,
       revisionLoop,
       visionProcessor
-    ) as jest.Mocked<PerformanceOptimizer>;
+    ) as unknown as jest.Mocked<PerformanceOptimizer>;
     resourceHandler = new ResourceHandler(resourceMonitor, performanceOptimizer);
   });
 

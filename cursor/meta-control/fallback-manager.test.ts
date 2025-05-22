@@ -13,7 +13,7 @@ import { MetaControlContext } from './meta-controller';
 
 // Mock interfaces for better type safety
 interface MockEventBus extends EventBus {
-  publish: jest.Mock;
+  emit: jest.Mock;
   on: jest.Mock;
 }
 
@@ -78,7 +78,7 @@ describe('FallbackManager', () => {
 
   beforeEach(() => {
     eventBus = {
-      publish: jest.fn(),
+      emit: jest.fn(),
       on: jest.fn()
     } as unknown as MockEventBus;
 
@@ -194,7 +194,7 @@ describe('FallbackManager', () => {
 
       await fallbackManager.executeFallbackPlan(plan);
 
-      expect(eventBus.publish).toHaveBeenCalledWith('recovery:attempted', expect.any(Object));
+      expect(eventBus.emit).toHaveBeenCalledWith('recovery:attempted', expect.any(Object));
       expect(agentMemory.updateTrustMetrics).toHaveBeenCalled();
     });
 
@@ -218,7 +218,7 @@ describe('FallbackManager', () => {
 
       await fallbackManager.executeFallbackPlan(plan);
 
-      expect(eventBus.publish).toHaveBeenCalledWith('degradation:started', expect.any(Object));
+      expect(eventBus.emit).toHaveBeenCalledWith('degradation:started', expect.any(Object));
     });
 
     it('should handle execution errors gracefully', async () => {
@@ -243,7 +243,7 @@ describe('FallbackManager', () => {
 
       await fallbackManager.executeFallbackPlan(plan);
 
-      expect(eventBus.publish).toHaveBeenCalledWith('fallback:error', expect.objectContaining({
+      expect(eventBus.emit).toHaveBeenCalledWith('fallback:error', expect.objectContaining({
         error: 'Test error'
       }));
     });
@@ -272,7 +272,7 @@ describe('FallbackManager', () => {
 
       await fallbackManager.executeFallbackPlan(plan);
 
-      expect(eventBus.publish).toHaveBeenCalledWith('fallback:error', expect.objectContaining({
+      expect(eventBus.emit).toHaveBeenCalledWith('fallback:error', expect.objectContaining({
         error: expect.stringContaining('Max attempts reached')
       }));
     });
@@ -311,9 +311,9 @@ describe('FallbackManager', () => {
 
       await fallbackManager.executeFallbackPlan(plan);
 
-      expect(eventBus.publish).toHaveBeenCalledWith('recovery:attempted', expect.any(Object));
-      expect(eventBus.publish).toHaveBeenCalledWith('degradation:started', expect.any(Object));
-      expect(eventBus.publish).toHaveBeenCalledWith('fallback:completed', expect.any(Object));
+      expect(eventBus.emit).toHaveBeenCalledWith('recovery:attempted', expect.any(Object));
+      expect(eventBus.emit).toHaveBeenCalledWith('degradation:started', expect.any(Object));
+      expect(eventBus.emit).toHaveBeenCalledWith('fallback:completed', expect.any(Object));
     });
   });
 
@@ -326,7 +326,7 @@ describe('FallbackManager', () => {
 
       await fallbackManager['handleFallbackTrigger'](event);
 
-      expect(eventBus.publish).toHaveBeenCalledWith('fallback:started', expect.any(Object));
+      expect(eventBus.emit).toHaveBeenCalledWith('fallback:started', expect.any(Object));
     });
 
     it('should handle recovery completion', async () => {
@@ -352,7 +352,7 @@ describe('FallbackManager', () => {
 
       await fallbackManager['handleRecoveryComplete'](event);
 
-      expect(eventBus.publish).toHaveBeenCalledWith('fallback:error', expect.objectContaining({
+      expect(eventBus.emit).toHaveBeenCalledWith('fallback:error', expect.objectContaining({
         error: 'Recovery failed'
       }));
     });

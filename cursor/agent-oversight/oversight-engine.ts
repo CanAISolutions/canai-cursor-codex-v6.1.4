@@ -6,7 +6,7 @@
  * Detects stagnation, overcorrection, and misuse of recovery logic.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { TrustScorer } from '../agents/trust-scorer/trust-scorer';
 import { EvolutionTriggerManager } from '../evolution-triggers/evolution-trigger';
 import { AgentMemory } from './agent-memory';

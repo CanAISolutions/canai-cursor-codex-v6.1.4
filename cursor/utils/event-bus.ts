@@ -5,7 +5,7 @@
 
 type EventHandler = (...args: any[]) => void;
 
-class EventBusClass {
+class EventBus {
   private handlers: Map<string, EventHandler[]>;
 
   constructor() {
@@ -70,4 +70,8 @@ class EventBusClass {
   }
 }
 
-export const EventBus = new EventBusClass(); 
+export const EventBus = new EventBus();
+
+export type EventBus = InstanceType<typeof EventBus>;
+export { EventBus };
+export default EventBus; 

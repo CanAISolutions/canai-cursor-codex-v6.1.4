@@ -6,7 +6,7 @@
  * and observability across the system.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { AgentMemory } from '../agent-oversight/agent-memory';
 import * as fs from 'fs';
 import * as path from 'path';

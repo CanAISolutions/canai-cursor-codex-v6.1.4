@@ -6,7 +6,7 @@
  * Emits violations and integrates with MetaEventRouter for rule enforcement.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { 
   Rule, 
   Violation, 

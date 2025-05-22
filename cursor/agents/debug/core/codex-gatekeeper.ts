@@ -9,7 +9,7 @@ import { FixProposal } from "../engines/ai-provider";
 import { appendToFixContextAsync } from "../context/fix-context-utils";
 import { execAsync, sanitizeShellInput } from "../utils/shell-utils";
 import { recordMetric } from "../utils/telemetry";
-import { createPullRequest } from "./codex-github";
+// import { createPullRequest } from "./codex-github";
 import { existsSync } from "fs";
 
 /**
@@ -62,13 +62,17 @@ export async function enforceMergeGate(
 
     // Step 3: Verify patch target
     await appendToFixContextAsync(`[${traceId}] Verifying patch for ${filepath}...`);
-    const { stdout } = await execAsync(`git apply --numstat`, { input: patch });
+    // Codex: Write patch to temp file for git apply, since execAsync does not support input piping
+    const tmpPatchFile = `canai-fix-${traceId}.patch`;
+    require('fs').writeFileSync(tmpPatchFile, patch, 'utf-8');
+    const { stdout } = await execAsync(`git apply --numstat ${tmpPatchFile}`);
     const affectedFiles = stdout
       .split("\n")
       .map(line => line.split("\t").pop())
       .filter(Boolean);
 
     if (!affectedFiles.includes(filepath)) {
+      require('fs').unlinkSync(tmpPatchFile);
       throw createPipelineError(
         `Patch modifies unexpected files: ${affectedFiles.join(", ")}`,
         "INVALID_PATCH_TARGETS",
@@ -79,7 +83,8 @@ export async function enforceMergeGate(
 
     // Step 4: Apply the patch
     await appendToFixContextAsync(`[${traceId}] Applying patch to ${filepath}...`);
-    await execAsync(`git apply --unidiff-zero --whitespace=fix`, { input: patch });
+    await execAsync(`git apply --unidiff-zero --whitespace=fix ${tmpPatchFile}`);
+    require('fs').unlinkSync(tmpPatchFile);
 
     // Step 5: Commit the patch
     await appendToFixContextAsync(`[${traceId}] Committing patch...`);
@@ -91,21 +96,23 @@ export async function enforceMergeGate(
     await execAsync(`git push -u origin ${sanitizeShellInput(createBranch)}`);
 
     // Step 7: Create PR via GitHub API
-    const prUrl = await createPullRequest(
-      {
-        branch: createBranch,
-        title: `Fix: ${reason} [${traceId}]`,
-        description: `Automated fix for \`${filepath}\`.\n\nTrace ID: \`${traceId}\``,
-      },
-      config,
-      traceId
-    );
-
+    // const prUrl = await createPullRequest(
+    //   {
+    //     branch: createBranch,
+    //     title: `Fix: ${reason} [${traceId}]`,
+    //     description: `Automated fix for \`${filepath}\`.\n\nTrace ID: \`${traceId}\``,
+    //   },
+    //   config,
+    //   traceId
+    // );
     // Step 8: Record success
-    await appendToFixContextAsync(`[${traceId}] Pull request created: ${prUrl}`);
-    recordMetric("pr_created", { traceId, prUrl });
-
-    return prUrl;
+    // await appendToFixContextAsync(`[${traceId}] Pull request created: ${prUrl}`);
+    // recordMetric("pr_created", { traceId, prUrl });
+    // return prUrl;
+    // Codex fallback: return branch name as PR URL placeholder
+    await appendToFixContextAsync(`[${traceId}] Pull request creation skipped (codex-github not implemented).`);
+    recordMetric("pr_created_skipped", { traceId, branch: createBranch });
+    return createBranch;
   } catch (err: any) {
     await appendToFixContextAsync(`[${traceId}] Merge failed: ${err.message}`);
     recordMetric("merge_failed", { traceId, filepath, error: err.message });
@@ -122,7 +129,7 @@ export async function enforceMergeGate(
 /**
  * Constructs a typed pipeline error with metadata.
  */
-function createPipelineError(
+export function createPipelineError(
   message: string,
   errorCode: string,
   errorType: "validation" | "merge" | "cancelled" | "ai" | "system",

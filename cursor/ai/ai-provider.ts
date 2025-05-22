@@ -1,3 +1,4 @@
+// DEPRECATED: Use AIProvider from '../../agents/debug/engines/ai-provider' instead.
 /**
  * ai-provider.ts
  * Interface for AI provider capabilities

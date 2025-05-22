@@ -38,8 +38,19 @@ export async function runESLintAnalysis(
         const errorCount = result.errorCount || 0;
         return { errorCount };
       } catch (parseErr) {
+        let msg = '';
+        if (
+          typeof parseErr === 'object' &&
+          parseErr !== null &&
+          'message' in parseErr &&
+          typeof (parseErr as any).message === 'string'
+        ) {
+          msg = (parseErr as { message: string }).message;
+        } else {
+          msg = String(parseErr);
+        }
         throw new Error(
-          `ESLint JSON parsing failed for ${filepath}: ${parseErr.message}`
+          `ESLint JSON parsing failed for ${filepath}: ${msg}`
         );
       }
     }

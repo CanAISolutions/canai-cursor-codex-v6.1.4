@@ -6,7 +6,7 @@
  * ensuring consistent event handling and system-wide observability.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { AgentMemory } from '../agent-oversight/agent-memory';
 import { MetaControlMetricsTracker } from './metrics-tracker';
 

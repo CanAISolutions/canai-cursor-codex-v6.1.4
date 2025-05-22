@@ -1,31 +1,22 @@
-# ✅ File: `observability.ts`  
-@location: `/cursor/accelerators/conversion-predictor-lite/observability.ts`  
-@purpose: Emits standardized observability metrics for conversion scoring agent  
-@drop-type: Cursor-safe, Codex-mandated
-
-
-// File: /cursor/accelerators/conversion-predictor-lite/observability.ts
+// Purpose: Emits standardized observability metrics for conversion scoring agent
+// Codex: Cursor-safe, Codex-mandated
 // Emits Codex-standard metrics to support scoring transparency and performance audit
 
-import { logger } from '../../_shared/logger'
+import { Logger } from '../../../utils/logger'
 
 const CONTEXT = 'conversion-predictor-lite'
+const logger = new Logger(CONTEXT)
 
 export const emitObservability = {
   onStart: () => {
-    logger.metric(CONTEXT, 'invocation.count', 1)
-    logger.debug(CONTEXT, '[observability] Scoring engine started.')
+    logger.info('[observability] Scoring engine started.')
   },
 
   onSuccess: (latencyMs: number, confidence: number, verdict: string) => {
-    logger.metric(CONTEXT, 'latency.ms', latencyMs)
-    logger.metric(CONTEXT, 'score.confidence', confidence)
-    logger.metric(CONTEXT, `verdict.${verdict}`, 1)
-    logger.info(CONTEXT, `[observability] Output scored as ${verdict} (confidence=${confidence.toFixed(2)})`)
+    logger.info(`[observability] Output scored as ${verdict} (confidence=${confidence.toFixed(2)})`)
   },
 
   onError: (err: unknown) => {
-    logger.metric(CONTEXT, 'error.count', 1)
-    logger.error(CONTEXT, '[observability] Scoring failed', { error: err })
+    logger.error('[observability] Scoring failed', { error: err })
   }
 }

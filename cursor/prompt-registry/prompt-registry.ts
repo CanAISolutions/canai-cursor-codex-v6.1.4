@@ -6,7 +6,7 @@
  * Provides versioned access to prompts.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { PromptDefinition } from '../prompt-infrastructure/prompt-schema';
 import { CodexRuleEngine } from '../rules/rule-engine';
 import { 
@@ -28,6 +28,9 @@ export class CodexPromptRegistry implements PromptRegistry {
   private ruleEngine: CodexRuleEngine;
   private config: RegistryConfig;
   private index: PromptIndex;
+  private registry: Map<string, RegistryEntry>;
+  private versionHistory: Map<string, VersionHistory[]>;
+  private status: string;
 
   constructor(
     eventBus: EventBus,
@@ -44,6 +47,9 @@ export class CodexPromptRegistry implements PromptRegistry {
       byVersion: new Map(),
       byTag: new Map()
     };
+    this.registry = new Map();
+    this.versionHistory = new Map();
+    this.status = 'active';
   }
 
   /**
@@ -100,7 +106,7 @@ export class CodexPromptRegistry implements PromptRegistry {
     this.updateIndex(entry);
 
     // Emit event
-    this.eventEmitter.emitPromptLoaded(
+    await this.eventEmitter.emitPromptLoaded(
       entry.id,
       entry.prompt.version,
       {
@@ -230,7 +236,7 @@ export class CodexPromptRegistry implements PromptRegistry {
     this.updateIndex(entry);
 
     // Emit event
-    this.eventEmitter.emitPromptEvolved(
+    await this.eventEmitter.emitPromptEvolved(
       entry.id,
       newVersion.version,
       {
@@ -255,7 +261,7 @@ export class CodexPromptRegistry implements PromptRegistry {
     entry.status = 'deprecated';
 
     // Emit event
-    this.eventEmitter.emitPromptDeprecated(entry.id, reason);
+    await this.eventEmitter.emitPromptDeprecated(entry.id, reason);
   }
 
   /**
@@ -263,7 +269,7 @@ export class CodexPromptRegistry implements PromptRegistry {
    */
   async validate(prompt: PromptDefinition): Promise<boolean> {
     // Validate against rule engine
-    const violations = await this.ruleEngine.evaluateRules(prompt);
+    const violations = await this.ruleEngine.evaluateRules([], prompt);
     if (violations.length > 0) {
       return false;
     }

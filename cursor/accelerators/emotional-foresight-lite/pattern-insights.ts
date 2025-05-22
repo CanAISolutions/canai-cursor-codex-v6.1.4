@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/emotional-foresight-lite/pattern-insights.ts`  
-@purpose: Detects long-term foresight signal drift, over-prediction, and fallback abuse  
-@drop-type: Codex-compliant, Cursor-safe
-
-// File: /cursor/accelerators/emotional-foresight-lite/pattern-insights.ts
+// Purpose: Detects long-term foresight signal drift, over-prediction, and fallback abuse
+// Codex: Codex-compliant, Cursor-safe
 // Analyzes foresight prediction history to detect misfires or trigger overuse
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type ForesightLog = {
   timestamp: string
@@ -50,7 +50,7 @@ export async function analyzeForesightPatterns(): Promise<InsightReport> {
       recommendations: [
         'Tighten signal thresholds in `emotion-signal-spec.jsonc`.',
         'Log fallback suppression reason in foresight state trace.',
-        'Review impact of “manualBypass” toggle if used.'
+        'Review impact of "manualBypass" toggle if used.'
       ]
     }
   }

@@ -5,13 +5,14 @@
  * Tests the prompt registry loader functionality.
  */
 
-import { EventBus } from '../../event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import { CodexRuleEngine } from '../../rules/rule-engine';
 import { CodexPromptRegistryLoader } from '../prompt-registry-loader';
 import { PromptDefinition } from '../../prompt-infrastructure/prompt-schema';
 import { RegistryConfig } from '../prompt-registry-schema';
 import * as fs from 'fs/promises';
-import * as path from 'path';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { Buffer } from 'buffer';
 
 jest.mock('fs/promises');
 
@@ -22,7 +23,7 @@ describe('CodexPromptRegistryLoader', () => {
   let config: RegistryConfig;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     ruleEngine = new CodexRuleEngine(eventBus);
     config = {
       trustThreshold: 0.7,
@@ -34,6 +35,56 @@ describe('CodexPromptRegistryLoader', () => {
       updateInterval: 5000
     };
     loader = new CodexPromptRegistryLoader(eventBus, ruleEngine, config);
+    jest.spyOn(fs, 'readdir').mockResolvedValue([
+      { name: 'test.json', isFile: () => true }
+    ]);
+    jest.spyOn(fs, 'readFile').mockResolvedValue(Buffer.from(JSON.stringify({
+      id: 'test-prompt',
+      type: 'test',
+      version: '1.0.0',
+      status: 'active',
+      name: 'Test Prompt',
+      description: 'A test prompt',
+      content: 'Test content',
+      metadata: {
+        author: 'test',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        tags: ['test'],
+        dependencies: [],
+        trustScore: 0.8,
+        alignmentScore: 0.8,
+        performanceScore: 0.8
+      },
+      contracts: [{
+        id: 'test-contract',
+        type: 'tone',
+        description: 'Test contract',
+        validation: {
+          regex: '^[A-Za-z]+$'
+        }
+      }],
+      constraints: [{
+        id: 'test-constraint',
+        type: 'token',
+        value: 100,
+        operator: 'lte',
+        description: 'Test constraint'
+      }],
+      evolution: {
+        id: 'test-evolution',
+        version: '1.0.0',
+        timestamp: Date.now(),
+        changes: [],
+        metadata: {
+          author: 'test',
+          reason: 'Initial version',
+          trustImpact: 0,
+          performanceImpact: 0,
+          alignmentImpact: 0
+        }
+      }
+    })));
   });
 
   describe('loadPrompts', () => {
@@ -86,11 +137,11 @@ describe('CodexPromptRegistryLoader', () => {
         }
       };
 
-      (fs.readdir as jest.Mock).mockResolvedValue([
+      jest.spyOn(fs, 'readdir').mockResolvedValue([
         { name: 'test.json', isFile: () => true }
       ]);
 
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(prompt));
+      jest.spyOn(fs, 'readFile').mockResolvedValue(Buffer.from(JSON.stringify(prompt)));
 
       const entries = await loader.loadPrompts('/test/directory');
       expect(entries).toHaveLength(1);
@@ -133,22 +184,22 @@ describe('CodexPromptRegistryLoader', () => {
         }
       };
 
-      (fs.readdir as jest.Mock).mockResolvedValue([
+      jest.spyOn(fs, 'readdir').mockResolvedValue([
         { name: 'test.json', isFile: () => true }
       ]);
 
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(prompt));
+      jest.spyOn(fs, 'readFile').mockResolvedValue(Buffer.from(JSON.stringify(prompt)));
 
       const entries = await loader.loadPrompts('/test/directory');
       expect(entries).toHaveLength(0);
     });
 
     it('should handle read errors', async () => {
-      (fs.readdir as jest.Mock).mockResolvedValue([
+      jest.spyOn(fs, 'readdir').mockResolvedValue([
         { name: 'test.json', isFile: () => true }
       ]);
 
-      (fs.readFile as jest.Mock).mockRejectedValue(new Error('Read error'));
+      jest.spyOn(fs, 'readFile').mockRejectedValue(new Error('Read error'));
 
       const entries = await loader.loadPrompts('/test/directory');
       expect(entries).toHaveLength(0);

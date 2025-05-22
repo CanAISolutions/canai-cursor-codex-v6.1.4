@@ -5,7 +5,7 @@
  * Tests prompt scoring functionality including trust, performance, and alignment metrics.
  */
 
-import { EventBus } from '../../utils/event-bus';
+import { EventBus } from '../../../event-bus/eventBus';
 import { PromptScoringManager } from '../prompt-score';
 import { PromptDefinition, PromptScore } from '../prompt-schema';
 
@@ -15,7 +15,7 @@ describe('PromptScoringManager', () => {
   let mockPrompt: PromptDefinition;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     scoringManager = new PromptScoringManager(eventBus);
 
     // Create mock prompt
@@ -32,15 +32,25 @@ describe('PromptScoringManager', () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
         tags: ['test'],
-        dependencies: []
+        dependencies: [],
+        trustScore: 1,
+        alignmentScore: 1,
+        performanceScore: 1
       },
       contracts: [],
       constraints: [],
       evolution: {
-        parentVersion: '1.0.0',
-        delta: undefined,
-        reason: 'Initial version',
-        approvedBy: 'system'
+        id: 'evo-1',
+        version: '1.0.0',
+        timestamp: Date.now(),
+        changes: [],
+        metadata: {
+          author: 'Test Author',
+          reason: 'Initial version',
+          trustImpact: 0,
+          performanceImpact: 0,
+          alignmentImpact: 0
+        }
       }
     };
   });

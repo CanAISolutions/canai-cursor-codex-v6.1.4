@@ -1,14 +1,11 @@
-# ✅ File: `observability.ts`  
-@location: `/cursor/accelerators/smart-prompt-score/observability.ts`  
-@purpose: Emits scoring telemetry, grade distribution, and emotional scoring patterns  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
-// File: /cursor/accelerators/smart-prompt-score/observability.ts
+// Purpose: Emits scoring telemetry, grade distribution, and emotional scoring patterns
+// Codex: Codex copy/paste-safe, Cursor-auditable
 // Emits composite score events, grade tags, and scoring signals for analytics
 
-import { logger } from '../../_shared/logger'
+import { Logger } from '../../../utils/logger'
 
 const CONTEXT = 'smart-prompt-score'
+const logger = new Logger(CONTEXT)
 
 export const emitScoreObservability = {
   onScoringComplete: (
@@ -16,11 +13,7 @@ export const emitScoreObservability = {
     grade: 'gold' | 'pass' | 'fallback',
     trace: Record<string, any>
   ) => {
-    logger.metric(CONTEXT, 'invocation.count', 1)
-    logger.metric(CONTEXT, 'composite.score', compositeScore)
-    logger.metric(CONTEXT, `grade.${grade}`, 1)
-
-    logger.info(CONTEXT, '[observability] Score result', {
+    logger.info('[observability] Score result', {
       compositeScore,
       grade,
       topSignal: trace?.topContributor,
@@ -29,16 +22,14 @@ export const emitScoreObservability = {
   },
 
   onScoreAnomaly: (message: string, debug: Record<string, any>) => {
-    logger.metric(CONTEXT, 'anomaly.count', 1)
-    logger.warn(CONTEXT, '[observability] Scoring anomaly detected', {
+    logger.warn('[observability] Scoring anomaly detected', {
       message,
       ...debug
     })
   },
 
   onError: (error: unknown) => {
-    logger.metric(CONTEXT, 'error.count', 1)
-    logger.error(CONTEXT, '[observability] Scoring engine failure', {
+    logger.error('[observability] Scoring engine failure', {
       error
     })
   }

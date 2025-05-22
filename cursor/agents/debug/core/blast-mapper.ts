@@ -5,11 +5,11 @@
  * retry resilience, structured logging, and escalation logic.
  */
 
-import { BugContext, AIProvider } from './ai-provider';
-import { recordMetric } from './telemetry';
-import { appendToFixContextAsync } from './fix-context-utils';
-import { pRetryWithTrace as pRetry } from './utils/pRetry';
-import { DebugConfig } from './config';
+import { AIProvider, BugContext } from '../engines/ai-provider';
+import { recordMetric } from '../utils/telemetry';
+import { appendToFixContextAsync } from '../context/fix-context-utils';
+import { pRetryWithTrace } from '../utils/pRetry';
+import { DebugConfig } from '../config/config';
 
 const MIN_CONTEXT_LENGTH = 10;
 const MAX_LOG_LINES = 100; // Performance limit
@@ -36,8 +36,8 @@ export async function detectBug(
   traceId: string
 ): Promise<BugContext> {
   try {
-    const bugContext = await pRetry(
-      () => aiProvider.detectBug(log),
+    const bugContext = await pRetryWithTrace(
+      () => aiProvider.detectBug(log, traceId),
       {
         retries: config.bugDetectionRetries ?? 3,
         onFailedAttempt: async (error, attempt) => {

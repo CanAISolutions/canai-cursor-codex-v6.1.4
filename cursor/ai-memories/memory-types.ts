@@ -90,6 +90,21 @@ export interface CompressionInfo {
 
 export interface CompressedMemory extends Memory {
   compressionInfo: CompressionInfo;
+  category?: string;
+  subCategories?: string[];
+  retrievalStrength?: number;
+  lastRetrieved?: number;
+  retrievalCount?: number;
+  compressionHistory?: CompressionRecord[];
+  state?: 'active' | 'archived';
+  focus?: number;
+  associations?: MemoryAssociation[];
+  processingContext?: ProcessingContext;
+  ttl?: number;
+  priority?: number;
+  isProcessed?: boolean;
+  processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
+  processingAttempts?: number;
 }
 
 export interface MemoryVersion {

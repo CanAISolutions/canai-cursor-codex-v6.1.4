@@ -5,15 +5,14 @@
  * @codex-verified: v1.0.0
  */
 
-import { Router } from "express";
+import { Router, RequestHandler } from "express";
 import { errorEventStore } from "./error-event.store";
 
 const errorsDashboardRouter = Router();
 
-// Only enable this dashboard outside of production
-errorsDashboardRouter.get("/errors", (req, res) => {
+const dashboardHandler: RequestHandler = (req, res): void => {
   if (process.env.NODE_ENV === "production") {
-    return res.status(403).json({
+    res.status(403).json({
       success: false,
       payload: null,
       errors: [
@@ -24,9 +23,10 @@ errorsDashboardRouter.get("/errors", (req, res) => {
       ],
       meta: {}
     });
+    return;
   }
 
-  return res.status(200).json({
+  res.status(200).json({
     success: true,
     payload: {
       capturedErrors: errorEventStore.getRecentErrors()
@@ -36,6 +36,8 @@ errorsDashboardRouter.get("/errors", (req, res) => {
       capturedAt: new Date().toISOString()
     }
   });
-});
+};
+
+errorsDashboardRouter.get("/errors", dashboardHandler);
 
 export default errorsDashboardRouter;

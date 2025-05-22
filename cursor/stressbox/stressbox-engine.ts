@@ -470,6 +470,9 @@ export class StressBox {
    * Emit stress test report
    */
   private async emitReport(report: StressReport): Promise<void> {
+    // Ensure the directory exists for the dynamic report path
+    const reportDir = path.join(process.cwd(), 'cursor', 'stressbox', 'reports', report.promptType);
+    await fs.mkdir(reportDir, { recursive: true });
     // Emit to system log
     await emitSystemLog('stress-test-report', {
       path: `/stressbox/reports/${report.promptType}/${report.timestamp}.json`,

@@ -18,6 +18,8 @@ interface PostDeploySelfcheckResult {
   mismatches: string[];
 }
 
+type LiveRoute = { path: string; method: string };
+
 /**
  * Perform post-deployment checks.
  * @param app - Express app instance
@@ -40,7 +42,7 @@ export function runPostDeploySelfcheck(app: Express): PostDeploySelfcheckResult 
   });
 
   // === Routes Validation ===
-  const liveRoutes = app._router.stack
+  const liveRoutes: LiveRoute[] = app._router.stack
     .filter((layer: any) => layer.route)
     .map((layer: any) => ({
       path: layer.route.path,
@@ -49,7 +51,15 @@ export function runPostDeploySelfcheck(app: Express): PostDeploySelfcheckResult 
 
   routesManifest.forEach((expectedRoute) => {
     const match = liveRoutes.find(
-      (r) => r.path === expectedRoute.path && r.method.toLowerCase() === expectedRoute.method.toLowerCase()
+      (r: LiveRoute) => r.path === expectedRoute.path && r.method.toLowerCase() === expectedRoute.method.toLowerCase()
     );
     if (!match) {
-      mismatches.push(`Missing or incorrect
+      mismatches.push(`Missing or incorrect route: ${expectedRoute.method.toUpperCase()} ${expectedRoute.path}`);
+    }
+  });
+
+  return {
+    success: mismatches.length === 0,
+    mismatches,
+  };
+}

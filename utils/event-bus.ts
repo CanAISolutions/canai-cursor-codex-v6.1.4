@@ -12,10 +12,21 @@
 type EventHandler = (data: any) => void;
 
 export class EventBus {
+  private static instance: EventBus;
   private handlers: Map<string, EventHandler[]>;
 
-  constructor() {
+  private constructor() {
     this.handlers = new Map();
+  }
+
+  /**
+   * Get the singleton instance of EventBus
+   */
+  public static getInstance(): EventBus {
+    if (!EventBus.instance) {
+      EventBus.instance = new EventBus();
+    }
+    return EventBus.instance;
   }
 
   /**

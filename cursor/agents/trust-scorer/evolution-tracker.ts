@@ -8,7 +8,7 @@
 
 import { TrustScorer } from './trust-scorer';
 
-interface TrustEvolutionMetrics {
+export interface TrustEvolutionMetrics {
   baselineScore: number;      // Initial trust score
   improvementRate: number;    // Rate of trust score improvement
   stabilityIndex: number;     // Measure of score stability

@@ -6,7 +6,7 @@
  * Manages memory promotion, demotion, and lifecycle.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import {
   Memory,
   ShortTermMemory,
@@ -305,24 +305,27 @@ export class MemoryHierarchyManager {
    * Sets up event listeners
    */
   private setupEventListeners(): void {
-    this.eventBus.on('memory.saved', this.handleMemoryEvent.bind(this));
-    this.eventBus.on('memory.recalled', this.handleMemoryEvent.bind(this));
-    this.eventBus.on('memory.updated', this.handleMemoryEvent.bind(this));
-    this.eventBus.on('memory.deleted', this.handleMemoryEvent.bind(this));
-    this.eventBus.on('memory.promoted', this.handleMemoryEvent.bind(this));
-    this.eventBus.on('memory.demoted', this.handleMemoryEvent.bind(this));
+    this.eventBus.on('memory.saved', async (event: MemoryEvent) => { await this.handleMemoryEvent(event); });
+    this.eventBus.on('memory.created', async (event: MemoryEvent) => { await this.handleMemoryEvent(event); });
+    this.eventBus.on('memory.updated', async (event: MemoryEvent) => { await this.handleMemoryEvent(event); });
+    this.eventBus.on('memory.deleted', async (event: MemoryEvent) => { await this.handleMemoryEvent(event); });
+    this.eventBus.on('memory.compressed', async (event: MemoryEvent) => { await this.handleMemoryEvent(event); });
+    this.eventBus.on('memory.recalled', async (event: MemoryEvent) => { await this.handleMemoryEvent(event); });
+    this.eventBus.on('memory.error', async (event: MemoryEvent) => { await this.handleMemoryEvent(event); });
+    this.eventBus.on('memory.promoted', async (event: MemoryEvent) => { await this.handleMemoryEvent(event); });
+    this.eventBus.on('memory.demoted', async (event: MemoryEvent) => { await this.handleMemoryEvent(event); });
   }
 
   /**
    * Handles memory events
    */
-  private handleMemoryEvent(event: MemoryEvent): void {
+  private async handleMemoryEvent(event: MemoryEvent): Promise<void> {
     // Update stats on significant events
     if (event.type === 'memory:saved' as MemoryEventType || 
         event.type === 'memory:deleted' as MemoryEventType ||
         event.type === 'memory:promoted' as MemoryEventType ||
         event.type === 'memory:demoted' as MemoryEventType) {
-      this.updateStats();
+      await this.updateStats();
     }
   }
 

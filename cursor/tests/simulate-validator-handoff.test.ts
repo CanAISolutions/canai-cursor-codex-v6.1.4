@@ -1,12 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { ValidatorChainMockV1, ValidatorEventLog } from './_mocks/validator-chain-mock';
-
 /**
  * simulateValidatorHandoff — Simulates layered validator handoff and fallback
  * WHAT: Simulates a chain of validators, enforcing schema and fallback logic.
  * WHY: To guarantee validator handoff, fallback, and schema enforcement are reliable and auditable.
  * HOW: Uses version-tagged mocks, logs all events, and asserts correct propagation and fallback.
  */
+import { ValidatorChainMockV1, ValidatorEventLog } from './_mocks/validator-chain-mock';
+
 describe('simulateValidatorHandoff (integration)', () => {
   it('should propagate validation and fallback events across validator chain [mock:v1]', async () => {
     // Arrange: Create a version-tagged validator chain mock

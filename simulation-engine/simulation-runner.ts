@@ -19,7 +19,7 @@ export class SimulationRunner {
 
   constructor() {
     this.logger = new Logger('simulation-runner');
-    this.eventBus = new EventBus();
+    this.eventBus = EventBus.getInstance();
     this.scoringOrchestrator = new ScoringOrchestrator();
     this.schemaValidator = new SchemaValidator();
     

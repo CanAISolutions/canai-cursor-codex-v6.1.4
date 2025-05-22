@@ -5,7 +5,7 @@
  * Implements storage for working memories that maintain active context and processing state.
  */
 
-import { EventBus } from '../../utils/event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import { WorkingMemory, MemoryMetadata } from '../memory-types';
 
 export class WorkingMemoryStore {

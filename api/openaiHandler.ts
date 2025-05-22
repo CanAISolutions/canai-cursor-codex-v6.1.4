@@ -1,8 +1,7 @@
 // api/openaiHandler.ts
 // Handles GPT-4o prompt fulfillment for all CanAI product types
 
-import { NextApiRequest, NextApiResponse } from 'next'
-import { Configuration, OpenAIApi } from 'openai'
+import OpenAI from 'openai'
 import { composePrompt } from '../prompts/composePrompt'
 
 /**
@@ -10,16 +9,14 @@ import { composePrompt } from '../prompts/composePrompt'
  * - OPENAI_API_KEY
  */
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
-
-const openai = new OpenAIApi(configuration)
 
 /**
  * Routes a structured input through the correct prompt builder and calls GPT-4o.
  */
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' })
   }
@@ -33,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const finalPrompt = composePrompt(promptType, input)
 
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
@@ -42,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         {
           role: 'user',
-          content: finalPrompt
+          content: finalPrompt.prompt
         }
       ],
       temperature: 0.7,
@@ -50,10 +47,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     res.status(200).json({
-      result: completion.data.choices[0].message?.content ?? ''
+      result: completion.choices[0].message?.content ?? ''
     })
   } catch (error) {
     console.error('[openaiHandler] Error:', error)
     res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+
+export default handler;

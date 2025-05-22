@@ -37,11 +37,17 @@ export class LearningOrchestrator {
 
   constructor(traceId: string) {
     this.traceId = traceId;
-    this.eventBus = new EventBusAgent(traceId);
+    this.eventBus = new EventBusAgent();
     const contextDir = path.join('.canai-context');
     if (!fs.existsSync(contextDir)) fs.mkdirSync(contextDir, { recursive: true });
-    this.eventBus.subscribe('task:completed', async (event) => this.handleTaskCompletion(event.data.taskId, event.data.outcome));
-    this.eventBus.subscribe('task:failed', async (event) => this.handleTaskFailure(event.data.taskId, event.data.reason));
+    this.eventBus.subscribe('task:completed', async (event) => {
+      const data = event.data as { taskId: string; outcome: any };
+      await this.handleTaskCompletion(data.taskId, data.outcome);
+    });
+    this.eventBus.subscribe('task:failed', async (event) => {
+      const data = event.data as { taskId: string; reason: string };
+      await this.handleTaskFailure(data.taskId, data.reason);
+    });
   }
 
   async aggregatePattern(bugType: string, fixPattern: string): Promise<void> {

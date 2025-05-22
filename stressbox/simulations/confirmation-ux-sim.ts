@@ -47,7 +47,7 @@ interface SimulationEvent {
  */
 export async function runConfirmationUXSimulation(): Promise<SimulationResult[]> {
   const results: SimulationResult[] = [];
-  const eventBus = new EventBus();
+  const eventBus = EventBus.getInstance();
 
   // Subscribe to simulation events
   eventBus.subscribe('simulation:start', (data: SimulationEvent) => {

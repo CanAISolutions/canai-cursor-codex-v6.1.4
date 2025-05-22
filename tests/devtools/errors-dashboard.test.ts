@@ -7,7 +7,7 @@
 
 import request from "supertest";
 import express from "express";
-import errorsDashboardRouter from "../../api-router/devtools/errors/errors-dashboard";
+import errorsDashboardRouter from "../../api/errors/errors-dashboard";
 
 // Helper to simulate environments dynamically
 function createTestApp(env: string) {

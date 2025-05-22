@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/smart-prompt-score/pattern-insights.ts`  
-@purpose: Detects score drift patterns, signal imbalance, and Copilot coaching needs  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
-// File: /cursor/accelerators/smart-prompt-score/pattern-insights.ts
+// Purpose: Detects score drift patterns, signal imbalance, and Copilot coaching needs
+// Codex: Codex copy/paste-safe, Cursor-auditable
 // Analyzes score history for drift, emotional flattening, and prompt decay signals
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type ScoreSnapshot = {
   timestamp: string

@@ -43,7 +43,9 @@ export class QualityTracker {
       trend,
       confidence,
       value,
-      timestamp
+      values: [value],
+      timestamp: new Date(),
+      timestamps: [new Date()]
     });
   }
 

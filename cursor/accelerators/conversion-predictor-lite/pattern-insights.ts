@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/conversion-predictor-lite/pattern-insights.ts`  
-@purpose: Detects anomalies and patterns in score distributions and verdict drift  
-@drop-type: Codex copy/paste-safe, AI-ready
-
-// File: /cursor/accelerators/conversion-predictor-lite/pattern-insights.ts
+// Purpose: Detects anomalies and patterns in score distributions and verdict drift
+// Codex: Codex copy/paste-safe, AI-ready
 // Detects drift in verdict patterns and confidence score distribution over time
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type ScoreEntry = {
   confidence: number

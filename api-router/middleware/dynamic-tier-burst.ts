@@ -48,46 +48,47 @@ const defaultTier: BurstProtectionOptions = tierConfigurations.standard;
 
 /**
  * Dream-State Dynamic Burst Protection Middleware
- * @param req 
- * @param res 
- * @param next 
+ * Returns an Express middleware function.
  */
-export function dynamicTierBurstProtection(req: Request, res: Response, next: NextFunction) {
-  const userTier = req.user?.tier || 'standard'; // Assume `req.user.tier` exists
-  const config = tierConfigurations[userTier] || defaultTier;
+export function dynamicTierBurstProtection() {
+  return function (req: Request, res: Response, next: NextFunction): void {
+    const userTier = (req as any).user?.tier || 'standard'; // Assume `req.user.tier` exists
+    const config = tierConfigurations[userTier] || defaultTier;
 
-  const identifier = req.ip || "unknown"; // Track by IP or fallback identifier
-  const now = Date.now();
+    const identifier = req.ip || "unknown"; // Track by IP or fallback identifier
+    const now = Date.now();
 
-  // Initialize burst tracker if missing
-  if (!req.app.locals.burstRequestTracker) {
-    req.app.locals.burstRequestTracker = {};
-  }
-
-  const burstTracker = req.app.locals.burstRequestTracker[identifier] || { count: 0, firstRequestTimestamp: now };
-
-  // Still within burst window
-  if (now - burstTracker.firstRequestTimestamp < config.burstWindowMs) {
-    burstTracker.count++;
-
-    if (burstTracker.count > config.maxBurstRequests) {
-      res.setHeader("Retry-After", Math.ceil(config.burstWindowMs / 1000).toString());
-      return res.status(429).json({
-        success: false,
-        error: {
-          code: "BURST_PROTECTION",
-          message: config.responseMessage
-        }
-      });
+    // Initialize burst tracker if missing
+    if (!req.app.locals.burstRequestTracker) {
+      req.app.locals.burstRequestTracker = {};
     }
-  } else {
-    // Reset burst window
-    burstTracker.count = 1;
-    burstTracker.firstRequestTimestamp = now;
-  }
 
-  req.app.locals.burstRequestTracker[identifier] = burstTracker;
-  return next();
+    const burstTracker = req.app.locals.burstRequestTracker[identifier] || { count: 0, firstRequestTimestamp: now };
+
+    // Still within burst window
+    if (now - burstTracker.firstRequestTimestamp < config.burstWindowMs) {
+      burstTracker.count++;
+
+      if (burstTracker.count > config.maxBurstRequests) {
+        res.setHeader("Retry-After", Math.ceil(config.burstWindowMs / 1000).toString());
+        res.status(429).json({
+          success: false,
+          error: {
+            code: "BURST_PROTECTION",
+            message: config.responseMessage
+          }
+        });
+        return;
+      }
+    } else {
+      // Reset burst window
+      burstTracker.count = 1;
+      burstTracker.firstRequestTimestamp = now;
+    }
+
+    req.app.locals.burstRequestTracker[identifier] = burstTracker;
+    next();
+  };
 }
 
 // Attach runtime metadata for introspection and selfchecking
@@ -96,3 +97,6 @@ export function dynamicTierBurstProtection(req: Request, res: Response, next: Ne
 (dynamicTierBurstProtection as any).codexVerified = true;
 (dynamicTierBurstProtection as any).codexPurpose = 'Dynamically adjust burst protection thresholds based on user tier and configuration.';
 (dynamicTierBurstProtection as any).codexCritical = true;
+
+// Codex: Named export for test compatibility
+export const dynamicTierBurstMiddleware = dynamicTierBurstProtection;

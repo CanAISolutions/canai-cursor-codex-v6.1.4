@@ -7,7 +7,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import {
   PromptDefinition,
   PromptLoader,
@@ -195,8 +195,8 @@ export class PromptFileLoader implements PromptLoader {
               output: null,
               session: {}
             },
-            severity: contract.required ? 'high' : 'low',
-            action: this.mapFailureAction(contract.failureAction)
+            severity: 'high',
+            action: 'failed'
           });
         }
       } catch (error: unknown) {

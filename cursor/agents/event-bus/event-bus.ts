@@ -60,14 +60,16 @@ export class EventBus {
   public async publish(event: Event, priority: 'high' | 'medium' | 'low' = 'medium'): Promise<void> {
     const handlers = this.handlers.get(event.type);
     if (handlers) {
-      const promises = Array.from(handlers).map(handler => handler(event));
-      if (priority === 'high') {
-        await Promise.all(promises);
-      } else {
-        Promise.all(promises).catch(error => {
+      const promises = Array.from(handlers).map(async handler => {
+        try {
+          await handler(event);
+        } catch (error) {
+          // Codex: Always catch and log errors from handlers for all priorities
+          // This ensures robust error handling in all environments
           console.error('Error in event handler:', error);
-        });
-      }
+        }
+      });
+      await Promise.all(promises);
     }
   }
 

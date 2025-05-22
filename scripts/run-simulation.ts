@@ -14,7 +14,7 @@ import { triggerImprovementQueue } from '../stressbox/improvement-queue';
 import { EventBus } from '../utils/event-bus';
 
 async function main() {
-  const eventBus = new EventBus();
+  const eventBus = EventBus.getInstance();
   console.log('Starting simulation suite...');
 
   try {

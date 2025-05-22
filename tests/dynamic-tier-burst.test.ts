@@ -5,27 +5,32 @@
  * @codex-verified: v1.0.0
  */
 
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import request from "supertest";
 import { dynamicTierBurstProtection } from "../api-router/middleware/dynamic-tier-burst";
 
-describe("🛡 Dream-State Dynamic Tier Burst Protection", () => {
-  const app = express();
+// Helper middleware to inject user tier from header
+function userTierInjector(req: Request, res: Response, next: NextFunction): void {
+  const tier = req.header('x-user-tier') || 'standard';
+  (req as any).user = { tier };
+  next();
+}
 
-  app.use(dynamicTierBurstProtection);
+describe("\uD83D\uDEE1 Dream-State Dynamic Tier Burst Protection", () => {
+  let app: express.Application;
 
-  // Mocking user tiers for testing purposes
-  const createUserWithTier = (tier: string) => {
-    return {
-      user: {
-        tier
-      }
-    };
-  };
+  beforeEach(() => {
+    app = express();
+    app.use(userTierInjector); // Inject user tier before burst protection
+    app.use(dynamicTierBurstProtection()); // Use as middleware factory
+    app.get("/test", (req: Request, res: Response) => {
+      res.status(200).json({ success: true, tier: (req as any).user.tier });
+    });
+  });
 
   it("should allow requests within burst threshold for free users", async () => {
     for (let i = 0; i < 5; i++) {
-      const res = await request(app).get("/test").set("user", createUserWithTier("free"));
+      const res = await request(app).get("/test").set("x-user-tier", "free");
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchSnapshot();
     }
@@ -33,17 +38,16 @@ describe("🛡 Dream-State Dynamic Tier Burst Protection", () => {
 
   it("should block requests exceeding burst threshold for free users", async () => {
     for (let i = 0; i < 5; i++) {
-      await request(app).get("/test").set("user", createUserWithTier("free"));
+      await request(app).get("/test").set("x-user-tier", "free");
     }
-
-    const res = await request(app).get("/test").set("user", createUserWithTier("free"));
+    const res = await request(app).get("/test").set("x-user-tier", "free");
     expect(res.statusCode).toBe(429);
     expect(res.body).toMatchSnapshot();
   });
 
   it("should allow requests within burst threshold for standard users", async () => {
     for (let i = 0; i < 10; i++) {
-      const res = await request(app).get("/test").set("user", createUserWithTier("standard"));
+      const res = await request(app).get("/test").set("x-user-tier", "standard");
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchSnapshot();
     }
@@ -51,17 +55,16 @@ describe("🛡 Dream-State Dynamic Tier Burst Protection", () => {
 
   it("should block requests exceeding burst threshold for standard users", async () => {
     for (let i = 0; i < 10; i++) {
-      await request(app).get("/test").set("user", createUserWithTier("standard"));
+      await request(app).get("/test").set("x-user-tier", "standard");
     }
-
-    const res = await request(app).get("/test").set("user", createUserWithTier("standard"));
+    const res = await request(app).get("/test").set("x-user-tier", "standard");
     expect(res.statusCode).toBe(429);
     expect(res.body).toMatchSnapshot();
   });
 
   it("should allow requests within burst threshold for premium users", async () => {
     for (let i = 0; i < 20; i++) {
-      const res = await request(app).get("/test").set("user", createUserWithTier("premium"));
+      const res = await request(app).get("/test").set("x-user-tier", "premium");
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchSnapshot();
     }
@@ -69,17 +72,16 @@ describe("🛡 Dream-State Dynamic Tier Burst Protection", () => {
 
   it("should block requests exceeding burst threshold for premium users", async () => {
     for (let i = 0; i < 20; i++) {
-      await request(app).get("/test").set("user", createUserWithTier("premium"));
+      await request(app).get("/test").set("x-user-tier", "premium");
     }
-
-    const res = await request(app).get("/test").set("user", createUserWithTier("premium"));
+    const res = await request(app).get("/test").set("x-user-tier", "premium");
     expect(res.statusCode).toBe(429);
     expect(res.body).toMatchSnapshot();
   });
 
   it("should allow requests within burst threshold for enterprise users", async () => {
     for (let i = 0; i < 50; i++) {
-      const res = await request(app).get("/test").set("user", createUserWithTier("enterprise"));
+      const res = await request(app).get("/test").set("x-user-tier", "enterprise");
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchSnapshot();
     }
@@ -87,10 +89,9 @@ describe("🛡 Dream-State Dynamic Tier Burst Protection", () => {
 
   it("should block requests exceeding burst threshold for enterprise users", async () => {
     for (let i = 0; i < 50; i++) {
-      await request(app).get("/test").set("user", createUserWithTier("enterprise"));
+      await request(app).get("/test").set("x-user-tier", "enterprise");
     }
-
-    const res = await request(app).get("/test").set("user", createUserWithTier("enterprise"));
+    const res = await request(app).get("/test").set("x-user-tier", "enterprise");
     expect(res.statusCode).toBe(429);
     expect(res.body).toMatchSnapshot();
   });

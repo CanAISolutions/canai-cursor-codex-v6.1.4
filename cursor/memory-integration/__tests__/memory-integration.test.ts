@@ -9,7 +9,7 @@
  * - Event emission
  */
 
-import { EventBus } from '../../utils/event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import { CodexRuleEngine } from '../../rules/rule-engine';
 import { CodexPromptRegistry } from '../../prompt-registry/prompt-registry';
 import { MemoryFilter } from '../memory-filter';
@@ -197,7 +197,7 @@ describe('Memory Integration', () => {
   let emittedEvents: { type: string; data: any }[];
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     ruleEngine = new CodexRuleEngine(eventBus);
     promptRegistry = new CodexPromptRegistry(eventBus, ruleEngine, registryConfig);
     memoryFilter = new MemoryFilter(filterConfig, eventBus);
@@ -212,8 +212,8 @@ describe('Memory Integration', () => {
     );
 
     emittedEvents = [];
-    eventBus.on('memory.injected', (data) => emittedEvents.push({ type: 'injected', data }));
-    eventBus.on('memory.rejected', (data) => emittedEvents.push({ type: 'rejected', data }));
+    eventBus.on('memory.injected', async (data) => { emittedEvents.push({ type: 'injected', data }); return; });
+    eventBus.on('memory.rejected', async (data) => { emittedEvents.push({ type: 'rejected', data }); return; });
 
     // Mock prompt registry
     jest.spyOn(promptRegistry, 'get').mockResolvedValue(mockRegistryEntry);

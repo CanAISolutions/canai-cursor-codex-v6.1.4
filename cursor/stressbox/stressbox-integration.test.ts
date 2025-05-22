@@ -24,7 +24,7 @@ describe('StressBoxIntegration', () => {
   let stressBox: jest.Mocked<StressBox>;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     healthDashboard = new PromptHealthDashboard(eventBus);
     stressBox = new StressBox(eventBus) as jest.Mocked<StressBox>;
     integration = new StressBoxIntegration(eventBus, healthDashboard);

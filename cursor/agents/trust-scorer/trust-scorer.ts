@@ -86,29 +86,58 @@ export class TrustScorer {
       impact: Object.keys(factors)
     };
 
-    const evaluation = await this.aiProvider.evaluateFixTrust(factors.toString(), bugContext);
-    const score = evaluation.score;
+    let score = this.MINIMUM_THRESHOLD;
+    try {
+      if (!this.aiProvider) {
+        throw new Error('AIProvider is not implemented');
+      }
+      let evalFn = (this.aiProvider as any).evaluateFixTrust || (this.aiProvider as any).evaluateTrust;
+      if (typeof evalFn !== 'function') {
+        throw new Error('AIProvider.evaluateFixTrust or evaluateTrust is not implemented');
+      }
+      // Support both return types: number or { score: number }
+      const result = await evalFn.call(this.aiProvider, factors, bugContext);
+      score = typeof result === 'number' ? result : result.score;
+    } catch (err: any) {
+      // Codex fallback: log, emit warning, and use minimum threshold
+      await recordMetric('trust_evaluation_failed', { error: err?.message || String(err), factors });
+      await this.eventBus.emit('trust-scorer:event', {
+        type: 'trust:warning',
+        data: {
+          message: 'AIProvider fallback: trust evaluation failed',
+          score,
+          threshold: this.MINIMUM_THRESHOLD
+        },
+        timestamp: new Date().toISOString()
+      });
+      // Fallback: return minimum threshold
+      return score;
+    }
 
     if (score < this.MINIMUM_THRESHOLD) {
-      await this.eventBus.publish({
+      await recordMetric('trust_violation', { score, threshold: this.MINIMUM_THRESHOLD, factors });
+      await this.eventBus.emit('trust-scorer:event', {
         type: 'trust:violation',
         data: {
           score,
           threshold: this.MINIMUM_THRESHOLD
         },
         timestamp: new Date().toISOString()
-      }, 'high');
-
-      await this.eventBus.publish({
+      });
+      throw new Error(`Trust score ${score} below threshold ${this.MINIMUM_THRESHOLD}`);
+    } else if (score < this.WARNING_THRESHOLD) {
+      await recordMetric('trust_warning', { score, threshold: this.WARNING_THRESHOLD, factors });
+      await this.eventBus.emit('trust-scorer:event', {
         type: 'trust:warning',
         data: {
-          message: 'Failed to evaluate trust score',
-          error: `Trust score ${score} below threshold ${this.MINIMUM_THRESHOLD}`
+          message: 'Low trust score',
+          score,
+          threshold: this.WARNING_THRESHOLD
         },
         timestamp: new Date().toISOString()
-      }, 'high');
-
-      throw new Error(`Trust score ${score} below threshold ${this.MINIMUM_THRESHOLD}`);
+      });
+    } else {
+      await recordMetric('trust_evaluated', { score, factors });
     }
 
     return score;
@@ -131,7 +160,7 @@ export class TrustScorer {
     this.trustScores.set(component, newScore);
     this.recordTrustHistory(component, newScore);
 
-    await this.eventBus.publish({
+    await this.eventBus.emit('trust-scorer:event', {
       type: 'trust:adjusted',
       data: {
         component,
@@ -141,7 +170,7 @@ export class TrustScorer {
         reason
       },
       timestamp: new Date().toISOString()
-    }, 'medium');
+    });
 
     return newScore;
   }
@@ -161,11 +190,11 @@ export class TrustScorer {
   }
 
   private async handleTrustViolation(component: string, score: number): Promise<void> {
-    await this.eventBus.publish({
+    await this.eventBus.emit('trust-scorer:event', {
       type: 'trust:violation',
       data: { component, score },
       timestamp: new Date().toISOString()
-    }, 'high');
+    });
   }
 
   private recordTrustHistory(component: string, score: number): void {
@@ -216,11 +245,11 @@ export class TrustScorer {
   }): Promise<void> {
     if (!outcome.success) {
       await recordMetric('task_failed', { taskId, error: outcome.error });
-      await this.eventBus.publish({
+      await this.eventBus.emit('trust-scorer:event', {
         type: 'task:failed',
         data: { taskId, error: outcome.error },
         timestamp: new Date().toISOString()
-      }, 'high');
+      });
       throw new Error(`Task ${taskId} failed: ${outcome.error}`);
     }
 

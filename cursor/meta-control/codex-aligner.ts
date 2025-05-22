@@ -83,15 +83,11 @@ export class CodexAligner {
     const isAligned = this.validateContent(content, metadata, this.guidelines.promptGuidelines);
     
     if (!isAligned) {
-      await this.eventBus.publish({
-        type: 'alignment:deviation',
-        data: {
-          type: 'prompt',
-          content,
-          metadata,
-          timestamp: Date.now()
-        },
-        timestamp: new Date().toISOString()
+      await this.eventBus.emit('alignment:deviation', {
+        type: 'prompt',
+        content,
+        metadata,
+        timestamp: Date.now()
       }, 'high');
     }
     
@@ -103,15 +99,11 @@ export class CodexAligner {
     const isAligned = this.validateContent(content, metadata, this.guidelines.responseGuidelines);
     
     if (!isAligned) {
-      await this.eventBus.publish({
-        type: 'alignment:deviation',
-        data: {
-          type: 'response',
-          content,
-          metadata,
-          timestamp: Date.now()
-        },
-        timestamp: new Date().toISOString()
+      await this.eventBus.emit('alignment:deviation', {
+        type: 'response',
+        content,
+        metadata,
+        timestamp: Date.now()
       }, 'high');
     }
     
@@ -123,15 +115,11 @@ export class CodexAligner {
     const isAligned = this.validateContent(action, metadata, this.guidelines.behaviorGuidelines);
     
     if (!isAligned) {
-      await this.eventBus.publish({
-        type: 'alignment:deviation',
-        data: {
-          type: 'behavior',
-          action,
-          metadata,
-          timestamp: Date.now()
-        },
-        timestamp: new Date().toISOString()
+      await this.eventBus.emit('alignment:deviation', {
+        type: 'behavior',
+        action,
+        metadata,
+        timestamp: Date.now()
       }, 'high');
     }
     
@@ -149,27 +137,19 @@ export class CodexAligner {
 
       const alignedContent = this.alignContent(data.content, data.metadata, guidelines);
       
-      await this.eventBus.publish({
-        type: 'alignment:enforced',
-        data: {
-          type,
-          originalContent: data.content,
-          alignedContent,
-          timestamp: Date.now()
-        },
-        timestamp: new Date().toISOString()
+      await this.eventBus.emit('alignment:enforced', {
+        type,
+        originalContent: data.content,
+        alignedContent,
+        timestamp: Date.now()
       }, 'medium');
 
       return true;
     } catch (error) {
-      await this.eventBus.publish({
-        type: 'alignment:error',
-        data: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          content,
-          timestamp: Date.now()
-        },
-        timestamp: new Date().toISOString()
+      await this.eventBus.emit('alignment:error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        content,
+        timestamp: Date.now()
       }, 'high');
       return false;
     }
@@ -284,5 +264,4 @@ export class CodexAligner {
   private async handleCorrectionApplied(event: any): Promise<void> {
     // Implementation for correction application handling
   }
-} 
 } 

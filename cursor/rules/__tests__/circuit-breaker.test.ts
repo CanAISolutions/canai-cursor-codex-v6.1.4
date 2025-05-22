@@ -5,7 +5,7 @@
  * Tests circuit breaker functionality including trust-aware execution suppression.
  */
 
-import { EventBus } from '../../utils/event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import { TrustCircuitBreaker } from '../circuit-breaker';
 import { Violation, CircuitBreakerState } from '../rules-schema';
 
@@ -15,7 +15,7 @@ describe('TrustCircuitBreaker', () => {
   let mockViolation: Violation;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     breaker = new TrustCircuitBreaker(eventBus);
 
     // Create mock violation

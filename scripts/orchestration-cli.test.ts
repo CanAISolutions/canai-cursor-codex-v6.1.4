@@ -228,7 +228,7 @@ describe('CLI Orchestration System', () => {
         const help = await orchestrator.getHelp(request);
         const emotionalScore = await emotionalValidator.validateContent(help);
 
-        expect(help).toContain('I'm here to guide you');
+        expect(help).toContain("I'm here to guide you");
         expect(emotionalScore).toBeGreaterThanOrEqual(4.2);
       }
     });

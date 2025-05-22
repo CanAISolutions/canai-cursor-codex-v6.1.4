@@ -5,7 +5,7 @@
  * Implements in-memory storage for short-term memories with TTL-based cleanup.
  */
 
-import { EventBus } from '../../utils/event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import { ShortTermMemory, MemoryMetadata } from '../memory-types';
 
 export class ShortTermMemoryStore {

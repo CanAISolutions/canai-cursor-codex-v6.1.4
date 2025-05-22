@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/copilot-injector/pattern-insights.ts`  
-@purpose: Detects systemic misuse, over-injection, and drift patterns  
-@drop-type: Cursor-ready, Codex-standard
-
-// File: /cursor/accelerators/copilot-injector/pattern-insights.ts
+// Purpose: Detects systemic misuse, over-injection, and drift patterns
+// Codex: Cursor-ready, Codex-standard
 // Detects abnormal injection patterns or underperformance indicators
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type InjectionRecord = {
   timestamp: string

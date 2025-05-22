@@ -27,7 +27,8 @@ jest.mock('../../utils/event-bus', () => {
       on: jest.fn(),
       off: jest.fn(),
       once: jest.fn(),
-      removeAllListeners: jest.fn()
+      removeAllListeners: jest.fn(),
+      emit: jest.fn().mockResolvedValue(undefined)
     }))
   };
 });
@@ -59,7 +60,7 @@ describe('Memory Intelligence', () => {
     testStoragePath = path.join(__dirname, 'test-storage');
     await fs.mkdir(testStoragePath, { recursive: true });
 
-    eventBus = new EventBus() as jest.Mocked<EventBus>;
+    eventBus = { emit: jest.fn() } as any;
     manager = new MemoryHierarchyManager(eventBus, testStoragePath);
     retrieval = new MemoryRetrieval(eventBus, manager);
     compression = new MemoryCompression();
@@ -192,7 +193,7 @@ describe('Memory Intelligence', () => {
       });
 
       await expect(compression.compress(memory)).rejects.toThrow('Compression failed');
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'memory:compression:error',
           data: expect.objectContaining({
@@ -293,7 +294,7 @@ describe('Memory Intelligence', () => {
       mockRecall.mockRejectedValueOnce(new Error('Retrieval failed'));
 
       await expect(retrieval.recallByType('short-term')).rejects.toThrow('Retrieval failed');
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'memory:retrieval:error',
           data: expect.objectContaining({

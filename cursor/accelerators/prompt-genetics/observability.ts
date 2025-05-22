@@ -1,39 +1,31 @@
-# ✅ File: `observability.ts`  
-@location: `/cursor/accelerators/prompt-genetics/observability.ts`  
-@purpose: Emits metrics for variant generation, mutation logic, and fitness scoring  
-@drop-type: Codex copy/paste-safe, Cursor-native
-
 // File: /cursor/accelerators/prompt-genetics/observability.ts
+// Purpose: Emits metrics for variant generation, mutation logic, and fitness scoring
+// Codex: Copy/paste-safe, Cursor-native
 // Tracks prompt mutation frequency, schema usage, and scoring events
 
-import { logger } from '../../_shared/logger'
+import { Logger } from '../../../utils/logger'
 
 const CONTEXT = 'prompt-genetics'
+const logger = new Logger(CONTEXT)
 
 export const emitObservability = {
   onMutationStart: (schemaVersion: string) => {
-    logger.metric(CONTEXT, 'invocation.count', 1)
-    logger.metric(CONTEXT, `schema.${schemaVersion}`, 1)
-    logger.debug(CONTEXT, `[observability] Mutation run with schema: ${schemaVersion}`)
+    logger.info(`[observability] Mutation run with schema: ${schemaVersion}`)
   },
 
   onMutationResult: (variantId: string, fitnessScore: number) => {
-    logger.metric(CONTEXT, 'mutation.count', 1)
-    logger.metric(CONTEXT, 'fitness.score', fitnessScore)
-    logger.info(CONTEXT, `[observability] Variant generated`, {
+    logger.info(`[observability] Variant generated`, {
       variantId,
       fitnessScore
     })
   },
 
   onReplayFallback: (reason: string) => {
-    logger.metric(CONTEXT, 'replay.used', 1)
-    logger.warn(CONTEXT, `[observability] Reused prior variant due to: ${reason}`)
+    logger.warn(`[observability] Reused prior variant due to: ${reason}`)
   },
 
   onError: (err: unknown) => {
-    logger.metric(CONTEXT, 'error.count', 1)
-    logger.error(CONTEXT, '[observability] Prompt genetics error', {
+    logger.error('[observability] Prompt genetics error', {
       error: err
     })
   }

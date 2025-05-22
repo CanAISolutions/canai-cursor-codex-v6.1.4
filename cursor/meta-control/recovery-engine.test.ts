@@ -100,9 +100,10 @@ describe('MetaRecoveryEngine', () => {
         }
       };
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'recovery-engine:event',
         expect.objectContaining({
           type: 'recovery:started',
           data: expect.objectContaining({
@@ -141,9 +142,9 @@ describe('MetaRecoveryEngine', () => {
         }
       };
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      const stepStartedCalls = (eventBus.publish as jest.Mock).mock.calls.filter(
+      const stepStartedCalls = (eventBus.emit as jest.Mock).mock.calls.filter(
         call => call[0].type === 'recovery:step-started'
       );
 
@@ -166,16 +167,17 @@ describe('MetaRecoveryEngine', () => {
       };
 
       // Mock event bus to emit failure
-      (eventBus.publish as jest.Mock).mockImplementation((event, priority) => {
+      (eventBus.emit as jest.Mock).mockImplementation((event, ...args) => {
         if (event.type === 'recovery:step-started' && event.data.step === 'verify-trust-restoration') {
           throw new Error('Trust verification failed');
         }
         return Promise.resolve();
       });
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'recovery-engine:event',
         expect.objectContaining({
           type: 'recovery:fallback-started',
           data: expect.objectContaining({
@@ -208,9 +210,10 @@ describe('MetaRecoveryEngine', () => {
         }
       };
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'recovery-engine:event',
         expect.objectContaining({
           type: 'recovery:started',
           data: expect.objectContaining({
@@ -249,9 +252,9 @@ describe('MetaRecoveryEngine', () => {
         }
       };
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      const stepStartedCalls = (eventBus.publish as jest.Mock).mock.calls.filter(
+      const stepStartedCalls = (eventBus.emit as jest.Mock).mock.calls.filter(
         call => call[0].type === 'recovery:step-started'
       );
 
@@ -274,16 +277,17 @@ describe('MetaRecoveryEngine', () => {
       };
 
       // Mock event bus to emit failure
-      (eventBus.publish as jest.Mock).mockImplementation((event, priority) => {
+      (eventBus.emit as jest.Mock).mockImplementation((event, ...args) => {
         if (event.type === 'recovery:step-started' && event.data.step === 'verify-resource-stability') {
           throw new Error('Resource verification failed');
         }
         return Promise.resolve();
       });
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'recovery-engine:event',
         expect.objectContaining({
           type: 'recovery:fallback-started',
           data: expect.objectContaining({
@@ -324,9 +328,10 @@ describe('MetaRecoveryEngine', () => {
         }
       };
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'recovery-engine:event',
         expect.objectContaining({
           type: 'recovery:started',
           data: expect.objectContaining({
@@ -373,9 +378,9 @@ describe('MetaRecoveryEngine', () => {
         }
       };
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      const stepStartedCalls = (eventBus.publish as jest.Mock).mock.calls.filter(
+      const stepStartedCalls = (eventBus.emit as jest.Mock).mock.calls.filter(
         call => call[0].type === 'recovery:step-started'
       );
 
@@ -406,16 +411,17 @@ describe('MetaRecoveryEngine', () => {
       };
 
       // Mock event bus to emit failure
-      (eventBus.publish as jest.Mock).mockImplementation((event, priority) => {
+      (eventBus.emit as jest.Mock).mockImplementation((event, ...args) => {
         if (event.type === 'recovery:step-started' && event.data.step === 'verify-alignment') {
           throw new Error('Alignment verification failed');
         }
         return Promise.resolve();
       });
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'recovery-engine:event',
         expect.objectContaining({
           type: 'recovery:fallback-started',
           data: expect.objectContaining({
@@ -452,9 +458,10 @@ describe('MetaRecoveryEngine', () => {
         }
       };
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'recovery-engine:event',
         expect.objectContaining({
           type: 'recovery:started',
           data: expect.objectContaining({
@@ -497,9 +504,9 @@ describe('MetaRecoveryEngine', () => {
         }
       };
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      const stepStartedCalls = (eventBus.publish as jest.Mock).mock.calls.filter(
+      const stepStartedCalls = (eventBus.emit as jest.Mock).mock.calls.filter(
         call => call[0].type === 'recovery:step-started'
       );
 
@@ -526,16 +533,17 @@ describe('MetaRecoveryEngine', () => {
       };
 
       // Mock event bus to emit failure
-      (eventBus.publish as jest.Mock).mockImplementation((event, priority) => {
+      (eventBus.emit as jest.Mock).mockImplementation((event, ...args) => {
         if (event.type === 'recovery:step-started' && event.data.step === 'verify-state-restoration') {
           throw new Error('State verification failed');
         }
         return Promise.resolve();
       });
 
-      await eventBus.publish(data, 'high');
+      await eventBus.emit('recovery-engine:event', data, 'high');
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'recovery-engine:event',
         expect.objectContaining({
           type: 'recovery:fallback-started',
           data: expect.objectContaining({

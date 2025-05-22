@@ -16,7 +16,7 @@ export class ScoringOrchestrator {
 
   constructor() {
     this.logger = new Logger('scoring-orchestrator');
-    this.eventBus = new EventBus();
+    this.eventBus = EventBus.getInstance();
     this.scorers = new Map();
 
     // Initialize scorers

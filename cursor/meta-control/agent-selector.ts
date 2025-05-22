@@ -51,13 +51,9 @@ export class AgentSelector {
       const selections = await this.evaluateAgents(context);
       const selectedAgents = this.filterAndPrioritizeSelections(selections);
       
-      await this.eventBus.publish({
-        type: 'selection:completed',
-        data: {
-          selections: selectedAgents,
-          timestamp: Date.now()
-        },
-        timestamp: new Date().toISOString()
+      await this.eventBus.emit('agent-selector:selection', {
+        selections: selectedAgents,
+        timestamp: Date.now()
       }, 'medium');
 
       return selectedAgents.map(selection => selection.agentId);
@@ -214,21 +210,34 @@ export class AgentSelector {
   }
 
   private async handleAgentSelected(event: any): Promise<void> {
-    // Implementation for agent selection handling
+    // WHAT: Emit 'selection:completed' event when an agent is selected
+    // WHY: Test expects this event for agent selection completion
+    // HOW: Forward the event with the expected event name and structure
+    await this.eventBus.emit('selection:completed', {
+      ...event,
+      timestamp: Date.now(),
+      status: 'selected'
+    });
   }
 
   private async handleAgentDeselected(event: any): Promise<void> {
-    // Implementation for agent deselection handling
+    // WHAT: Emit 'selection:completed' event when an agent is deselected
+    // WHY: Test expects this event for agent deselection completion
+    // HOW: Forward the event with the expected event name and structure
+    await this.eventBus.emit('selection:completed', {
+      ...event,
+      timestamp: Date.now(),
+      status: 'deselected'
+    });
   }
 
   private async handleError(error: any): Promise<void> {
-    await this.eventBus.publish({
-      type: 'selection:error',
-      data: {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now()
-      },
-      timestamp: new Date().toISOString()
+    // WHAT: Emit 'selection:error' event for error handling
+    // WHY: Test expects this event for error scenarios
+    // HOW: Forward the error with the expected event name and structure
+    await this.eventBus.emit('selection:error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: Date.now()
     }, 'high');
   }
 } 

@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/zombie-hunter/pattern-insights.ts`  
-@purpose: Detects repeated zombie triggers, recovery failures, or session stagnation trends  
-@drop-type: Codex copy/paste-safe, audit-safe
-
-// File: /cursor/accelerators/zombie-hunter/pattern-insights.ts
+// Purpose: Detects repeated zombie triggers, recovery failures, or session stagnation trends
+// Codex: Codex copy/paste-safe, audit-safe
 // Evaluates recent zombie traces to detect fatigue loops, escalation needs, or QA drift
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type ZombieEvent = {
   sessionId: string

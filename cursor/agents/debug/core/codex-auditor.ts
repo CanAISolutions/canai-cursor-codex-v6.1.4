@@ -4,9 +4,9 @@
  * Validates fixes against structural, safety, and policy rules before merge.
  */
 
-import { FixProposal } from './ai-provider';
-import { appendToFixContextAsync } from './fix-context-utils';
-import { recordMetric } from './telemetry';
+import { BugContext, FixProposal, AIProvider } from '../engines/ai-provider';
+import { appendToFixContextAsync } from '../context/fix-context-utils';
+import { recordMetric } from '../utils/telemetry';
 
 /**
  * Runs static, rule-based audits on a proposed fix.

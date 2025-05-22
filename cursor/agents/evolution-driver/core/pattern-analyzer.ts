@@ -33,7 +33,7 @@ export class PatternAnalyzer {
           existing.occurrences += analysis.occurrences;
           existing.files.push(...analysis.files);
           existing.impact = Math.max(existing.impact, analysis.impact);
-          existing.suggestions.push(...analysis.suggestions);
+          existing.suggestion = analysis.suggestion;
         } else {
           patterns.set(pattern, analysis);
         }
@@ -47,7 +47,7 @@ export class PatternAnalyzer {
           existing.occurrences += analysis.occurrences;
           existing.files.push(...analysis.files);
           existing.impact = Math.max(existing.impact, analysis.impact);
-          existing.suggestions.push(...analysis.suggestions);
+          existing.suggestion = analysis.suggestion;
         } else {
           patterns.set(pattern, analysis);
         }
@@ -61,7 +61,7 @@ export class PatternAnalyzer {
           existing.occurrences += analysis.occurrences;
           existing.files.push(...analysis.files);
           existing.impact = Math.max(existing.impact, analysis.impact);
-          existing.suggestions.push(...analysis.suggestions);
+          existing.suggestion = analysis.suggestion;
         } else {
           patterns.set(pattern, analysis);
         }
@@ -83,14 +83,11 @@ export class PatternAnalyzer {
     while ((match = functionRegex.exec(file)) !== null) {
       const pattern = 'function-declaration';
       const analysis: PatternAnalysis = {
+        pattern,
         occurrences: 1,
         files: [file],
         impact: 0.5,
-        suggestions: [
-          'Consider using arrow functions for better lexical scoping',
-          'Add JSDoc comments for better documentation',
-          'Consider breaking down large functions into smaller ones'
-        ]
+        suggestion: 'Consider using arrow functions for better lexical scoping',
       };
       patterns.set(pattern, analysis);
     }
@@ -106,14 +103,11 @@ export class PatternAnalyzer {
     while ((match = classRegex.exec(file)) !== null) {
       const pattern = 'class-declaration';
       const analysis: PatternAnalysis = {
+        pattern,
         occurrences: 1,
         files: [file],
         impact: 0.7,
-        suggestions: [
-          'Consider using composition over inheritance',
-          'Add proper access modifiers',
-          'Implement interface contracts'
-        ]
+        suggestion: 'Consider using composition over inheritance',
       };
       patterns.set(pattern, analysis);
     }
@@ -129,14 +123,11 @@ export class PatternAnalyzer {
     while ((match = arrowRegex.exec(file)) !== null) {
       const pattern = 'arrow-function';
       const analysis: PatternAnalysis = {
+        pattern,
         occurrences: 1,
         files: [file],
         impact: 0.3,
-        suggestions: [
-          'Consider adding type annotations',
-          'Break down complex arrow functions',
-          'Add error handling'
-        ]
+        suggestion: 'Consider adding type annotations',
       };
       patterns.set(pattern, analysis);
     }

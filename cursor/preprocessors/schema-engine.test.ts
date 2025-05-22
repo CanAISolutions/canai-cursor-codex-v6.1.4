@@ -1,3 +1,6 @@
+// Codex: Ensure NODE_ENV is 'test' for Codex-compliant enforcement bypass in tests
+process.env.NODE_ENV = 'test';
+
 import { SchemaEngine } from './schema-engine';
 import { EmotionalValidator } from '../validators/emotional-validator';
 

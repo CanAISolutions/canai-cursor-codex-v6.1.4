@@ -8,7 +8,7 @@
 
 import { MemoryRecord } from '../ai-memories/memory-schema';
 import { MemoryFilterConfig, MemoryInjectionType } from './memory-integration-schema';
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 
 export class MemoryFilter {
   constructor(

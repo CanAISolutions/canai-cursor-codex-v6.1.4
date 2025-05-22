@@ -85,7 +85,9 @@ export class SchemaEngine {
 
   /**
    * Main entry: Accepts interpreted intent, optional sparkIntentRaw, and optional visionCatcher input.
-   * Enforces emotional chain-of-custody and field-level metadata requirements.
+   * WHAT: Structures intent or falls back safely if input is malformed/null/chaos
+   * WHY: Prevents unhandled exceptions and ensures emotional trust continuity
+   * HOW: Checks input type/shape, returns fallback StructuredIntent if invalid
    */
   async structureIntent(
     interpreted: {
@@ -103,6 +105,31 @@ export class SchemaEngine {
       visionCatcherInput?: string;
     }
   ): Promise<StructuredIntent> {
+    // Fallback: handle null, undefined, or chaos input
+    if (!interpreted || typeof interpreted !== 'object' || Array.isArray(interpreted)) {
+      // Codex fallback: always return safe fallback StructuredIntent
+      return {
+        business_type: { value: '', confidence: 0, source: 'fallback', overrideable: false, errorState: true, wasConfirmed: false },
+        primary_goal: { value: '', confidence: 0, source: 'fallback', overrideable: false, errorState: true, wasConfirmed: false },
+        tone: { value: '', confidence: 0, source: 'fallback', overrideable: false, errorState: true, wasConfirmed: false },
+        challenges: { value: [], confidence: 0, source: 'fallback', overrideable: false, errorState: true, wasConfirmed: false },
+        motivator: { value: '', confidence: 0, source: 'fallback', overrideable: false, errorState: true, wasConfirmed: false },
+        _meta: {
+          allFields: ['business_type', 'primary_goal', 'tone', 'challenges', 'motivator'],
+          injectedFields: [],
+          validationPassed: false,
+          errors: ['Fallback: invalid or null input'],
+          usedSparkSignal: false,
+          usedVisionCatcher: false,
+          intentConfidence: 0,
+          fallbackSummary: 'Fallback: invalid or null input',
+          emotionalAnchorPresent: false,
+          conflictDetected: false,
+          hasMotivationHook: false
+        }
+      };
+    }
+
     // --- Codex Enforcement Guard (Schema Mutation Entry) ---
     // This will eventually be mounted at the entry of all schema mutation flows (/flows/schema/),
     // blocking any mutation if enforcement is not complete. Activation requires schema intelligence,

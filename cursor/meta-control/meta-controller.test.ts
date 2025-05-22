@@ -27,6 +27,7 @@ jest.mock('./agent-selector');
 // Define mock interfaces
 interface MockEventBus {
   publish: jest.Mock;
+  emit: jest.Mock;
   on: jest.Mock;
   off: jest.Mock;
   once: jest.Mock;
@@ -144,12 +145,13 @@ describe('MetaController', () => {
   beforeEach(() => {
     // Initialize mocks
     eventBus = {
-      publish: jest.fn().mockResolvedValue(undefined),
+      publish: jest.fn(),
+      emit: jest.fn(),
       on: jest.fn(),
       off: jest.fn(),
       once: jest.fn(),
-      removeAllListeners: jest.fn()
-    };
+      removeAllListeners: jest.fn(),
+    } as unknown as MockEventBus;
 
     agentMemory = {
       getAgentMetrics: jest.fn().mockResolvedValue({
@@ -429,7 +431,7 @@ describe('MetaController', () => {
         timestamp: new Date().toISOString()
       };
 
-      await eventBus.publish('agent:request', request);
+      await eventBus.emit('meta-controller:agent-request', request);
 
       expect(agentSelector.selectAgent).toHaveBeenCalledWith(request);
       expect(trustScorer.validateTrustThreshold).toHaveBeenCalled();
@@ -456,7 +458,7 @@ describe('MetaController', () => {
 
       agentSelector.selectAgent.mockRejectedValueOnce(new Error('Selection failed'));
 
-      await eventBus.publish('agent:request', request);
+      await eventBus.emit('meta-controller:agent-request', request);
 
       expect(fallbackManager.handleFallback).toHaveBeenCalledWith('selection', expect.any(Object));
       expect(eventBus.publish).toHaveBeenCalledWith(
@@ -482,7 +484,7 @@ describe('MetaController', () => {
         timestamp: new Date().toISOString()
       };
 
-      await eventBus.publish('agent:request', request);
+      await eventBus.emit('meta-controller:agent-request', request);
       await eventBus.publish('trust:violation', {
         type: 'threshold',
         value: 0.7,
@@ -505,7 +507,7 @@ describe('MetaController', () => {
         timestamp: new Date().toISOString()
       };
 
-      await eventBus.publish('agent:request', request);
+      await eventBus.emit('meta-controller:agent-request', request);
 
       expect(fallbackManager.handleFallback).toHaveBeenCalledWith('state', expect.any(Object));
       expect(eventBus.publish).toHaveBeenCalledWith(
@@ -533,7 +535,7 @@ describe('MetaController', () => {
         timestamp: new Date().toISOString()
       };
 
-      await eventBus.publish('agent:request', request);
+      await eventBus.emit('meta-controller:agent-request', request);
 
       expect(fallbackManager.handleFallback).toHaveBeenCalledWith('event', expect.any(Object));
       expect(eventBus.publish).toHaveBeenCalledWith(

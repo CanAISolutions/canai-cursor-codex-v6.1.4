@@ -6,7 +6,7 @@
  * Validates injection safety and calculates influence.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { CodexRuleEngine } from '../rules/rule-engine';
 import { CodexPromptRegistry } from '../prompt-registry/prompt-registry';
 import { MemoryFilter } from './memory-filter';

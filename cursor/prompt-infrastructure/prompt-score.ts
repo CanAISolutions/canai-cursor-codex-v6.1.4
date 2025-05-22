@@ -5,7 +5,7 @@
  * Scores prompts based on trust impact, performance metrics, and Codex alignment.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import {
   PromptDefinition,
   PromptScorer,

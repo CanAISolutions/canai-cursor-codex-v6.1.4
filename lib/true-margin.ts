@@ -30,7 +30,7 @@ export class TrueMargin {
   private readonly TARGET_ROI = 2.0; // 200% target ROI
 
   constructor() {
-    this.eventBus = new EventBus();
+    this.eventBus = EventBus.getInstance();
     this.trustCalculator = new TrustScoreCalculator();
     this.setupEventListeners();
   }

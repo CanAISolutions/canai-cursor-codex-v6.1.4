@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/swarm-agents/pattern-insights.ts`  
-@purpose: Analyzes swarm health, agent reliability, and fallback overuse patterns  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
-// File: /cursor/accelerators/swarm-agents/pattern-insights.ts
+// Purpose: Analyzes swarm health, agent reliability, and fallback overuse patterns
+// Codex: Codex copy/paste-safe, Cursor-auditable
 // Detects quorum instability, fallback overuse, agent volatility, and mode imbalance
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type SwarmLogEntry = {
   timestamp: string

@@ -54,6 +54,9 @@ export interface QualityTrend {
   values: number[];
   timestamps: Date[];
   trend: 'improving' | 'degrading' | 'stable';
+  confidence: number;
+  value: number;
+  timestamp: Date;
 }
 
 export interface LearningOpportunity {

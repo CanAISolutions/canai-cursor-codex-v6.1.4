@@ -1,13 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/auto-rollback/pattern-insights.ts`  
-@purpose: Detects behavioral anomalies across rollback sessions  
-@drop-type: Copy/paste-safe (Cursor compliant)
-
-
-// File: /cursor/accelerators/auto-rollback/pattern-insights.ts
+// Purpose: Detects behavioral anomalies across rollback sessions
+// Codex: Copy/paste-safe (Cursor compliant)
 // Detects signal clusters and abnormal rollback behavior across sessions
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type RollbackSession = {
   timestamp: string

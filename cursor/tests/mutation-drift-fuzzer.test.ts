@@ -1,12 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { MutationDriftFuzzerMockV1, MutationDriftEvent } from './_mocks/mutation-drift-fuzzer-mock';
-
 /**
  * mutationDriftFuzzer — Fuzzes agent, memory, validator, and prompt for drift/mutation
  * WHAT: Randomizes config, memory, validator logic, and prompt text to induce drift/mutation.
  * WHY: To guarantee Codex alignment, schema enforcement, and prompt consistency under mutation/drift.
  * HOW: Uses version-tagged mocks, logs all mutations, and asserts deterministic or flagged divergence.
  */
+import { MutationDriftFuzzerMockV1, MutationDriftEvent } from './_mocks/mutation-drift-fuzzer-mock';
+
 describe('mutationDriftFuzzer (integration)', () => {
   it('should detect and log all drift-induced misalignments and prompt inconsistencies [mock:v1]', async () => {
     // Arrange: Create a version-tagged mutation drift fuzzer mock

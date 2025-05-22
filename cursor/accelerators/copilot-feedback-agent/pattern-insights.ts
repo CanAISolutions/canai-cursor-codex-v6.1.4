@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/copilot-feedback-agent/pattern-insights.ts`  
-@purpose: Detects session anomalies and overuse patterns in feedback triggers  
-@drop-type: Cursor-safe, Codex-standard
-
-// File: /cursor/accelerators/copilot-feedback-agent/pattern-insights.ts
+// Purpose: Detects session anomalies and overuse patterns in feedback triggers
+// Codex: Cursor-safe, Codex-standard
 // Analyzes session patterns for repeated drift or fatigue triggers
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type FeedbackTrigger = {
   timestamp: string

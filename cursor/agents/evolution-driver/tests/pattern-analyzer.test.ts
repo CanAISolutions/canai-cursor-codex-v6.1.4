@@ -17,7 +17,7 @@ describe('PatternAnalyzer', () => {
       testCoverage: 0.75,
       performance: 0.9,
       maintainability: 0.85,
-      timestamp: new Date().toISOString()
+      timestamp: new Date()
     };
 
     analyzer = new PatternAnalyzer(mockMetrics);
@@ -50,19 +50,21 @@ describe('PatternAnalyzer', () => {
     it('should detect pattern changes', async () => {
       const oldPatterns = new Map<string, PatternAnalysis>([
         ['function-declaration', {
+          pattern: 'function-declaration',
           occurrences: 1,
           files: ['file1.ts'],
           impact: 0.5,
-          suggestions: ['Consider using arrow functions']
+          suggestion: 'Consider using arrow functions'
         }]
       ]);
 
       const newPatterns = new Map<string, PatternAnalysis>([
         ['function-declaration', {
+          pattern: 'function-declaration',
           occurrences: 2,
           files: ['file1.ts', 'file2.ts'],
           impact: 0.6,
-          suggestions: ['Consider using arrow functions']
+          suggestion: 'Consider using arrow functions'
         }]
       ]);
 

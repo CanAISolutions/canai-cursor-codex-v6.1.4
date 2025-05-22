@@ -7,6 +7,7 @@
 
 import { EvolutionTriggerCoordinator } from './trigger-manager';
 import { TrustEvolutionTracker } from '../agents/trust-scorer/evolution-tracker';
+import type { TrustEvolutionMetrics } from '../agents/trust-scorer/evolution-tracker';
 import { PerformanceOptimizer } from '../optimization/performance-optimizer';
 import { EmotionalIntelligenceEngine } from '../agents/emotional-intelligence/pipeline';
 import { ResourceMonitor } from '../optimization/resource-monitor';
@@ -83,7 +84,13 @@ describe('EvolutionTriggerCoordinator', () => {
   let mockResourceMonitor: jest.Mocked<ResourceMonitor>;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = {
+      emit: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn(),
+      once: jest.fn(),
+      removeAllListeners: jest.fn(),
+    } as any;
     
     // Create mocks using jest.spyOn
     mockTrustTracker = {
@@ -308,7 +315,13 @@ describe('EvolutionTriggerCoordinator', () => {
     it('should handle trigger processing timeouts', async () => {
       // Mock slow processing
       mockTrustTracker.calculateEvolutionMetrics.mockImplementationOnce(() => 
-        new Promise(resolve => setTimeout(resolve, 2000))
+        new Promise<TrustEvolutionMetrics>(resolve => setTimeout(() => resolve({
+          baselineScore: 0.9,
+          improvementRate: 0.1,
+          stabilityIndex: 0.95,
+          recoveryEfficiency: 0.9,
+          adaptationSpeed: 0.05
+        }), 2000))
       );
 
       await coordinator.handleTrigger('trust-recovery', {
@@ -484,7 +497,13 @@ describe('EvolutionTriggerCoordinator', () => {
 
       // Mock slow processing
       mockTrustTracker.calculateEvolutionMetrics.mockImplementationOnce(() => 
-        new Promise(resolve => setTimeout(resolve, 2000))
+        new Promise<TrustEvolutionMetrics>(resolve => setTimeout(() => resolve({
+          baselineScore: 0.9,
+          improvementRate: 0.1,
+          stabilityIndex: 0.95,
+          recoveryEfficiency: 0.9,
+          adaptationSpeed: 0.05
+        }), 2000))
       );
 
       await coordinator.handleTrigger('trust-recovery', {

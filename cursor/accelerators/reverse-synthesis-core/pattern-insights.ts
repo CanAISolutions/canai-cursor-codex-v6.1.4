@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/reverse-synthesis-core/pattern-insights.ts`  
-@purpose: Detects inference instability, frequent fallback usage, and drift decay over time  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
-// File: /cursor/accelerators/reverse-synthesis-core/pattern-insights.ts
+// Purpose: Detects inference instability, frequent fallback usage, and drift decay over time
+// Codex: Copy/paste-safe, Cursor-auditable
 // Analyzes recent traces for pattern instability or systemic inference failure
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type SynthesisTrace = {
   timestamp: string

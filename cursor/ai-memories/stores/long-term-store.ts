@@ -5,7 +5,7 @@
  * Implements persistent storage for long-term memories with versioning and compression.
  */
 
-import { EventBus } from '../../utils/event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import { LongTermMemory, MemoryMetadata, MemoryVersion } from '../memory-types';
 import * as fs from 'fs/promises';
 import * as path from 'path';

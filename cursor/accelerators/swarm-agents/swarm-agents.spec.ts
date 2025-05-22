@@ -1,9 +1,5 @@
-# ✅ File: `swarm-agents.spec.ts`  
-@location: `/cursor/accelerators/swarm-agents/swarm-agents.spec.ts`  
-@purpose: Validates entrypoint behavior, config loading, and result shape  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
-// File: /cursor/accelerators/swarm-agents/swarm-agents.spec.ts
+// Purpose: Validates entrypoint behavior, config loading, and result shape
+// Codex: Codex copy/paste-safe, Cursor-auditable
 // Validates entry execution of swarm-agents.ts with mocked input
 
 import { runSwarmAgents } from './swarm-agents'

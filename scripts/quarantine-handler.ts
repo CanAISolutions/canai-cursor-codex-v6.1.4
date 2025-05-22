@@ -6,7 +6,7 @@
 
 import { ClarityEngine } from '../gpt-templates/clarity-schema';
 import { TrustScoreCalculator } from '../cursor/validators/trust-score';
-import { MemoryFidelityTracker } from '../cursor/memory/fidelity-tracker';
+import { FidelityTracker } from '../cursor/memory/fidelity-tracker';
 import { EventBus } from '../event-bus/eventBus';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -21,15 +21,15 @@ interface QuarantineConfig {
 export class QuarantineHandler {
   private clarityEngine: ClarityEngine;
   private trustCalculator: TrustScoreCalculator;
-  private memoryTracker: MemoryFidelityTracker;
+  private memoryTracker: FidelityTracker;
   private eventBus: EventBus;
   private config: QuarantineConfig;
 
   constructor(config: QuarantineConfig) {
     this.clarityEngine = new ClarityEngine();
     this.trustCalculator = new TrustScoreCalculator();
-    this.memoryTracker = new MemoryFidelityTracker();
-    this.eventBus = new EventBus();
+    this.memoryTracker = new FidelityTracker();
+    this.eventBus = EventBus.getInstance();
     this.config = config;
   }
 
@@ -70,8 +70,8 @@ export class QuarantineHandler {
       originalPath: promptPath,
       quarantinedAt: new Date().toISOString(),
       validationResults: validation,
-      trustScore: await this.trustCalculator.calculateTrustScore(promptPath),
-      memoryFidelity: await this.memoryTracker.getFidelityScore(promptPath)
+      trustScore: await this.trustCalculator.calculateTrustScore(),
+      memoryFidelity: await this.memoryTracker.calculateFidelity(promptPath)
     };
 
     await fs.writeFile(

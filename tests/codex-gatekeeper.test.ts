@@ -4,14 +4,14 @@
  */
 
 import { jest } from '@jest/globals';
-import { enforceMergeGate, createPipelineError } from '../cursor/agents/debug/core/codex-gatekeeper';
+import { enforceMergeGate } from '../cursor/agents/debug/core/codex-gatekeeper';
 import { execAsync } from '../cursor/agents/debug/utils/shell-utils';
 import { appendToFixContextAsync } from '../cursor/agents/debug/context/fix-context-utils';
 import { recordMetric } from '../cursor/agents/debug/utils/telemetry';
 import fs from 'fs';
 
-jest.mock('../shell-utils');
-jest.mock('../fix-context-utils');
+jest.mock('../cursor/agents/debug/utils/shell-utils');
+jest.mock('../cursor/agents/debug/context/fix-context-utils');
 jest.mock('../telemetry');
 
 describe('enforceMergeGate', () => {
@@ -20,17 +20,25 @@ describe('enforceMergeGate', () => {
     filepath: 'file.js',
     reason: 'Fix bug',
   };
-  const opts = { traceId: 'test123' };
+  const opts = { traceId: 'test123', createBranch: 'test-branch' };
+  const config = {
+    token: 'test-token',
+    owner: 'test-owner',
+    repo: 'test-repo',
+    baseBranch: 'main',
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (execAsync as jest.Mock).mockResolvedValue({ stdout: 'file.js' });
-    (appendToFixContextAsync as jest.Mock).mockResolvedValue(undefined);
-    (recordMetric as jest.Mock).mockReturnValue(undefined);
+    (execAsync as any).mockResolvedValue({ stdout: 'file.js', stderr: '' });
+    (appendToFixContextAsync as any).mockResolvedValue(undefined);
+    (recordMetric as any).mockReturnValue(undefined);
     jest.spyOn(fs, 'existsSync').mockReturnValue(true);
   });
 
   it('should apply and commit patch', async () => {
-    await enforceMergeGate(fixProposal, opts);
-    expect(execAsync).toHaveBeenCalledWith(expect.stringContaining('git apply'), expect.any(Object));
-    expect(execAsync).toHaveBeenCalledWith(expect.stringContaining('git commit'), expect.any(Object));
+    await enforceMergeGate(fixProposal, opts, config);
+    expect(execAsync).toHaveBeenCalledWith(expect.stringContaining('git apply'));
+    expect(execAsync).toHaveBeenCalledWith(expect.stringContaining('git commit'));
+  });
+});

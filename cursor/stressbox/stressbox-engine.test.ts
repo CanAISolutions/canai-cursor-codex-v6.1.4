@@ -20,7 +20,7 @@ describe('StressBox', () => {
   const mockReportsDir = '/stressbox/reports';
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     stressBox = new StressBox(eventBus);
   });
 
@@ -46,7 +46,7 @@ describe('StressBox', () => {
       
       report.results.forEach(result => {
         expect(result.riskAssessment).toBeDefined();
-        expect(result.riskAssessment.level).toBeOneOf(['low', 'medium', 'high']);
+        expect(['low', 'medium', 'high']).toContain(result.riskAssessment.level);
         expect(Array.isArray(result.riskAssessment.factors)).toBe(true);
       });
     });

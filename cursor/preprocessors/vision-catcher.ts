@@ -34,8 +34,17 @@ export class VisionCatcher {
 
   /**
    * Main entry: Collects vision input and enriches structured intent
+   * WHAT: Enriches intent with vision or falls back safely if input is malformed/null/chaos
+   * WHY: Prevents unhandled exceptions and ensures emotional trust continuity
+   * HOW: Checks input type/shape, returns null if invalid
    */
   async catchVision(structured: StructuredIntent): Promise<StructuredIntent | null> {
+    // Fallback: handle null, undefined, or chaos input
+    if (!structured || typeof structured !== 'object' || Array.isArray(structured) || !structured._meta) {
+      // Codex fallback: always return null (no enrichment)
+      return null;
+    }
+
     // Check if we need to trigger Vision Catcher
     if (!this.needsVisionCatch(structured)) {
       return null;

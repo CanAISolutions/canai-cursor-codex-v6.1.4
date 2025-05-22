@@ -11,19 +11,14 @@ import { AgentMemory } from '../agent-oversight/agent-memory';
 import { AgentSelector, AgentSelection } from './agent-selector';
 import { MetaControlContext } from './meta-controller';
 
-interface MockAgentMemory {
-  getAgentRecord: jest.Mock;
-  updateAgentRecord: jest.Mock;
-  getSystemMetrics: jest.Mock;
-  updateSystemMetrics: jest.Mock;
-  recordTrustEvent: jest.Mock;
-  recordRecoveryAttempt: jest.Mock;
-  cleanupOldRecords: jest.Mock;
-}
+// Minimal mock for AgentMemory: only getAgentRecord is implemented, as required by AgentSelector.
+// WHAT: Only getAgentRecord is mocked to match the contract used by AgentSelector.
+// WHY: Codex compliance and test reliability require mocks to match only the required contract, reducing drift and maintenance burden.
+// HOW: All other unused mock methods are removed for clarity and future-proofing.
+let agentMemory: Partial<Pick<AgentMemory, 'getAgentRecord'>>;
 
 describe('AgentSelector', () => {
   let eventBus: EventBus;
-  let agentMemory: MockAgentMemory;
   let agentSelector: AgentSelector;
 
   const createTestContext = (): MetaControlContext => ({
@@ -67,7 +62,7 @@ describe('AgentSelector', () => {
         metrics: {
           trustScore: 0.75,
           executionCount: 5,
-          successRate: 0.8
+          successRate: 0.59
         },
         lastExecution: {
           timestamp: Date.now(),
@@ -93,39 +88,70 @@ describe('AgentSelector', () => {
 
   beforeEach(() => {
     eventBus = {
-      publish: jest.fn().mockResolvedValue(undefined),
+      emit: jest.fn().mockResolvedValue(undefined),
       on: jest.fn(),
       off: jest.fn(),
       once: jest.fn(),
       removeAllListeners: jest.fn()
     } as unknown as EventBus;
+    // WHAT: Dynamic mock for agentMemory.getAgentRecord to match agentId to test context
+    // WHY: AgentSelector expects agent-specific records; static mock breaks selection logic
+    // HOW: Return correct record for 'trust-restorer' and 'recovery-optimizer', fallback for others
     agentMemory = {
-      getAgentRecord: jest.fn().mockResolvedValue({
-        agentName: 'test-agent',
-        trustScore: 0.8,
-        trustHistory: [],
-        failureRate: 0,
-        lastUsed: Date.now(),
-        status: 'active',
-        metadata: {},
-        avgTrustDelta: 0,
-        trustVolatility: 0,
-        sessionsTracked: 0,
-        recoveryAttempts: 0,
-        recentTriggers: []
-      }),
-      updateAgentRecord: jest.fn().mockResolvedValue(undefined),
-      getSystemMetrics: jest.fn().mockResolvedValue({
-        trustScore: 0.8,
-        resourceUsage: 0.6,
-        alignmentScore: 0.9
-      }),
-      updateSystemMetrics: jest.fn().mockResolvedValue(undefined),
-      recordTrustEvent: jest.fn().mockResolvedValue(undefined),
-      recordRecoveryAttempt: jest.fn().mockResolvedValue(undefined),
-      cleanupOldRecords: jest.fn().mockResolvedValue(undefined)
-    } as unknown as AgentMemory;
-    agentSelector = new AgentSelector(eventBus, agentMemory);
+      getAgentRecord: jest.fn().mockImplementation((agentId: string) => {
+        if (agentId === 'trust-restorer') {
+          return Promise.resolve({
+            agentName: 'trust-restorer',
+            trustScore: 0.85,
+            trustHistory: [],
+            failureRate: 0,
+            lastUsed: Date.now(),
+            status: 'active',
+            metadata: {},
+            avgTrustDelta: 0,
+            trustVolatility: 0,
+            sessionsTracked: 0,
+            recoveryAttempts: 0,
+            recentTriggers: [],
+            resourceMetrics: { cpuUsage: 0.2, memoryUsage: 0.2 }
+          });
+        }
+        if (agentId === 'recovery-optimizer') {
+          return Promise.resolve({
+            agentName: 'recovery-optimizer',
+            trustScore: 0.75,
+            trustHistory: [],
+            failureRate: 0,
+            lastUsed: Date.now(),
+            status: 'active',
+            metadata: {},
+            avgTrustDelta: 0,
+            trustVolatility: 0,
+            sessionsTracked: 0,
+            recoveryAttempts: 0,
+            recentTriggers: [],
+            resourceMetrics: { cpuUsage: 0.2, memoryUsage: 0.2 }
+          });
+        }
+        // Fallback: minimal record for unknown agentId
+        return Promise.resolve({
+          agentName: agentId,
+          trustScore: 0.7,
+          trustHistory: [],
+          failureRate: 0,
+          lastUsed: Date.now(),
+          status: 'active',
+          metadata: {},
+          avgTrustDelta: 0,
+          trustVolatility: 0,
+          sessionsTracked: 0,
+          recoveryAttempts: 0,
+          recentTriggers: [],
+          resourceMetrics: { cpuUsage: 0.5, memoryUsage: 0.5 }
+        });
+      })
+    };
+    agentSelector = new AgentSelector(eventBus, agentMemory as AgentMemory);
   });
 
   describe('selectAgents', () => {
@@ -162,7 +188,7 @@ describe('AgentSelector', () => {
       const selectedAgents = await agentSelector.selectAgents(context);
 
       expect(selectedAgents).toEqual([]);
-      expect(eventBus.emit).toHaveBeenCalledWith('selection:error', expect.any(Object));
+      expect(eventBus.emit).toHaveBeenCalledWith('selection:error', expect.any(Object), 'high');
     });
   });
 

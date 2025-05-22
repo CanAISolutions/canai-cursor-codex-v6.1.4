@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/tone-override-agent/pattern-insights.ts`  
-@purpose: Detects tone override overuse, fatigue patterns, emotional failure loops, and profile instability  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
-// File: /cursor/accelerators/tone-override-agent/pattern-insights.ts
+// Purpose: Detects tone override overuse, fatigue patterns, emotional failure loops, and profile instability
+// Codex: Codex copy/paste-safe, Cursor-auditable
 // Evaluates recent override history to detect fatigue or profile mismatch trends
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type OverrideLog = {
   timestamp: string

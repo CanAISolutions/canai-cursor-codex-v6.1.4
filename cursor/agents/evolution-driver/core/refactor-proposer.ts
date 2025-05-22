@@ -23,12 +23,19 @@ export class RefactorProposer {
     for (const [pattern, analysis] of patterns) {
       if (analysis.impact > 0.5) {
         proposals.push({
-          pattern,
+          id: `${pattern}-${Date.now()}`,
+          type: 'pattern',
           description: this.generateDescription(pattern, analysis),
           impact: analysis.impact,
           complexity: this.calculateComplexity(analysis),
-          files: analysis.files,
-          suggestions: analysis.suggestions
+          changes: [], // No code changes generated in this mock
+          reasoning: `Pattern '${pattern}' detected with impact ${analysis.impact}`,
+          confidence: 1.0, // Default confidence
+          metadata: {
+            files: analysis.files,
+            suggestion: analysis.suggestion,
+            occurrences: analysis.occurrences
+          }
         });
       }
     }
@@ -57,20 +64,6 @@ export class RefactorProposer {
     if (!proposal.type || !proposal.description) {
       return false;
     }
-
-    if (typeof proposal.priority !== 'number' || 
-        proposal.priority < 0 || 
-        proposal.priority > 1) {
-      return false;
-    }
-
-    if (proposal.impact) {
-      if (typeof proposal.impact.complexity !== 'number' ||
-          typeof proposal.impact.maintainability !== 'number') {
-        return false;
-      }
-    }
-
     return true;
   }
 

@@ -13,15 +13,14 @@ describe('EvolutionDriver', () => {
 
   beforeEach(() => {
     config = {
-      minQualityScore: 0.8,
-      maxComplexity: 0.9,
       patternRecognitionEnabled: true,
-      metricsThreshold: {
-        codeQuality: 0.8,
-        testCoverage: 0.75,
-        performance: 0.9,
-        maintainability: 0.85
-      }
+      refactoringEnabled: true,
+      qualityTrackingEnabled: true,
+      selfImprovementEnabled: true,
+      minQualityThreshold: 0.8,
+      maxRefactoringComplexity: 0.9,
+      learningRate: 0.1,
+      proposalFrequency: 'daily'
     };
 
     driver = new EvolutionDriver(config);

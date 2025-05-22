@@ -6,7 +6,7 @@
  * Integrates with rule engine for contract validation.
  */
 
-import { EventBus } from '../event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { PromptDefinition } from '../prompt-infrastructure/prompt-schema';
 import { CodexRuleEngine } from '../rules/rule-engine';
 import { 
@@ -50,7 +50,7 @@ export class CodexPromptRegistryLoader implements PromptRegistryLoader {
           const entry = await this.registerPrompt(prompt);
           entries.push(entry);
           
-          this.eventEmitter.emitPromptLoaded(
+          await this.eventEmitter.emitPromptLoaded(
             entry.id,
             entry.prompt.version,
             {
@@ -61,7 +61,7 @@ export class CodexPromptRegistryLoader implements PromptRegistryLoader {
           );
         }
       } catch (error) {
-        this.eventEmitter.emitPromptInvalid(
+        await this.eventEmitter.emitPromptInvalid(
           path.basename(file, '.json'),
           error instanceof Error ? error.message : 'Unknown error'
         );

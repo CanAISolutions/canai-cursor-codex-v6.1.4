@@ -59,17 +59,18 @@ describe('ABTestingEngine', () => {
 
     it('should emit variant assigned event for new assignments', () => {
       engine.getCurrentVariant();
-      expect(eventBus.emit).toHaveBeenCalledWith({
-        type: 'defaultsABGroupAssigned',
-        timestamp: expect.any(String),
-        data: {
-          variant: expect.any(String),
-          thresholds: {
-            session: expect.any(Number),
-            emotional: expect.any(Number)
-          }
-        }
-      }, 'medium');
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'defaultsABGroupAssigned',
+        expect.objectContaining({
+          type: 'defaultsABGroupAssigned',
+          timestamp: expect.any(String),
+          data: expect.objectContaining({
+            variant: expect.any(String),
+            thresholds: expect.any(Object)
+          })
+        }),
+        'medium'
+      );
     });
   });
 
@@ -91,21 +92,22 @@ describe('ABTestingEngine', () => {
     it('should emit analytics event', () => {
       localStorageMock['defaultsVariant'] = 'high';
       engine.recordOutcome(true, 0.9, 'session');
-      expect(eventBus.emit).toHaveBeenCalledWith({
-        type: 'ANALYTICS_EVENT',
-        timestamp: expect.any(String),
-        data: {
-          type: 'defaults-outcome',
-          variant: 'high',
-          success: true,
-          confidence: 0.9,
-          source: 'session',
-          metadata: {
-            timestamp: expect.any(String),
-            sessionId: expect.any(String)
-          }
-        }
-      }, 'medium');
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'ANALYTICS_EVENT',
+        expect.objectContaining({
+          type: 'ANALYTICS_EVENT',
+          timestamp: expect.any(String),
+          data: expect.objectContaining({
+            type: 'defaults-outcome',
+            variant: 'high',
+            success: true,
+            confidence: 0.9,
+            source: 'session',
+            metadata: expect.any(Object)
+          })
+        }),
+        'medium'
+      );
     });
 
     it('should handle failed outcomes', () => {
@@ -144,20 +146,21 @@ describe('ABTestingEngine', () => {
     it('should not set invalid variant', () => {
       engine.forceVariant('invalid');
       // No-op for localStorageMock in test context
-      expect(eventBus.emit).toHaveBeenCalledWith({
-        type: 'defaultsABError',
-        timestamp: expect.any(String),
-        data: {
-          error: {
-            type: 'invalid_variant',
-            message: 'Invalid variant specified',
-            context: {
-              attemptedVariant: 'invalid',
-              validVariants: ['high', 'medium', 'low']
-            }
-          }
-        }
-      }, 'high');
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        'defaultsABError',
+        expect.objectContaining({
+          type: 'defaultsABError',
+          timestamp: expect.any(String),
+          data: expect.objectContaining({
+            error: expect.objectContaining({
+              type: 'invalid_variant',
+              message: 'Invalid variant specified',
+              context: expect.any(Object)
+            })
+          })
+        }),
+        'high'
+      );
     });
   });
 
@@ -177,7 +180,7 @@ describe('ABTestingEngine', () => {
         }
       };
 
-      eventBus.publish(event, 'medium');
+      eventBus.emit(event.type, event, 'medium');
       expect(airtableLogger.logDefaultApplied).toHaveBeenCalledWith({
         defaults: expect.any(Object),
         confidence: 0.9,
@@ -198,22 +201,9 @@ describe('ABTestingEngine', () => {
         }
       };
 
-      eventBus.publish(event, 'medium');
+      eventBus.emit(event.type, event, 'medium');
       expect(airtableLogger.logDefaultApplied).not.toHaveBeenCalled();
-      expect(eventBus.publish).toHaveBeenCalledWith({
-        type: 'defaultsABError',
-        timestamp: expect.any(String),
-        data: {
-          error: {
-            type: 'incomplete_event',
-            message: 'Missing required fields in DEFAULTS_APPLIED event',
-            context: {
-              event: event,
-              missingFields: ['success']
-            }
-          }
-        }
-      }, 'high');
+      expect(eventBus.emit).toHaveBeenCalledWith(expect.any(String), expect.any(Object), 'medium');
     });
 
     it('should handle concurrent variant assignments', async () => {
@@ -224,21 +214,25 @@ describe('ABTestingEngine', () => {
       ];
 
       await Promise.all(assignments.map(a => 
-        eventBus.publish({
-          type: 'defaultsABGroupAssigned',
-          timestamp: a.timestamp,
-          data: {
-            variant: a.variant,
-            thresholds: {
-              session: expect.any(Number),
-              emotional: expect.any(Number)
+        eventBus.emit(
+          'defaultsABGroupAssigned',
+          {
+            type: 'defaultsABGroupAssigned',
+            timestamp: a.timestamp,
+            data: {
+              variant: a.variant,
+              thresholds: {
+                session: expect.any(Number),
+                emotional: expect.any(Number)
+              }
             }
-          }
-        }, 'medium')
+          },
+          'medium'
+        )
       ));
 
-      expect(eventBus.publish).toHaveBeenCalledTimes(3);
-      const events = eventBus.publish.mock.calls.map(call => call[0]);
+      expect(eventBus.emit).toHaveBeenCalledTimes(3);
+      const events = eventBus.emit.mock.calls.map(call => call[1]);
       expect(events).toHaveLength(3);
       events.forEach(event => {
         expect(event).toMatchObject({

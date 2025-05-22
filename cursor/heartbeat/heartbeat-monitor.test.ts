@@ -18,7 +18,13 @@ describe('HeartbeatMonitor', () => {
   let emittedEvents: HeartbeatEvent[];
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = {
+      emit: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn(),
+      once: jest.fn(),
+      removeAllListeners: jest.fn(),
+    } as any;
     trustScorer = {
       getTrustScore: jest.fn().mockResolvedValue(0.8)
     } as any;

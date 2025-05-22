@@ -80,19 +80,10 @@ export async function computeTrustScore(
     }
   }
 
-  // AI scoring (optional)
+  // AI scoring (optional) - Codex Gap: Canonical AIProvider does not implement evaluateFixTrustScore.
+  // Fallback: Heuristic scoring only. Documented for auditability.
   if (aiProvider) {
-    try {
-      const aiScore = await aiProvider.evaluateFixTrustScore(fixProposal, bugContext);
-      const aiBonus = Math.min(aiScore / 2, 5.0);
-      score += aiBonus;
-      await appendToFixContextAsync(
-        `[${traceId}] AI trust score bonus: +${aiBonus.toFixed(2)} (Raw: ${aiScore})`
-      );
-    } catch (err: any) {
-      await appendToFixContextAsync(`[${traceId}] AI trust score failed: ${err.message}`);
-      recordMetric("trust_ai_failed", { traceId, error: err.message });
-    }
+    await appendToFixContextAsync(`[${traceId}] AI trust scoring skipped: evaluateFixTrustScore not implemented in canonical AIProvider.`);
   }
 
   const final = Math.min(Math.max(score, 0), 10);
@@ -130,21 +121,6 @@ export class DebugTrustScorer {
   }
 
   /**
-   * Evaluates trust score for a fix proposal
-   */
-  public async evaluateFixTrust(
-    fixProposal: string,
-    bugContext: DebugContext
-  ): Promise<number> {
-    try {
-      return await this.aiProvider.evaluateFixTrust(fixProposal, bugContext);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to evaluate fix trust: ${message}`);
-    }
-  }
-
-  /**
    * Validates trust score meets minimum threshold
    */
   public validateTrustScore(score: number): boolean {
@@ -163,4 +139,15 @@ export class DebugTrustScorer {
       timestamp: Date.now()
     };
   }
+
+  /**
+   * Codex Gap: evaluateFixTrust is not implemented in canonical AIProvider.
+   * Fallback: Not implemented. Use heuristic scoring only.
+   */
+  // public async evaluateFixTrust(
+  //   fixProposal: string,
+  //   bugContext: DebugContext
+  // ): Promise<number> {
+  //   throw new Error('evaluateFixTrust is not implemented in canonical AIProvider.');
+  // }
 }

@@ -5,7 +5,7 @@
  * Tests prompt loading and validation functionality.
  */
 
-import { EventBus } from '../../utils/event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import { PromptFileLoader } from '../prompt-loader';
 import { PromptDefinition, PromptContract } from '../prompt-schema';
 import * as fs from 'fs/promises';
@@ -19,7 +19,7 @@ describe('PromptFileLoader', () => {
   let mockPrompt: PromptDefinition;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     loader = new PromptFileLoader(eventBus);
 
     // Create mock prompt
@@ -36,20 +36,36 @@ describe('PromptFileLoader', () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
         tags: ['test'],
-        dependencies: []
+        dependencies: [],
+        trustScore: 1,
+        alignmentScore: 1,
+        performanceScore: 1
       },
       contracts: [],
       constraints: [],
       evolution: {
-        parentVersion: '1.0.0',
-        delta: undefined,
-        reason: 'Initial version',
-        approvedBy: 'system'
+        id: 'evo-1',
+        version: '1.0.0',
+        timestamp: Date.now(),
+        changes: [],
+        metadata: {
+          author: 'Test Author',
+          reason: 'Initial version',
+          trustImpact: 0,
+          performanceImpact: 0,
+          alignmentImpact: 0
+        }
       }
     };
 
-    // Mock fs.readFile
-    (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(mockPrompt));
+    // Mock fs.readFile to return a string (as expected with 'utf-8')
+    (fs.readFile as jest.Mock).mockImplementation((file, encoding) => {
+      if (encoding === 'utf-8') {
+        return Promise.resolve(JSON.stringify(mockPrompt));
+      }
+      // If encoding is not specified, return a Buffer
+      return Promise.resolve(Buffer.from(JSON.stringify(mockPrompt)));
+    });
   });
 
   describe('loadPrompt', () => {
@@ -117,14 +133,12 @@ describe('PromptFileLoader', () => {
 
     it('should validate prompt contracts', async () => {
       const contract: PromptContract = {
-        type: 'behavior',
+        id: 'contract-1',
+        type: 'tone',
         description: 'Test contract',
         validation: {
-          method: 'regex',
-          pattern: 'test'
-        },
-        required: true,
-        failureAction: 'error'
+          regex: 'test'
+        }
       };
 
       const promptWithContract = {
@@ -138,14 +152,12 @@ describe('PromptFileLoader', () => {
 
     it('should reject prompt with invalid contract', async () => {
       const invalidContract: PromptContract = {
-        type: 'behavior',
+        id: 'contract-2',
+        type: 'tone',
         description: 'Test contract',
         validation: {
-          method: 'regex',
-          pattern: 'invalid'
-        },
-        required: true,
-        failureAction: 'error'
+          regex: 'invalid'
+        }
       };
 
       const promptWithInvalidContract = {

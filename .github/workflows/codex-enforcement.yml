@@ -1,25 +1,57 @@
-name: Dreamstate Enforcement
+name: Codex Enforcement
+
 on:
   push:
-    branches: ['preboot']
+    branches: ['**']
   pull_request:
-    branches: ['preboot']
+    branches: ['**']
 
 jobs:
-  enforce-dreamstate:
+  enforce-codex:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '20'
       - name: Install Dependencies
-        run: npm install
-      - name: Run Dreamstate Checks
+        run: npm ci
+      - name: Run DreamState Tests
+        run: npm run test:dreamstate
+      - name: Validate Test Files
         run: |
-          npm run dreamstate-hash
-          npm run sentinel:check
-          npm run community:align
-      - name: Verify Hash
-        run: node cursor/scripts/hash-dreamstate.ts
+          test -f docs/reference/dreamstate-test-mappings.md || { echo "Error: Missing dreamstate-test-mappings.md"; exit 1; }
+          test -f cursor/test-coverage-register.md || { echo "Error: Missing test-coverage-register.md"; exit 1; }
+          test -f cursor/mock-integrity-audit.md || { echo "Error: Missing mock-integrity-audit.md"; exit 1; }
+          test -f cursor/auto-actions.log.md || { echo "Error: Missing auto-actions.log.md"; exit 1; }
+      - name: Verify Archived Logs
+        run: |
+          for log in auto-actions.log.2025-05-14T00-00-00.md auto-actions.log.2025-05-15T00-00-00.md auto-actions.log.2025-05-20T00-00-00.md auto-actions.log.2025-05-21T00-00-00.md; do
+            test -f cursor/$log || echo "Warning: Archived log cursor/$log not found"
+          done
+      - name: Check Mock Remediation Status
+        run: |
+          if grep -q "Partial" cursor/mock-integrity-audit.md; then
+            echo "Warning: Partial tests detected in mock-integrity-audit.md. Remediation required by 2025-06-01."
+          else
+            echo "All tests are Real System Bound."
+          fi
+          if grep -l "mock" tests/dreamstate/*.test.ts cursor/tests/system-wide/*.test.ts | grep -v "requireMock"; then
+            echo "Error: Unjustified mocks detected in the following test files:"
+            grep -l "mock" tests/dreamstate/*.test.ts cursor/tests/system-wide/*.test.ts | grep -v "requireMock"
+            exit 1
+          else
+            echo "No unjustified mocks detected."
+          fi
+      - name: Verify Test Health Metrics
+        run: |
+          curl -s -f http://api/public/test-health > test-health.json || { echo "Error: Failed to query /api/public/test-health"; exit 1; }
+          jq -e '.status == "healthy"' test-health.json || { echo "Error: Test health unhealthy"; exit 1; }
+      - name: Notify on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-id: 'cofounder-escalation'
+          text: 'Codex Enforcement CI failed on branch ${{ github.ref_name }}. Escalate to Cofounder for review. Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'

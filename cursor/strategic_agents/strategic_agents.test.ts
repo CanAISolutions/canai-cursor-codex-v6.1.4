@@ -22,7 +22,7 @@ jest.mock('../agent-oversight/agent-memory');
 jest.mock('../agents/trust-scorer/trust-scorer');
 
 interface MockEventBus extends EventBus {
-  publish: jest.Mock;
+  emit: jest.Mock;
   on: jest.Mock;
   off: jest.Mock;
   once: jest.Mock;
@@ -88,7 +88,7 @@ describe('Strategic Agents Module', () => {
 
     // Initialize mocks with proper typing
     eventBus = {
-      publish: jest.fn().mockResolvedValue(undefined),
+      emit: jest.fn().mockResolvedValue(undefined),
       on: jest.fn(),
       off: jest.fn(),
       once: jest.fn(),
@@ -222,7 +222,7 @@ describe('Strategic Agents Module', () => {
         (agentMemory.updateTrustMetrics as jest.Mock).mockRejectedValue(new Error('Test error'));
 
         await expect(agent.executeStrategy(context)).rejects.toThrow('Test error');
-        expect(eventBus.publish).toHaveBeenCalledWith(
+        expect(eventBus.emit).toHaveBeenCalledWith(
           expect.objectContaining({
             type: 'strategy_error',
             data: expect.objectContaining({

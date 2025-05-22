@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { FallbackCascadeMockV1, FallbackEventLog } from './_mocks/fallback-cascade-mock';
 
 /**

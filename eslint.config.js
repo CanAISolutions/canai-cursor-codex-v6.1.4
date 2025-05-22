@@ -1,16 +1,20 @@
 // eslint.config.js
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const {
-  parser,
-  plugin,
-  configs: { recommended }
+  configs: { recommended },
+  rules: tsRules,
+  default: tsPlugin
 } = tseslint;
+
+const parser = tsParser;
+const plugin = tseslint;
 
 export default [
   // ✅ Base JS rules for all files

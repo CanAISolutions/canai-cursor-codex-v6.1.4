@@ -5,7 +5,7 @@
  * Tests the memory hierarchy manager for proper coordination between memory stores.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { MemoryHierarchyManager } from './memory-hierarchy-manager';
 import { ShortTermMemory, WorkingMemory, LongTermMemory, Memory } from './memory-types';
 import * as fs from 'fs/promises';
@@ -17,7 +17,7 @@ describe('MemoryHierarchyManager', () => {
   let testStoragePath: string;
 
   beforeEach(async () => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     testStoragePath = path.join(__dirname, 'test-storage');
     manager = new MemoryHierarchyManager(eventBus, testStoragePath);
     await manager.initialize();
@@ -199,9 +199,9 @@ describe('MemoryHierarchyManager', () => {
   describe('Event Handling', () => {
     it('should emit events for memory operations', async () => {
       const events: any[] = [];
-      eventBus.on('memory.saved', (event) => events.push(event));
-      eventBus.on('memory.recalled', (event) => events.push(event));
-      eventBus.on('memory.promoted', (event) => events.push(event));
+      eventBus.on('memory.saved', async (event) => { events.push(event); });
+      eventBus.on('memory.recalled', async (event) => { events.push(event); });
+      eventBus.on('memory.promoted', async (event) => { events.push(event); });
 
       const shortTermMemory: ShortTermMemory = {
         id: 'test-st',

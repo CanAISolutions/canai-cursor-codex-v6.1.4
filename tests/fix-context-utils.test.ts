@@ -4,13 +4,13 @@
  */
 
 import { jest } from '@jest/globals';
-import { appendToFixContextAsync, testOverrides } from '../fix-context-utils';
+import { appendToFixContextAsync, testOverrides } from '../cursor/agents/debug/context/fix-context-utils';
 
 describe('appendToFixContextAsync', () => {
   beforeEach(() => {
-    testOverrides.appendFileAsync = jest.fn().mockResolvedValue(undefined);
-    testOverrides.mkdirSync = jest.fn();
-    testOverrides.existsSync = jest.fn().mockReturnValue(false);
+    (testOverrides.appendFileAsync as any) = jest.fn(() => Promise.resolve(undefined));
+    (testOverrides.mkdirSync as any) = jest.fn();
+    (testOverrides.existsSync as any) = jest.fn().mockReturnValue(false);
   });
 
   it('should write sanitized message to log file', async () => {
@@ -24,7 +24,7 @@ describe('appendToFixContextAsync', () => {
   });
 
   it('should throw a FixContextError on write failure', async () => {
-    testOverrides.appendFileAsync.mockRejectedValue(new Error('Write failed'));
+    (testOverrides.appendFileAsync as any).mockRejectedValue(new Error('Write failed'));
 
     await expect(appendToFixContextAsync('Test')).rejects.toThrow('FixContextError');
   });

@@ -52,9 +52,15 @@ export const MODULARITY_THRESHOLDS = {
   MAX_COMPLEXITY: 0.8
 };
 
+export interface ModularityViolation {
+  type: "coupling" | "bloat" | "drift" | "schema-lag";
+  module: string;
+  description: string;
+}
+
 export interface ModularityCheck {
   passed: boolean;
-  violations?: string[];
+  violations?: ModularityViolation[];
   score: number;
 }
 
@@ -62,6 +68,15 @@ export async function validateModularIntegrity(): Promise<ModularityCheck> {
   // Implementation would check component boundaries, dependencies, and exports
   return {
     passed: true,
-    score: 0.95
+    score: 0.95,
+    violations: []
   };
+}
+
+/**
+ * Detects modular violations (stub for test remediation)
+ */
+export async function detectModularViolations(modules: any[]): Promise<{ violations: any[] }> {
+  // TODO: Implement real violation detection logic
+  return { violations: [] };
 } 

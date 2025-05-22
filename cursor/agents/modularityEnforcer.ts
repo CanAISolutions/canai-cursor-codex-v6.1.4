@@ -6,7 +6,7 @@
  * Enforces: Clean architecture, evolutionary safety, agent autonomy.
  */
 
-import { introspectModules, detectModularViolations } from "../utils/modularity-utils";
+import { introspectModules, validateModularIntegrity } from "../utils/modularity-utils";
 import { emitSystemLog } from "../system-intel/audit-utils";
 
 interface ModularityEnforcementResult {
@@ -19,17 +19,32 @@ interface ModularityEnforcementResult {
 }
 
 export async function enforceModularityStandards(): Promise<ModularityEnforcementResult> {
-  const modules = await introspectModules();
-  const { violations } = await detectModularViolations(modules);
+  // TODO: Replace with real module paths in production
+  const modules = await introspectModules(["src/"]);
+  const modularityCheck = await validateModularIntegrity();
+  let violations: { type: "coupling" | "bloat" | "drift" | "schema-lag"; module: string; description: string; }[] = [];
+  if (Array.isArray(modularityCheck.violations)) {
+    violations = modularityCheck.violations.map(v =>
+      typeof v === 'string'
+        ? { type: 'drift', module: 'unknown', description: v }
+        : v
+    );
+  }
 
   const clean = violations.length === 0;
 
   if (!clean) {
     for (const violation of violations) {
-      emitSystemLog("modularity-violation-detected", violation);
+      await emitSystemLog("modularity-violation-detected", {
+        path: "logs/modularity-violations.log",
+        content: JSON.stringify(violation)
+      });
     }
   } else {
-    emitSystemLog("modularity-health-passed", {});
+    await emitSystemLog("modularity-health-passed", {
+      path: "logs/modularity-violations.log",
+      content: JSON.stringify({})
+    });
   }
 
   return {

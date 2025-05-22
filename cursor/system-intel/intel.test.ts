@@ -10,7 +10,7 @@ import { IntelAggregator, SystemIntelMetrics, AgentMetrics } from './intel-aggre
 import { AgentStatusSurface } from './agent-status-surface';
 import { SnapshotEmitter } from './snapshot-emitter';
 import { TrustTimeline } from './trust-timeline';
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { TrustScorer } from '../agents/trust-scorer/trust-scorer';
 import { HeartbeatMonitor } from '../heartbeat/heartbeat-monitor';
 import { EvolutionTriggerManager } from '../evolution-triggers/evolution-trigger';
@@ -90,7 +90,7 @@ describe('System Intel Module', () => {
   let trustTimeline: TrustTimeline;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     trustScorer = {
       getTrustScore: jest.fn().mockResolvedValue(0.9),
       adjustTrustScore: jest.fn(),
@@ -181,14 +181,14 @@ describe('System Intel Module', () => {
     });
 
     it('should handle trust signal events', async () => {
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'trust:signal',
         timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 0.95
         }
-      }, 'medium');
+      });
 
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].trustScore).toBe(0.95);
@@ -197,14 +197,14 @@ describe('System Intel Module', () => {
     });
 
     it('should handle trust warning events', async () => {
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'trust:warning',
         timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 0.75
         }
-      }, 'high');
+      });
 
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].status).toBe('warning');
@@ -214,14 +214,14 @@ describe('System Intel Module', () => {
     });
 
     it('should handle trust violation events', async () => {
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'trust:violation',
         timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 0.5
         }
-      }, 'high');
+      });
 
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].status).toBe('critical');
@@ -232,7 +232,7 @@ describe('System Intel Module', () => {
     });
 
     it('should handle heartbeat events', async () => {
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'heartbeat:ping',
         timestamp: new Date().toISOString(),
         data: {
@@ -244,7 +244,7 @@ describe('System Intel Module', () => {
             }
           }
         }
-      }, 'medium');
+      });
 
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].status).toBe('healthy');
@@ -257,14 +257,14 @@ describe('System Intel Module', () => {
     });
 
     it('should handle evolution events', async () => {
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'evolution:triggered',
         timestamp: new Date().toISOString(),
         data: {
           agentId: 'agent-1',
           triggerType: 'performance'
         }
-      }, 'high');
+      });
 
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].lastTrigger).toBe('performance');
@@ -273,26 +273,26 @@ describe('System Intel Module', () => {
     });
 
     it('should recover from metric ingestion failures', async () => {
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'trust:signal',
         timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 'invalid' // Invalid score type
         }
-      }, 'medium');
+      });
 
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.systemHealth).toBe('stable');
 
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'trust:signal',
         timestamp: new Date().toISOString(),
         data: {
           component: 'agent-1',
           score: 0.9
         }
-      }, 'medium');
+      });
 
       const updatedMetrics = intelAggregator.getCurrentMetrics();
       expect(updatedMetrics.agents['agent-1'].trustScore).toBe(0.9);
@@ -318,7 +318,7 @@ describe('System Intel Module', () => {
         }
       ];
 
-      await Promise.all(events.map(event => eventBus.publish(event, 'medium')));
+      await Promise.all(events.map(event => eventBus.emit('intel:event', event)));
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].trustScore).toBe(0.95);
       expect(metrics.agents['agent-2'].trustScore).toBe(0.85);
@@ -334,13 +334,13 @@ describe('System Intel Module', () => {
         }
       }));
 
-      await Promise.all(events.map(event => eventBus.publish(event, 'high')));
+      await Promise.all(events.map(event => eventBus.emit('intel:event', event)));
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.recentViolations).toHaveLength(1000); // Should be capped
     });
 
     it('should handle resource threshold violations', async () => {
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'heartbeat:ping',
         timestamp: new Date().toISOString(),
         data: {
@@ -352,7 +352,7 @@ describe('System Intel Module', () => {
             }
           }
         }
-      }, 'high');
+      });
 
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].status).toBe('critical');
@@ -365,7 +365,7 @@ describe('System Intel Module', () => {
     });
 
     it('should handle evolution trigger failures', async () => {
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'evolution:failed',
         timestamp: new Date().toISOString(),
         data: {
@@ -373,7 +373,7 @@ describe('System Intel Module', () => {
           triggerType: 'performance',
           error: 'Trigger failed'
         }
-      }, 'high');
+      });
 
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].lastError).toBe('Trigger failed');
@@ -382,7 +382,7 @@ describe('System Intel Module', () => {
 
     it('should handle heartbeat timeouts', async () => {
       const oldTimestamp = new Date(Date.now() - 20000).toISOString(); // 20 seconds ago
-      await eventBus.publish({
+      await eventBus.emit('intel:event', {
         type: 'heartbeat:timeout',
         timestamp: new Date().toISOString(),
         data: {
@@ -390,7 +390,7 @@ describe('System Intel Module', () => {
           lastHeartbeat: oldTimestamp,
           isActive: false
         }
-      }, 'high');
+      });
 
       const metrics = intelAggregator.getCurrentMetrics();
       expect(metrics.agents['agent-1'].status).toBe('warning');

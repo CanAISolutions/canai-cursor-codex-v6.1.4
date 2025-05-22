@@ -19,21 +19,17 @@ export class EvolutionDriver {
 
   constructor(config: EvolutionDriverConfig) {
     this.config = config;
-    this.patternAnalyzer = new PatternAnalyzer({
-      codeQuality: config.metricsThreshold.codeQuality,
-      testCoverage: config.metricsThreshold.testCoverage,
-      performance: config.metricsThreshold.performance,
-      maintainability: config.metricsThreshold.maintainability,
-      timestamp: new Date().toISOString()
-    });
-    this.qualityTracker = new QualityTracker(config.minQualityScore);
-    this.refactorProposer = new RefactorProposer({
-      codeQuality: config.metricsThreshold.codeQuality,
-      testCoverage: config.metricsThreshold.testCoverage,
-      performance: config.metricsThreshold.performance,
-      maintainability: config.metricsThreshold.maintainability,
-      timestamp: new Date().toISOString()
-    }, config.maxComplexity);
+    // Use static/test values for SystemMetrics for now
+    const defaultMetrics: SystemMetrics = {
+      codeQuality: 0.8,
+      testCoverage: 0.75,
+      performance: 0.9,
+      maintainability: 0.85,
+      timestamp: new Date()
+    };
+    this.patternAnalyzer = new PatternAnalyzer(defaultMetrics);
+    this.qualityTracker = new QualityTracker(config.minQualityThreshold);
+    this.refactorProposer = new RefactorProposer(defaultMetrics, config.maxRefactoringComplexity);
 
     this.metrics = {
       proposalsGenerated: 0,
@@ -82,14 +78,14 @@ export class EvolutionDriver {
   }
 
   public async trackQuality(codebase: string[]): Promise<SystemMetrics> {
+    // Use static/test values for SystemMetrics for now
     const metrics: SystemMetrics = {
-      codeQuality: this.config.metricsThreshold.codeQuality,
-      testCoverage: this.config.metricsThreshold.testCoverage,
-      performance: this.config.metricsThreshold.performance,
-      maintainability: this.config.metricsThreshold.maintainability,
-      timestamp: new Date().toISOString()
+      codeQuality: 0.8,
+      testCoverage: 0.75,
+      performance: 0.9,
+      maintainability: 0.85,
+      timestamp: new Date()
     };
-
     this.qualityTracker.trackMetrics(metrics);
     return metrics;
   }

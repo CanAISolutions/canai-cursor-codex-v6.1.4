@@ -66,12 +66,30 @@ export class ConfirmationUX {
 
   /**
    * Main entry: Handles confirmation flow based on structured intent
+   * WHAT: Confirms user intent or falls back safely if input is malformed/null/chaos
+   * WHY: Prevents unhandled exceptions and ensures emotional trust continuity
+   * HOW: Checks input type/shape, returns fallback confirmation if invalid
    */
   async confirmIntent(structured: StructuredIntent): Promise<{
     confirmed: boolean;
     meta: ConfirmationMeta;
     updatedIntent?: StructuredIntent;
   }> {
+    // Fallback: handle null, undefined, or chaos input
+    if (!structured || typeof structured !== 'object' || Array.isArray(structured) || !structured._meta) {
+      // Codex fallback: always return safe confirmation with fallback meta
+      return {
+        confirmed: true,
+        meta: {
+          usedConfirmationUX: true,
+          decisionSupportTriggered: false,
+          emotionalTrustScore: 5,
+          fieldConfirmations: {}
+        },
+        updatedIntent: undefined
+      };
+    }
+
     const meta: ConfirmationMeta = {
       usedConfirmationUX: true,
       decisionSupportTriggered: false,

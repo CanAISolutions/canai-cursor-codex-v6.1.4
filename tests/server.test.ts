@@ -6,7 +6,8 @@
  */
 
 import request from "supertest";
-import app from "../server";
+import { Request, Response } from "express";
+const app = require("../server");
 
 describe("Dream-State Server Integrity", () => {
   it("should boot and respond to invalid routes with golden 404 payload", async () => {
@@ -28,7 +29,7 @@ describe("Dream-State Server Integrity", () => {
 
   it("should normalize internal server errors into golden emotional payloads", async () => {
     // Simulate throwing error inside route
-    app.get("/simulate-error", (req, res) => {
+    app.get("/simulate-error", (req: Request, res: Response) => {
       throw new Error("Simulated failure");
     });
 

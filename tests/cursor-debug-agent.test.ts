@@ -8,9 +8,10 @@ import { testOverrides as aiTestOverrides } from '../cursor/agents/debug/engines
 import { recordMetric, readMetrics, clearMetrics } from '../cursor/agents/debug/utils/telemetry';
 import * as fs from 'fs';
 import { jest } from '@jest/globals';
+import { loadConfig } from 'config/loadConfig';
 
 jest.mock('../cursor/agents/debug/utils/telemetry');
-jest.mock('../cursor/agents/debug/utils/fix-context-utils');
+jest.mock('../cursor/agents/debug/context/fix-context-utils');
 jest.mock('../cursor/agents/debug/utils/shell-utils');
 jest.mock('../cursor/agents/debug/engines/ai-provider');
 
@@ -18,25 +19,24 @@ describe('runCursorDebugAgent', () => {
   const traceId = 'test-trace-001';
 
   beforeEach(async () => {
-    aiTestOverrides.detectBugs = async () => ({
-      message: 'Test bug',
-      type: 'TypeError',
-      impact: ['src/index.ts'],
-      likelihood: 'high',
-      retryAttempts: 0,
-    });
-
-    aiTestOverrides.proposeFix = async () => ({
-      patch: 'diff --git a/src/index.ts b/src/index.ts\n--- a/src/index.ts\n+++ b/src/index.ts\n@@ ...',
-      filepath: 'src/index.ts',
-      reason: 'Fix example bug',
-      confidence: 0.95,
-    });
-
-    aiTestOverrides.evaluateFixTrustScore = async () => 8.8;
-
-    aiTestOverrides.generateEscalationTicket = async () => {};
-
+    aiTestOverrides.aiProvider = {
+      ping: async () => true,
+      detectBug: async () => ({
+        message: 'Test bug',
+        type: 'TypeError',
+        impact: ['src/index.ts'],
+        likelihood: 'high',
+        retryAttempts: 0,
+      }),
+      proposeFix: async () => ({
+        patch: 'diff --git a/src/index.ts b/src/index.ts\n--- a/src/index.ts\n+++ b/src/index.ts\n@@ ...',
+        filepath: 'src/index.ts',
+        reason: 'Fix example bug',
+        confidence: 0.95,
+      }),
+      generateEscalationTicket: async () => {},
+      evaluateFixTrustScore: async () => 8.8 as any // Not in interface, but used in test
+    } as any;
     await clearMetrics();
   });
 
@@ -47,8 +47,8 @@ describe('runCursorDebugAgent', () => {
 
     const metrics = await readMetrics();
     expect(metrics.length).toBeGreaterThan(0);
-    expect(metrics.some(m => m.metricName === 'bug_detected')).toBe(true);
-    expect(metrics.some(m => m.metricName === 'pipeline_completed')).toBe(true);
+    expect(metrics.some(m => m.event === 'bug_detected')).toBe(true);
+    expect(metrics.some(m => m.event === 'pipeline_completed')).toBe(true);
   });
 
   it('should fail on invalid log format', async () => {
@@ -57,7 +57,10 @@ describe('runCursorDebugAgent', () => {
   });
 
   it('should escalate if trust score is below threshold', async () => {
-    aiTestOverrides.evaluateFixTrustScore = async () => 2.0; // Simulate low trust
+    aiTestOverrides.aiProvider = {
+      ...aiTestOverrides.aiProvider,
+      evaluateFixTrustScore: async () => 2.0 as any
+    } as any;
 
     await expect(runCursorDebugAgent({
       rawLog: 'ReferenceError: bar is undefined\n at x.ts:3:3',
@@ -66,9 +69,10 @@ describe('runCursorDebugAgent', () => {
   });
 
   it('should retry AI bug detection and fallback to inference', async () => {
-    aiTestOverrides.detectBugs = async () => {
-      throw new Error('AI failure');
-    };
+    aiTestOverrides.aiProvider = {
+      ...aiTestOverrides.aiProvider,
+      detectBug: async () => { throw new Error('AI failure'); }
+    } as any;
 
     await expect(runCursorDebugAgent({
       rawLog: 'SyntaxError: Unexpected token',
@@ -77,12 +81,15 @@ describe('runCursorDebugAgent', () => {
   });
 
   it('should throw on unsafe filepaths (e.g. /etc/passwd)', async () => {
-    aiTestOverrides.proposeFix = async () => ({
-      patch: 'diff --git a/etc/passwd b/etc/passwd\n@@ ...',
-      filepath: '/etc/passwd',
-      reason: 'Exploit test',
-      confidence: 1,
-    });
+    aiTestOverrides.aiProvider = {
+      ...aiTestOverrides.aiProvider,
+      proposeFix: async () => ({
+        patch: 'diff --git a/etc/passwd b/etc/passwd\n@@ ...',
+        filepath: '/etc/passwd',
+        reason: 'Exploit test',
+        confidence: 1,
+      })
+    } as any;
 
     await expect(runCursorDebugAgent({
       rawLog: 'Fake error targeting system file',

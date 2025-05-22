@@ -5,7 +5,7 @@
  * Tests the AgentMemory class for proper record management and event emission.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { AgentMemory } from './agent-memory';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,7 +16,7 @@ describe('AgentMemory', () => {
   const testMemoryDir = 'test-memory';
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     agentMemory = new AgentMemory(eventBus, testMemoryDir);
   });
 
@@ -118,7 +118,7 @@ describe('AgentMemory', () => {
       };
 
       const eventPromise = new Promise<any>(resolve => {
-        eventBus.on('agent:record:updated', resolve);
+        eventBus.on('agent:record:updated', async (event) => { resolve(event); });
       });
 
       await agentMemory.updateAgentRecord(agentId, updates);
@@ -139,7 +139,7 @@ describe('AgentMemory', () => {
       };
 
       const eventPromise = new Promise<any>(resolve => {
-        eventBus.on('metric:recorded', resolve);
+        eventBus.on('metric:recorded', async (event) => { resolve(event); });
       });
 
       await agentMemory.updateAgentRecord(agentId, updates);

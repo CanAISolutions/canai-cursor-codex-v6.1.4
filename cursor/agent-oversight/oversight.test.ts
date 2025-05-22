@@ -6,13 +6,16 @@
  * stagnation detection, and memory management.
  */
 
+// Codex: Legacy non-canonical AIProvider methods and types removed as part of interface standardization (2025-05-15). All trust logic now uses canonical AIProvider from engines/ai-provider. See failure tracker for audit trail.
+// If import error persists, fallback to local mock interface for test continuity.
+
 import { OversightEngine } from './oversight-engine';
 import { AgentMemory } from './agent-memory';
 import { StagnationDetector } from './stagnation-detector';
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { EventBusAgent } from '../agents/event-bus/event-bus';
 import { TrustScorer } from '../agents/trust-scorer/trust-scorer';
-import { AIProvider } from '../agents/debug/core/ai-provider';
+import { AIProvider } from '../../agents/debug/engines/ai-provider';
 import { EvolutionTriggerManager } from '../evolution-triggers/evolution-trigger';
 import { TrustEvolutionTracker } from '../agents/trust-scorer/evolution-tracker';
 import { PerformanceOptimizer } from '../optimization/performance-optimizer';
@@ -25,21 +28,10 @@ import * as path from 'path';
 
 // Mock AIProvider implementation
 class MockAIProvider implements AIProvider {
-  async evaluateFixTrustScore(fixProposal: string, bugContext: any): Promise<number> {
-    return 0.9; // Return a high trust score for testing
-  }
-
-  async evaluateFixTrust(fixProposal: string, bugContext: any): Promise<any> {
-    return {
-      score: 0.9,
-      confidence: 0.95,
-      factors: {
-        correctness: 0.9,
-        safety: 0.95,
-        efficiency: 0.85
-      }
-    };
-  }
+  async ping(): Promise<boolean> { return true; }
+  async detectBug(log: string, traceId: string): Promise<any> { return { message: '', type: '', likelihood: 'high', impact: [] }; }
+  async proposeFix(bug: any, traceId: string): Promise<any> { return { patch: '', filepath: '', reason: '' }; }
+  async generateEscalationTicket(input: any): Promise<void> { return; }
 }
 
 jest.mock('fs');
@@ -65,7 +57,7 @@ describe('Agent Oversight Module', () => {
   let visionProcessor: EnhancedVisionProcessor;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     eventBusAgent = new EventBusAgent();
     aiProvider = new MockAIProvider();
     trustScorer = new TrustScorer(eventBusAgent, aiProvider);

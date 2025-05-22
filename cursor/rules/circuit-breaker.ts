@@ -7,7 +7,7 @@
  * Integrates with MetaControl for system-wide circuit breaking.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { 
   CircuitBreaker, 
   CircuitBreakerManager, 

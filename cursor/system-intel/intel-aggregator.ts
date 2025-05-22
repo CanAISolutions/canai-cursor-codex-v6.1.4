@@ -7,7 +7,7 @@
  * of system health, trust scores, and agent status.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import { TrustScorer } from '../agents/trust-scorer/trust-scorer';
 import { HeartbeatMonitor } from '../heartbeat/heartbeat-monitor';
 import { EvolutionTriggerManager } from '../evolution-triggers/evolution-trigger';

@@ -1,3 +1,4 @@
+/* eslint-env node, jest */
 /**
  * prompt-registry/__tests__/prompt-registry.test.ts
  * 
@@ -5,11 +6,12 @@
  * Tests the prompt registry functionality.
  */
 
-import { EventBus } from '../../event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import { CodexRuleEngine } from '../../rules/rule-engine';
 import { CodexPromptRegistry } from '../prompt-registry';
 import { PromptDefinition } from '../../prompt-infrastructure/prompt-schema';
 import { RegistryConfig } from '../prompt-registry-schema';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 
 describe('CodexPromptRegistry', () => {
   let eventBus: EventBus;
@@ -18,7 +20,7 @@ describe('CodexPromptRegistry', () => {
   let config: RegistryConfig;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     ruleEngine = new CodexRuleEngine(eventBus);
     config = {
       trustThreshold: 0.7,

@@ -5,7 +5,7 @@
  * Manages agent records and their lifecycle within the system.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -211,5 +211,56 @@ export class AgentMemory {
       resourceUsage: avgResourceUsage || 0,
       alignmentScore: avgAlignmentScore || 0
     };
+  }
+
+  /**
+   * WHAT: Returns all agent records as a map keyed by agentName
+   * WHY: Required for oversight, stagnation, and strategic agent modules
+   * HOW: Returns a Record<string, AgentOversightRecord> for compatibility
+   */
+  public async getAllRecords(): Promise<Record<string, AgentOversightRecord>> {
+    const records: Record<string, AgentOversightRecord> = {};
+    for (const [agentName, record] of this.memoryCache.entries()) {
+      records[agentName] = record;
+    }
+    return records;
+  }
+
+  /**
+   * WHAT: Updates trust-related metrics for an agent
+   * WHY: Enables trust volatility, delta, and recovery tracking
+   * HOW: Only updates trust fields, emits update event, and includes fallback logic
+   */
+  public async updateTrustMetrics(agentId: string, updates: Partial<Pick<AgentOversightRecord, 'avgTrustDelta' | 'trustVolatility' | 'trustScore'>>) {
+    const record = this.memoryCache.get(agentId) || this.createNewRecord(agentId);
+    const updatedRecord = { ...record, ...updates };
+    this.memoryCache.set(agentId, updatedRecord);
+    await this.saveRecord(agentId, updatedRecord);
+    await this.eventBus.emit('agent:trust:metrics:updated', {
+      agentId,
+      updates,
+      timestamp: Date.now(),
+      previousState: record,
+      newState: updatedRecord
+    });
+  }
+
+  /**
+   * WHAT: Increments the recoveryAttempts field for an agent
+   * WHY: Tracks recovery fatigue and triggers fatigue logic
+   * HOW: Increments, emits event, and includes fallback for missing agent
+   */
+  public async incrementRecoveryAttempts(agentId: string): Promise<void> {
+    const record = this.memoryCache.get(agentId) || this.createNewRecord(agentId);
+    const updatedRecord = { ...record, recoveryAttempts: (record.recoveryAttempts || 0) + 1 };
+    this.memoryCache.set(agentId, updatedRecord);
+    await this.saveRecord(agentId, updatedRecord);
+    await this.eventBus.emit('agent:recovery:attempted', {
+      agentId,
+      recoveryAttempts: updatedRecord.recoveryAttempts,
+      timestamp: Date.now(),
+      previousState: record,
+      newState: updatedRecord
+    });
   }
 } 

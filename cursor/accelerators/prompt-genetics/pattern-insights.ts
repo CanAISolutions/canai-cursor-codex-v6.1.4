@@ -1,12 +1,13 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/prompt-genetics/pattern-insights.ts`  
-@purpose: Detects repeated low-fitness variants, mutation fatigue, or stale trait reuse  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
 // File: /cursor/accelerators/prompt-genetics/pattern-insights.ts
+// Purpose: Detects repeated low-fitness variants, mutation fatigue, or stale trait reuse
+// Codex: Copy/paste-safe, Cursor-auditable
 // Detects output stagnation, ineffective trait mutation, or variant reuse decay
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type VariantTrace = {
   timestamp: string

@@ -8,8 +8,8 @@ import { appendToFixContextAsync } from '../cursor/agents/debug/context/fix-cont
 import { recordMetric } from '../cursor/agents/debug/utils/telemetry';
 import { jest } from '@jest/globals';
 
-jest.mock('../core/fix-context-utils');
-jest.mock('../core/telemetry');
+jest.mock('../cursor/agents/debug/context/fix-context-utils');
+jest.mock('../cursor/agents/debug/utils/telemetry');
 
 describe('auditFix()', () => {
   const baseFix = {
@@ -22,7 +22,7 @@ describe('auditFix()', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (appendToFixContextAsync as jest.Mock).mockResolvedValue(undefined);
+    (appendToFixContextAsync as jest.MockedFunction<typeof appendToFixContextAsync>).mockResolvedValue(undefined);
     (recordMetric as jest.Mock).mockReturnValue(undefined);
   });
 

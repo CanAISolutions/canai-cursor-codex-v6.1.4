@@ -18,6 +18,7 @@ interface MockEventBus {
   off: jest.Mock;
   once: jest.Mock;
   removeAllListeners: jest.Mock;
+  emit: jest.Mock;
 }
 
 interface MockTrustScorer {
@@ -54,6 +55,7 @@ describe('CodexAligner', () => {
   beforeEach(() => {
     eventBus = {
       publish: jest.fn().mockResolvedValue(undefined),
+      emit: jest.fn().mockResolvedValue(undefined),
       on: jest.fn(),
       off: jest.fn(),
       once: jest.fn(),
@@ -116,7 +118,7 @@ describe('CodexAligner', () => {
 
       const result = await codexAligner.validatePromptAlignment(prompt);
       expect(result).toBe(true);
-      expect(eventBus.publish).not.toHaveBeenCalledWith(expect.objectContaining({
+      expect(eventBus.emit).not.toHaveBeenCalledWith(expect.objectContaining({
         type: 'alignment:deviation'
       }));
     });
@@ -132,7 +134,7 @@ describe('CodexAligner', () => {
 
       const result = await codexAligner.validatePromptAlignment(prompt);
       expect(result).toBe(false);
-      expect(eventBus.publish).toHaveBeenCalledWith(expect.objectContaining({
+      expect(eventBus.emit).toHaveBeenCalledWith(expect.objectContaining({
         type: 'alignment:deviation'
       }), 'high');
     });
@@ -148,7 +150,7 @@ describe('CodexAligner', () => {
 
       const result = await codexAligner.validateResponseAlignment(response);
       expect(result).toBe(true);
-      expect(eventBus.publish).not.toHaveBeenCalledWith(expect.objectContaining({
+      expect(eventBus.emit).not.toHaveBeenCalledWith(expect.objectContaining({
         type: 'alignment:deviation'
       }));
     });
@@ -164,7 +166,7 @@ describe('CodexAligner', () => {
 
       const result = await codexAligner.validateResponseAlignment(response);
       expect(result).toBe(false);
-      expect(eventBus.publish).toHaveBeenCalledWith(expect.objectContaining({
+      expect(eventBus.emit).toHaveBeenCalledWith(expect.objectContaining({
         type: 'alignment:deviation'
       }), 'high');
     });
@@ -180,7 +182,7 @@ describe('CodexAligner', () => {
 
       const result = await codexAligner.validateBehaviorAlignment(behavior);
       expect(result).toBe(true);
-      expect(eventBus.publish).not.toHaveBeenCalledWith(expect.objectContaining({
+      expect(eventBus.emit).not.toHaveBeenCalledWith(expect.objectContaining({
         type: 'alignment:deviation'
       }));
     });
@@ -196,7 +198,7 @@ describe('CodexAligner', () => {
 
       const result = await codexAligner.validateBehaviorAlignment(behavior);
       expect(result).toBe(false);
-      expect(eventBus.publish).toHaveBeenCalledWith(expect.objectContaining({
+      expect(eventBus.emit).toHaveBeenCalledWith(expect.objectContaining({
         type: 'alignment:deviation'
       }), 'high');
     });
@@ -217,7 +219,7 @@ describe('CodexAligner', () => {
 
       const result = await codexAligner.enforceAlignment(content);
       expect(result).toBe(true);
-      expect(eventBus.publish).toHaveBeenCalledWith(expect.objectContaining({
+      expect(eventBus.emit).toHaveBeenCalledWith(expect.objectContaining({
         type: 'alignment:enforced'
       }), 'medium');
     });
@@ -234,11 +236,11 @@ describe('CodexAligner', () => {
         }
       };
 
-      eventBus.publish.mockRejectedValueOnce(new Error('Enforcement failed'));
+      eventBus.emit.mockRejectedValueOnce(new Error('Enforcement failed'));
 
       const result = await codexAligner.enforceAlignment(content);
       expect(result).toBe(false);
-      expect(eventBus.publish).toHaveBeenCalledWith('alignment:error', expect.any(Object));
+      expect(eventBus.emit).toHaveBeenCalledWith('alignment:error', expect.any(Object));
     });
   });
 
@@ -273,11 +275,11 @@ describe('CodexAligner', () => {
         }
       };
 
-      eventBus.publish.mockRejectedValueOnce(new Error('Validation error'));
+      eventBus.emit.mockRejectedValueOnce(new Error('Validation error'));
 
       const result = await codexAligner.validatePromptAlignment(prompt);
       expect(result).toBe(false);
-      expect(eventBus.publish).toHaveBeenCalledWith('alignment:error', expect.any(Object));
+      expect(eventBus.emit).toHaveBeenCalledWith('alignment:error', expect.any(Object));
     });
 
     it('should handle metric retrieval errors', async () => {

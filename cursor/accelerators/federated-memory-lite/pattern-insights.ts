@@ -1,12 +1,12 @@
-# ✅ File: `pattern-insights.ts`  
-@location: `/cursor/accelerators/federated-memory-lite/pattern-insights.ts`  
-@purpose: Detects overuse of fallback logic, frequent rejections, or routing decay  
-@drop-type: Codex copy/paste-safe, Cursor-auditable
-
-// File: /cursor/accelerators/federated-memory-lite/pattern-insights.ts
+// Purpose: Detects overuse of fallback logic, frequent rejections, or routing decay
+// Codex: Copy/paste-safe, Cursor-auditable
 // Detects long-term misuse patterns in memory resolution logic
 
-import { getStateHistory } from '../../_shared/acceleratorState'
+// Codex Stub: getStateHistory should be implemented in a shared utility. This stub returns an empty array for compilation/testing.
+async function getStateHistory<T>(key: string, count: number): Promise<T[]> {
+  // TODO: Replace with real state/history retrieval logic
+  return [];
+}
 
 type MemoryTrace = {
   timestamp: string

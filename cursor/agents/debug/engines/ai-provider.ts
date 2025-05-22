@@ -4,8 +4,9 @@
  * Supports OpenAI by default. Claude-compatible scaffolding included.
  */
 
-import { DebugConfig } from '../config';
-import { appendToFixContextAsync } from '../fix-context-utils';
+import { DebugConfig } from 'cursor/agents/debug/config/config';
+
+import { appendToFixContextAsync } from 'cursor/agents/debug/context/fix-context-utils';
 import OpenAI from 'openai';
 
 // Future: import { ClaudeProvider } from './claude-provider';
@@ -123,29 +124,30 @@ export class OpenAIProvider implements AIProvider {
     }
   }
 
-  async generateEscalationTicket({ summary, sourceFile, priority, traceId }: {
+  async generateEscalationTicket(input: {
     summary: string;
     sourceFile?: string;
     priority?: 'low' | 'medium' | 'high';
     traceId?: string;
   }): Promise<void> {
-    await appendToFixContextAsync(`[${
-      traceId || 'ticket'
-    }] [Escalation] Priority: ${priority ?? 'medium'}\nSummary: ${summary}\nSource: ${sourceFile ?? 'N/A'}`);
+    const { summary, sourceFile, priority, traceId } = input;
+    await appendToFixContextAsync(
+      `[Escalation] Priority: ${priority ?? 'medium'} | Summary: ${summary} | Source: ${sourceFile ?? 'N/A'}`,
+      undefined,
+      traceId
+    );
   }
 
   private async callOpenAI(messages: AIMessage[], traceId: string): Promise<string> {
     try {
       const model = this.config.aiProviderConfig?.model || 'gpt-4o';
-      const temperature = this.config.defaults?.temperature ?? 0;
-
+      const temperature = this.config.aiProviderConfig?.temperature ?? 0.7;
       const response = await this.openai.chat.completions.create({
         model,
         messages,
         temperature,
-        response_format: 'text',
+        response_format: { type: 'text' },
       });
-
       const content = response.choices[0]?.message?.content;
       if (!content) throw new Error('No content returned from OpenAI');
       return content.trim();
@@ -161,7 +163,6 @@ export class OpenAIProvider implements AIProvider {
  */
 export function loadAIProvider(config: DebugConfig, providerName = 'openai'): AIProvider {
   if (testOverrides.aiProvider) return testOverrides.aiProvider;
-
   switch (providerName) {
     case 'openai':
       return new OpenAIProvider(config);

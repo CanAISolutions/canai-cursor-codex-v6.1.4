@@ -49,7 +49,7 @@ export async function triggerImprovementQueue(
   results: SimulationResult[]
 ): Promise<ImprovementTask[]> {
   const tasks: ImprovementTask[] = [];
-  const eventBus = new EventBus();
+  const eventBus = EventBus.getInstance();
 
   // Subscribe to improvement events
   eventBus.subscribe('improvement:taskCreated', (task: ImprovementTask) => {

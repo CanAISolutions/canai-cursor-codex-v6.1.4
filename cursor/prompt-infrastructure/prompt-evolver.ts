@@ -5,13 +5,15 @@
  * Handles prompt evolution with safety checks, version tracking, and trust impact analysis.
  */
 
-import { EventBus } from '../utils/event-bus';
+import { EventBus } from '../event-bus/eventBus';
 import {
   PromptDefinition,
   PromptEvolver,
   PromptEvent,
   PromptEventType,
-  PromptDelta
+  PromptDelta,
+  PromptContract,
+  PromptConstraint
 } from './prompt-schema';
 
 export class PromptEvolutionManager implements PromptEvolver {
@@ -41,9 +43,13 @@ export class PromptEvolutionManager implements PromptEvolver {
       // Create evolved prompt
       const evolvedPrompt = this.applyDelta(prompt, delta);
 
-      // Validate evolution
-      const isValid = await this.validateEvolution(prompt, evolvedPrompt);
+      // Validate evolution (pass context for feedback/metrics validation)
+      const isValid = await this.validateEvolution(prompt, evolvedPrompt, context);
       if (!isValid) {
+        this.emitEvent('prompt:invalid', {
+          promptId: prompt.id,
+          details: { error: 'Evolution validation failed' }
+        });
         throw new Error('Evolution validation failed');
       }
 
@@ -73,9 +79,25 @@ export class PromptEvolutionManager implements PromptEvolver {
    */
   async validateEvolution(
     original: PromptDefinition,
-    evolved: PromptDefinition
+    evolved: PromptDefinition,
+    context?: {
+      feedback?: any;
+      metrics?: any;
+      triggers?: any;
+    }
   ): Promise<boolean> {
     try {
+      // What: Validate feedback/metrics for minimum quality/performance
+      // Why: Ensure prompt evolution only proceeds if feedback/metrics meet Codex trust thresholds
+      // How: If context is provided, check quality/performance >= 0.5
+      if (context) {
+        if (context.feedback && typeof context.feedback.quality === 'number' && context.feedback.quality < 0.5) {
+          return false;
+        }
+        if (context.metrics && typeof context.metrics.performance === 'number' && context.metrics.performance < 0.5) {
+          return false;
+        }
+      }
       // Check version increment
       if (!this.isValidVersionIncrement(original.version, evolved.version)) {
         return false;
@@ -118,7 +140,7 @@ export class PromptEvolutionManager implements PromptEvolver {
       triggers?: any;
     }
   ): Promise<PromptDelta> {
-    const changes = [];
+    const changes: PromptDelta['changes'] = [];
 
     // Analyze feedback for content improvements
     if (context.feedback) {
@@ -143,7 +165,6 @@ export class PromptEvolutionManager implements PromptEvolver {
       promptId: prompt.id,
       fromVersion: prompt.version,
       toVersion: this.incrementVersion(prompt.version),
-      timestamp: Date.now(),
       changes,
       metadata: {
         author: 'system',
@@ -159,19 +180,18 @@ export class PromptEvolutionManager implements PromptEvolver {
    * Applies a delta to create an evolved prompt
    */
   private applyDelta(prompt: PromptDefinition, delta: PromptDelta): PromptDefinition {
-    const evolved = { ...prompt };
+    const evolved: PromptDefinition = { ...prompt };
 
-    // Apply each change
+    // Apply each change with explicit type validation/casting
     for (const change of delta.changes) {
       if (change.field.includes('.')) {
         // Handle nested fields
         const [parent, child] = change.field.split('.');
         switch (parent) {
           case 'metadata':
-            evolved.metadata = {
-              ...evolved.metadata,
-              [child]: change.newValue
-            };
+            if (Object.prototype.hasOwnProperty.call(evolved.metadata, child)) {
+              (evolved.metadata as any)[child] = change.newValue;
+            }
             break;
           case 'evolution':
             evolved.evolution = {
@@ -180,47 +200,47 @@ export class PromptEvolutionManager implements PromptEvolver {
             };
             break;
           default:
-            // Skip unknown nested fields
             continue;
         }
       } else {
-        // Handle top-level fields
+        // Handle top-level fields with type guards
         switch (change.field) {
           case 'version':
-            evolved.version = change.newValue;
+            evolved.version = String(change.newValue);
             break;
           case 'status':
-            evolved.status = change.newValue;
+            evolved.status = change.newValue as PromptDefinition['status'];
             break;
           case 'name':
-            evolved.name = change.newValue;
+            evolved.name = String(change.newValue);
             break;
           case 'description':
-            evolved.description = change.newValue;
+            evolved.description = String(change.newValue);
             break;
           case 'content':
-            evolved.content = change.newValue;
+            evolved.content = String(change.newValue);
             break;
           case 'contracts':
-            evolved.contracts = change.newValue;
+            evolved.contracts = Array.isArray(change.newValue) ? change.newValue as PromptContract[] : evolved.contracts;
             break;
           case 'constraints':
-            evolved.constraints = change.newValue;
+            evolved.constraints = Array.isArray(change.newValue) ? change.newValue as PromptConstraint[] : evolved.constraints;
             break;
           default:
-            // Skip unknown fields
             continue;
         }
       }
     }
 
-    // Update version and evolution info
+    // Update version and evolution info to match schema
     evolved.version = delta.toVersion;
     evolved.metadata.updatedAt = Date.now();
     evolved.evolution = {
-      parentVersion: delta.fromVersion,
-      delta,
-      reason: delta.metadata.reason
+      id: delta.id,
+      version: delta.toVersion,
+      timestamp: Date.now(),
+      changes: delta.changes,
+      metadata: delta.metadata
     };
 
     return evolved;
@@ -268,18 +288,25 @@ export class PromptEvolutionManager implements PromptEvolver {
     original: PromptDefinition,
     evolved: PromptDefinition
   ): boolean {
-    // Check that all required contracts are maintained
+    // What: Ensure all contracts from the original are present and valid in the evolved prompt, per schema.
+    // Why: Codex compliance and contract continuity, not just presence.
+    // How: Compare by contract id/type and validate using contract.validation (e.g., regex).
     for (const contract of original.contracts) {
-      if (contract.required) {
-        const evolvedContract = evolved.contracts.find(
-          c => c.type === contract.type
-        );
-        if (!evolvedContract) {
+      const evolvedContract = evolved.contracts.find(
+        c => c.id === contract.id && c.type === contract.type
+      );
+      if (!evolvedContract) {
+        return false;
+      }
+      // Enforce contract logic (e.g., regex validation)
+      if (contract.validation && contract.validation.regex) {
+        const regex = new RegExp(contract.validation.regex);
+        if (!regex.test(evolved.content)) {
           return false;
         }
       }
+      // Add additional contract validation logic as needed (schema, function, etc.)
     }
-
     return true;
   }
 
@@ -307,29 +334,32 @@ export class PromptEvolutionManager implements PromptEvolver {
     original: PromptDefinition,
     evolved: PromptDefinition
   ): boolean {
+    // What: Validate constraints using only schema operators: 'lt', 'lte', 'eq', 'gte', 'gt'.
+    // Why: Remove legacy operators and enforce schema alignment.
+    // How: Use type guards and explicit checks.
     for (const constraint of original.constraints) {
-      const originalValue = this.getNestedValue(original, constraint.field);
-      const evolvedValue = this.getNestedValue(evolved, constraint.field);
-
+      const evolvedValue = this.getNestedValue(evolved, constraint.type);
       switch (constraint.operator) {
-        case 'equals':
+        case 'lt':
+          if (!(typeof evolvedValue === 'number' && evolvedValue < constraint.value)) return false;
+          break;
+        case 'lte':
+          if (!(typeof evolvedValue === 'number' && evolvedValue <= constraint.value)) return false;
+          break;
+        case 'eq':
           if (evolvedValue !== constraint.value) return false;
           break;
-        case 'contains':
-          if (!evolvedValue.includes(constraint.value)) return false;
+        case 'gte':
+          if (!(typeof evolvedValue === 'number' && evolvedValue >= constraint.value)) return false;
           break;
-        case 'matches':
-          if (!new RegExp(constraint.value).test(evolvedValue)) return false;
+        case 'gt':
+          if (!(typeof evolvedValue === 'number' && evolvedValue > constraint.value)) return false;
           break;
-        case 'greaterThan':
-          if (evolvedValue <= constraint.value) return false;
-          break;
-        case 'lessThan':
-          if (evolvedValue >= constraint.value) return false;
-          break;
+        default:
+          // Skip non-schema operators
+          continue;
       }
     }
-
     return true;
   }
 

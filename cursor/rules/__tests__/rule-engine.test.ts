@@ -5,7 +5,7 @@
  * Tests rule engine functionality including rule evaluation and violation handling.
  */
 
-import { EventBus } from '../../utils/event-bus';
+import { EventBus } from '../../event-bus/eventBus';
 import { CodexRuleEngine } from '../rule-engine';
 import { Rule, Violation, SeverityLevel, RecoveryAction } from '../rules-schema';
 
@@ -15,7 +15,7 @@ describe('CodexRuleEngine', () => {
   let mockRule: Rule;
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     engine = new CodexRuleEngine(eventBus);
 
     // Create mock rule

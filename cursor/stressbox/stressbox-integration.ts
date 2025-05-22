@@ -13,6 +13,8 @@ import { EventBus } from '../event-bus/eventBus';
 import { StressBox } from './stressbox-engine';
 import { emitSystemLog } from '../system-intel/audit-utils';
 import { PromptHealthDashboard } from '../dashboard/prompt-health-dashboard';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 interface StressTestResult {
   promptType: string;
@@ -66,6 +68,8 @@ export class StressBoxIntegration {
     try {
       await this.stressBox.runStressTest(promptType);
     } catch (error) {
+      const errorDir = path.join(process.cwd(), 'cursor', 'stressbox', 'errors', promptType);
+      await fs.mkdir(errorDir, { recursive: true });
       await emitSystemLog('stress-test-error', {
         path: `/stressbox/errors/${promptType}/${Date.now()}.json`,
         content: JSON.stringify({
@@ -88,7 +92,9 @@ export class StressBoxIntegration {
     if (result.summary.failedTests > 0) {
       await this.generateRecommendations(result);
     }
-    
+    // Ensure the directory exists for the results log
+    const resultsDir = path.join(process.cwd(), 'cursor', 'stressbox', 'results', result.promptType);
+    await fs.mkdir(resultsDir, { recursive: true });
     // Emit system log
     await emitSystemLog('stress-test-result', {
       path: `/stressbox/results/${result.promptType}/${result.timestamp}.json`,

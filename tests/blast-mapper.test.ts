@@ -1,5 +1,5 @@
 import { detectBug, inferBugContext, BugType } from '../cursor/agents/debug/core/blast-mapper';
-import { AIProvider } from '../cursor/agents/debug/engines/ai-provider';
+import { AIProvider, BugContext } from '../cursor/agents/debug/engines/ai-provider';
 import { DebugConfig } from '../cursor/agents/debug/config/config';
 import { appendToFixContextAsync } from '../cursor/agents/debug/context/fix-context-utils';
 import { recordMetric } from '../cursor/agents/debug/utils/telemetry';
@@ -10,8 +10,15 @@ jest.mock('../cursor/agents/debug/utils/telemetry');
 
 describe('blast-mapper', () => {
   const mockAIProvider: Partial<AIProvider> = {
-    detectBug: jest.fn(),
-    generateEscalationTicket: jest.fn().mockResolvedValue(undefined),
+    detectBug: jest.fn(async (log: string, traceId: string): Promise<BugContext> => ({
+      message: 'Mock bug',
+      type: BugType.NullPointer,
+      likelihood: 'high',
+      impact: ['file.js'],
+    })),
+    generateEscalationTicket: jest.fn(async (input) => Promise.resolve()),
+    proposeFix: jest.fn(async (bug: BugContext, traceId: string) => Promise.resolve({ patch: '', filepath: '', reason: '' })),
+    ping: jest.fn(async () => Promise.resolve(true)),
   };
 
   const config: DebugConfig = {
@@ -24,20 +31,18 @@ describe('blast-mapper', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (mockAIProvider.detectBug as jest.Mock).mockReset();
-    (appendToFixContextAsync as jest.Mock).mockResolvedValue(undefined);
     (recordMetric as jest.Mock).mockReturnValue(undefined);
   });
 
   it('detects bug with AI', async () => {
-    const bugContext = {
+    const bugContext: BugContext = {
       message: 'Null error',
       type: BugType.NullPointer,
       likelihood: 'high',
       impact: ['file.js'],
     };
 
-    (mockAIProvider.detectBug as jest.Mock).mockResolvedValue(bugContext);
+    (mockAIProvider.detectBug as jest.Mock).mockImplementation(async () => bugContext);
 
     const result = await detectBug(log, mockAIProvider as AIProvider, config, traceId);
 
@@ -49,13 +54,13 @@ describe('blast-mapper', () => {
   });
 
   it('falls back to inference on AI failure', async () => {
-    (mockAIProvider.detectBug as jest.Mock).mockRejectedValue(new Error('AI failed'));
+    (mockAIProvider.detectBug as jest.Mock).mockImplementation(async () => { throw new Error('AI failed'); });
 
     const result = await detectBug(log, mockAIProvider as AIProvider, config, traceId);
 
     expect(result.type).toBe(BugType.NullPointer);
     expect(result.impact).toContain('file.js');
-    expect(mockAIProvider.generateEscalationTicket).toHaveBeenCalled();
+    expect((mockAIProvider.generateEscalationTicket as jest.Mock)).toHaveBeenCalled();
   });
 
   it('infers bug context correctly', () => {
