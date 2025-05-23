@@ -19,7 +19,6 @@ describe('DreamState: generateDreamStateMetrics', () => {
   });
 
   it('should fallback gracefully on malformed input', () => {
-    // @ts-expect-error
     const metrics = generateDreamStateMetrics(undefined);
     expect(metrics).toHaveProperty('alignmentScore');
   });

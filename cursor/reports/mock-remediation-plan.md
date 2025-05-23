@@ -52,7 +52,7 @@ Eliminate all canonical mocks from DreamState tests, enforce real system-bound v
 ## References
 - [Remediation Tracker](/cursor/reports/mock-remediation-tracker.md)
 - [Auto Actions Log](/cursor/auto-actions.log.md)
-- [Ideal CX Thread](/docs/ideal-cx-thread.md)
+- [Ideal CX Thread](/docs/ideal-cx-thread-v2-emotional-sovereignty.md)
 - [Polaris DreamState Codex Lock](/docs/reference/polaris-dreamstate-codex-lock.md)
 
 ## 7. Emotional Volatility & Drift Simulation

@@ -70,7 +70,10 @@ export class TrustScoreCalculator {
     }
   }
 
-  public async validateTrustScore(score: number): Promise<boolean> {
+  public async validateTrustScore(score: number | undefined | null): Promise<boolean> {
+    if (score === undefined || score === null || typeof score !== 'number') {
+      return false; // Fallback for invalid input
+    }
     return score >= this.TRUST_THRESHOLD;
   }
 } 

@@ -113,7 +113,7 @@ All ritual outcomes must be:
 
 Cursor must also:
 - Post human-readable summaries to `/cursor/logs/system-transition.md`
-- Append execution notes to `/cursor/logs/auto-actions.log.md`
+- Append execution notes to `/cursor/auto-actions.log.md`
 
 ---
 
@@ -147,7 +147,7 @@ Cursor may evolve rituals by:
       •     Archiving unused rituals after 30 days of <5% invocation
 
 All changes must:
-      •     Be logged to /cursor/logs/auto-actions.log.md
+      •     Be logged to /cursor/auto-actions.log.md
       •     Include rationale and Codex Pillar mapping
       •     Optionally trigger /docs/living-artifact-changelog.md update
 

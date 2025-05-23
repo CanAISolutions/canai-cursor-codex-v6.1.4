@@ -9,7 +9,6 @@
  */
 
 import handler from '../../../api/internal/admin_status';
-// @ts-expect-error: node-mocks-http types must be installed as a dev dependency
 import { createMocks } from 'node-mocks-http';
 
 describe('DreamState: admin_status.ts — Operational Resilience & Emotional UX Fallback', () => {

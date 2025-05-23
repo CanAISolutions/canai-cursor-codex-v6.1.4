@@ -1,0 +1,277 @@
+# 🛡️ DreamState Protection Pipeline
+# CRITICAL: Protects 100% test success rate achievement
+# This workflow MUST pass before any code changes are merged
+
+name: 🛡️ DreamState Protection Pipeline
+
+on:
+  push:
+    branches: [ main, preboot ]
+  pull_request:
+    branches: [ main, preboot ]
+  schedule:
+    # Run daily at 2 AM UTC to catch any drift
+    - cron: '0 2 * * *'
+
+env:
+  REQUIRED_SUCCESS_RATE: 100
+  REQUIRED_TEST_COUNT: 340
+  REQUIRED_SUITE_COUNT: 61
+  REQUIRED_SNAPSHOT_COUNT: 26
+
+jobs:
+  # 🚨 CRITICAL: DreamState Test Suite Protection
+  dreamstate-protection:
+    name: 🛡️ DreamState 100% Success Rate Protection
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: 🔒 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for drift detection
+          
+      - name: 🟢 Setup Node.js 18 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: |
+          npm ci
+          echo "✅ Dependencies installed"
+          
+      - name: 🧪 Run DreamState Test Suite (CRITICAL)
+        id: dreamstate-tests
+        run: |
+          echo "🚀 Running DreamState test suite..."
+          npm test tests/dreamstate > dreamstate-results.txt 2>&1
+          
+          # Extract results
+          PASSING_TESTS=$(grep "Tests:" dreamstate-results.txt | grep -o '[0-9]\+ passed' | grep -o '[0-9]\+' || echo "0")
+          TOTAL_TESTS=$(grep "Tests:" dreamstate-results.txt | grep -o '[0-9]\+ total' | grep -o '[0-9]\+' || echo "0")
+          PASSING_SUITES=$(grep "Test Suites:" dreamstate-results.txt | grep -o '[0-9]\+ passed' | grep -o '[0-9]\+' || echo "0")
+          TOTAL_SUITES=$(grep "Test Suites:" dreamstate-results.txt | grep -o '[0-9]\+ total' | grep -o '[0-9]\+' || echo "0")
+          SNAPSHOTS=$(grep "Snapshots:" dreamstate-results.txt | grep -o '[0-9]\+ passed' | grep -o '[0-9]\+' || echo "0")
+          
+          echo "PASSING_TESTS=$PASSING_TESTS" >> $GITHUB_OUTPUT
+          echo "TOTAL_TESTS=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+          echo "PASSING_SUITES=$PASSING_SUITES" >> $GITHUB_OUTPUT
+          echo "TOTAL_SUITES=$TOTAL_SUITES" >> $GITHUB_OUTPUT
+          echo "SNAPSHOTS=$SNAPSHOTS" >> $GITHUB_OUTPUT
+          
+          # Calculate success rate
+          if [ "$TOTAL_TESTS" -gt 0 ]; then
+            SUCCESS_RATE=$(echo "scale=2; $PASSING_TESTS * 100 / $TOTAL_TESTS" | bc)
+          else
+            SUCCESS_RATE=0
+          fi
+          echo "SUCCESS_RATE=$SUCCESS_RATE" >> $GITHUB_OUTPUT
+          
+          echo "📊 DreamState Results:"
+          echo "  Tests: $PASSING_TESTS/$TOTAL_TESTS passed"
+          echo "  Suites: $PASSING_SUITES/$TOTAL_SUITES passed"
+          echo "  Snapshots: $SNAPSHOTS passed"
+          echo "  Success Rate: $SUCCESS_RATE%"
+          
+      - name: 🚨 CRITICAL VALIDATION: 100% Success Rate Required
+        run: |
+          echo "🔍 Validating critical success metrics..."
+          
+          # Check test count
+          if [ "${{ steps.dreamstate-tests.outputs.PASSING_TESTS }}" -ne "${{ env.REQUIRED_TEST_COUNT }}" ]; then
+            echo "❌ CRITICAL FAILURE: Expected ${{ env.REQUIRED_TEST_COUNT }} passing tests, got ${{ steps.dreamstate-tests.outputs.PASSING_TESTS }}"
+            exit 1
+          fi
+          
+          # Check suite count
+          if [ "${{ steps.dreamstate-tests.outputs.PASSING_SUITES }}" -ne "${{ env.REQUIRED_SUITE_COUNT }}" ]; then
+            echo "❌ CRITICAL FAILURE: Expected ${{ env.REQUIRED_SUITE_COUNT }} passing suites, got ${{ steps.dreamstate-tests.outputs.PASSING_SUITES }}"
+            exit 1
+          fi
+          
+          # Check snapshot count
+          if [ "${{ steps.dreamstate-tests.outputs.SNAPSHOTS }}" -ne "${{ env.REQUIRED_SNAPSHOT_COUNT }}" ]; then
+            echo "❌ CRITICAL FAILURE: Expected ${{ env.REQUIRED_SNAPSHOT_COUNT }} passing snapshots, got ${{ steps.dreamstate-tests.outputs.SNAPSHOTS }}"
+            exit 1
+          fi
+          
+          # Check 100% success rate
+          SUCCESS_RATE_INT=$(echo "${{ steps.dreamstate-tests.outputs.SUCCESS_RATE }}" | cut -d. -f1)
+          if [ "$SUCCESS_RATE_INT" -ne "${{ env.REQUIRED_SUCCESS_RATE }}" ]; then
+            echo "❌ CRITICAL FAILURE: Expected ${{ env.REQUIRED_SUCCESS_RATE }}% success rate, got ${{ steps.dreamstate-tests.outputs.SUCCESS_RATE }}%"
+            exit 1
+          fi
+          
+          echo "✅ ALL CRITICAL VALIDATIONS PASSED"
+          echo "🎉 DreamState 100% success rate PROTECTED"
+          
+      - name: 📊 Generate Protection Report
+        if: always()
+        run: |
+          cat > dreamstate-protection-report.md << EOF
+          # 🛡️ DreamState Protection Report
+          
+          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Commit**: ${{ github.sha }}
+          **Branch**: ${{ github.ref_name }}
+          
+          ## 📊 Test Results
+          - **Tests**: ${{ steps.dreamstate-tests.outputs.PASSING_TESTS }}/${{ steps.dreamstate-tests.outputs.TOTAL_TESTS }} passed
+          - **Suites**: ${{ steps.dreamstate-tests.outputs.PASSING_SUITES }}/${{ steps.dreamstate-tests.outputs.TOTAL_SUITES }} passed  
+          - **Snapshots**: ${{ steps.dreamstate-tests.outputs.SNAPSHOTS }} passed
+          - **Success Rate**: ${{ steps.dreamstate-tests.outputs.SUCCESS_RATE }}%
+          
+          ## 🎯 Protection Status
+          $(if [ "${{ steps.dreamstate-tests.outputs.SUCCESS_RATE }}" = "100.00" ]; then echo "✅ **PROTECTED** - 100% success rate maintained"; else echo "❌ **BREACH DETECTED** - Success rate below 100%"; fi)
+          
+          ## 🔍 Critical Metrics Validation
+          - Required Tests: ${{ env.REQUIRED_TEST_COUNT }} ✅
+          - Required Suites: ${{ env.REQUIRED_SUITE_COUNT }} ✅  
+          - Required Snapshots: ${{ env.REQUIRED_SNAPSHOT_COUNT }} ✅
+          - Required Success Rate: ${{ env.REQUIRED_SUCCESS_RATE }}% ✅
+          EOF
+          
+      - name: 📤 Upload Protection Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dreamstate-protection-report-${{ github.run_number }}
+          path: |
+            dreamstate-protection-report.md
+            dreamstate-results.txt
+          retention-days: 30
+          
+  # 🔍 Code Quality Protection
+  code-quality-protection:
+    name: 🔍 Code Quality Protection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🔒 Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 🧹 Lint Check
+        run: |
+          echo "🔍 Running ESLint..."
+          npm run lint
+          echo "✅ Linting passed"
+          
+      - name: 🎯 TypeScript Compilation Check
+        run: |
+          echo "🔍 Checking TypeScript compilation..."
+          npx tsc --noEmit
+          echo "✅ TypeScript compilation passed"
+          
+      - name: 🚫 Prevent Mock Dependencies
+        run: |
+          echo "🔍 Scanning for mock dependencies in DreamState tests..."
+          if grep -r "jest.mock\|mockImplementation\|mockReturnValue" tests/dreamstate/ --exclude-dir=node_modules; then
+            echo "❌ CRITICAL: Mock dependencies detected in DreamState tests!"
+            echo "DreamState tests must use 100% real implementations"
+            exit 1
+          fi
+          echo "✅ No mock dependencies found"
+          
+      - name: 🔒 Protect Critical Files
+        run: |
+          echo "🔍 Checking for unauthorized changes to critical files..."
+          
+          # Check if critical DreamState files were modified
+          CRITICAL_FILES=(
+            "tests/dreamstate/"
+            "cursor/services/emotional-ux-renderer.ts"
+            "cursor/services/trust-score-manager.ts"
+            "cursor/services/fallback-manager.ts"
+            "cursor/event-bus/eventBus.ts"
+            "cursor/validators/cx-tone-sentinel.ts"
+          )
+          
+          for file in "${CRITICAL_FILES[@]}"; do
+            if git diff --name-only HEAD~1 | grep -q "$file"; then
+              echo "⚠️ WARNING: Critical file modified: $file"
+              echo "Ensure changes maintain 100% test success rate"
+            fi
+          done
+          
+  # 🚨 Emergency Rollback Preparation
+  rollback-preparation:
+    name: 🚨 Emergency Rollback Preparation
+    runs-on: ubuntu-latest
+    if: failure()
+    needs: [dreamstate-protection]
+    
+    steps:
+      - name: 🔒 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: 🔍 Find Last Known Good Commit
+        run: |
+          echo "🔍 Finding last commit with 100% DreamState success..."
+          
+          # Look for the last successful workflow run
+          LAST_GOOD_COMMIT=$(git log --oneline -n 20 --grep="DreamState.*100%" | head -1 | cut -d' ' -f1)
+          
+          if [ -n "$LAST_GOOD_COMMIT" ]; then
+            echo "📍 Last known good commit: $LAST_GOOD_COMMIT"
+            echo "LAST_GOOD_COMMIT=$LAST_GOOD_COMMIT" >> $GITHUB_ENV
+          else
+            echo "⚠️ No recent good commit found in git history"
+          fi
+          
+      - name: 📋 Generate Rollback Instructions
+        run: |
+          cat > EMERGENCY_ROLLBACK.md << EOF
+          # 🚨 EMERGENCY ROLLBACK INSTRUCTIONS
+          
+          **DreamState Protection Breach Detected**
+          
+          ## 🎯 Immediate Actions Required
+          
+          1. **Stop all deployments immediately**
+          2. **Investigate the failing tests**
+          3. **Consider emergency rollback if critical**
+          
+          ## 🔄 Rollback Commands
+          
+          \`\`\`bash
+          # Rollback to last known good commit
+          git checkout ${{ env.LAST_GOOD_COMMIT }}
+          
+          # Verify DreamState tests pass
+          npm test tests/dreamstate
+          
+          # If tests pass, create emergency fix branch
+          git checkout -b emergency-fix-$(date +%Y%m%d-%H%M)
+          \`\`\`
+          
+          ## 📊 Failed Metrics
+          - Tests: ${{ needs.dreamstate-protection.outputs.PASSING_TESTS }}/${{ needs.dreamstate-protection.outputs.TOTAL_TESTS }}
+          - Success Rate: ${{ needs.dreamstate-protection.outputs.SUCCESS_RATE }}%
+          
+          ## 🔍 Investigation Steps
+          1. Check test output logs
+          2. Verify no mock dependencies introduced
+          3. Check for breaking changes in critical files
+          4. Validate environment consistency
+          EOF
+          
+      - name: 📤 Upload Rollback Instructions
+        uses: actions/upload-artifact@v4
+        with:
+          name: emergency-rollback-instructions
+          path: EMERGENCY_ROLLBACK.md
+          retention-days: 7 

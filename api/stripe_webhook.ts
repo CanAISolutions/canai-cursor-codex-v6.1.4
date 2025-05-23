@@ -7,9 +7,9 @@
 
 import { NextApiRequest, NextApiResponse } from "next";
 import { buffer } from "micro";
-import { validateStripeEvent } from "../validators/stripeValidator";
-import { verifySignature } from "../webhook/verifySignature";
-import { StripeWebhookPayload } from "../types/stripe";
+import { validateStripeEvent } from "./validators/stripeValidator";
+import { verifySignature } from "./webhook/verifySignature";
+import { StripeWebhookPayload } from "./types/stripe";
 
 // Required environment variables
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -35,7 +35,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const rawBody = await buffer(req);
     const signature = req.headers["stripe-signature"] as string;
 
-    verifySignature(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+    const isValidSignature = verifySignature(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+    if (!isValidSignature) {
+      throw new Error("Invalid signature");
+    }
 
     const parsed = JSON.parse(rawBody.toString());
     const event = validateStripeEvent(parsed) as StripeWebhookPayload;

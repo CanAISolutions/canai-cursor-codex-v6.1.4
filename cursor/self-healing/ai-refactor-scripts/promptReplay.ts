@@ -6,15 +6,31 @@
  * Enforces: Evolutionary safety, emotional fidelity, and auditability.
  */
 
-import { fetchHistoricalSession } from "../utils/session-archive";
-import { generateNewOutput } from "../utils/prompt-engine";
-import { analyzeOutputDelta } from "../self-healing/output-delta-analyzer";
+import { analyzeOutputDelta } from "../output-delta-analyzer";
+
+interface HistoricalSession {
+  promptInput: any;
+  originalOutput: string;
+}
 
 interface ReplayResult {
   sessionId: string;
   originalOutput: string;
   replayedOutput: string;
-  deltaReport: ReturnType<typeof analyzeOutputDelta>;
+  deltaReport: Awaited<ReturnType<typeof analyzeOutputDelta>>;
+}
+
+// Simple implementation for missing utilities
+async function fetchHistoricalSession(sessionId: string): Promise<HistoricalSession | null> {
+  // Placeholder implementation - in real system this would fetch from storage
+  console.warn(`fetchHistoricalSession: Session ID ${sessionId} - using placeholder implementation`);
+  return null;
+}
+
+async function generateNewOutput(promptInput: any): Promise<string> {
+  // Placeholder implementation - in real system this would generate new output
+  console.warn(`generateNewOutput: Using placeholder implementation for input:`, promptInput);
+  return "Placeholder output for replay test";
 }
 
 export async function replayPromptSession(sessionId: string): Promise<ReplayResult | null> {

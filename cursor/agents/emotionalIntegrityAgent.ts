@@ -18,8 +18,8 @@ interface EmotionalIntegrityResult {
   }[];
 }
 
-export async function monitorEmotionalIntegrity(): Promise<EmotionalIntegrityResult> {
-  const { score, delta } = calculateEmotionalResonanceScore();
+export async function monitorEmotionalIntegrity(input?: string): Promise<EmotionalIntegrityResult> {
+  const { score, delta } = calculateEmotionalResonanceScore(input || "system-wide-check");
 
   const issues: EmotionalIntegrityResult["issues"] = [];
 
@@ -43,10 +43,16 @@ export async function monitorEmotionalIntegrity(): Promise<EmotionalIntegrityRes
 
   if (!optimal) {
     for (const issue of issues) {
-      emitSystemLog("emotional-drift-detected", issue);
+      emitSystemLog("emotional-drift-detected", {
+        path: "emotional-integrity-agent",
+        content: JSON.stringify(issue)
+      });
     }
   } else {
-    emitSystemLog("emotional-state-optimal", {});
+    emitSystemLog("emotional-state-optimal", {
+      path: "emotional-integrity-agent",
+      content: "Emotional state is optimal"
+    });
   }
 
   return {

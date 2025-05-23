@@ -4,7 +4,7 @@
 // Why: Ensures system detects and recovers from fallback chain corruption
 // How: Uses real assertion, fallback logic, and Codex-aligned comments
 
-import { executeFallbackCascade } from '../../../cursor/meta-control/fallback-manager';
+import { FallbackManager } from '../../../cursor/meta-control/fallback-manager';
 import { describe, it, expect } from '@jest/globals';
 
 describe('Chaos: Fallback Chain Corruption', () => {

@@ -70,7 +70,7 @@ Any changes to prompt behavior must enforce:
 Ingestion must include:
 
 - `/docs/spark-primer.md`
-- `/docs/ideal-cx-thread.md`
+- `/docs/ideal-cx-thread-v2-emotional-sovereignty.md`
 - `/docs/emotional-fallback-scenarios.md`
 - `/codex/` — System tone, fallback UX, mission lock
 - `/cx/` — Frontend overlays and stage-mapped emotion triggers

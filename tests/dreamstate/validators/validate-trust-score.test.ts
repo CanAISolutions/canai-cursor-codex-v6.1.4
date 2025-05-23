@@ -24,7 +24,6 @@ describe('DreamState: validateTrustScore', () => {
   });
 
   it('should fallback gracefully on malformed score', async () => {
-    // @ts-expect-error
     const result = await calculator.validateTrustScore(undefined);
     expect(result).toBe(false);
   });

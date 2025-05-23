@@ -9,6 +9,7 @@
  * Codex: v6.1.4
  * Fallback: Yes
  * EmotionQA: Enabled
+ * MCP Enhancement: Enabled (v3 Schema Lock)
  */
 
 import { EventEmitter } from 'events';
@@ -25,6 +26,16 @@ interface BusinessPlanInput {
   targetMarket?: string;
   budget?: number;
   timeline?: string;
+  // Enhanced fields from schema lock v3
+  idea?: string;
+  audience?: string;
+  problemSolved?: string;
+  differentiator?: string;
+  customerContent?: string;
+  founderBio?: string;
+  archetype?: string;
+  voice?: string;
+  vibe?: string;
   financials?: {
     revenueModel?: string;
     pricingNotes?: string;
@@ -88,6 +99,7 @@ interface RecoveryStatus {
   attempts: number;
   success: boolean;
   smartDefaultUsed: boolean;
+  mcpEnhancementUsed: boolean;
 }
 
 interface PromptSession {
@@ -215,10 +227,131 @@ export class BusinessPlanMCP extends EventEmitter {
     return input;
   }
 
-  // Enhance processPrompt to include smart defaults
+  // MCP Enhancer Logic - Auto-fill missing fields
+  private applyMCPEnhancers(input: BusinessPlanInput): BusinessPlanInput {
+    const enhanced = { ...input };
+
+    // Infer problemSolved from idea/goal
+    if (!enhanced.problemSolved && (enhanced.idea || enhanced.goal)) {
+      enhanced.problemSolved = this.inferProblemFromIdea(enhanced.idea || enhanced.goal);
+    }
+
+    // Infer customerContent from audience/targetMarket
+    if (!enhanced.customerContent && (enhanced.audience || enhanced.targetMarket)) {
+      enhanced.customerContent = this.inferContentFromAudience(enhanced.audience || enhanced.targetMarket || '');
+    }
+
+    // Infer differentiator from idea/industry
+    if (!enhanced.differentiator && enhanced.idea) {
+      enhanced.differentiator = this.inferDifferentiatorFromIdea(enhanced.idea, enhanced.industry);
+    }
+
+    // Infer founderBio from emotionalContext
+    if (!enhanced.founderBio && enhanced.emotionalContext) {
+      enhanced.founderBio = this.inferFounderFromContext(enhanced.emotionalContext);
+    }
+
+    // Apply emotional defaults if missing
+    if (!enhanced.tone) {
+      enhanced.tone = 'supportive';
+    }
+    if (!enhanced.voice) {
+      enhanced.voice = 'empowering';
+    }
+    if (!enhanced.vibe) {
+      enhanced.vibe = 'professional';
+    }
+
+    return enhanced;
+  }
+
+  private inferProblemFromIdea(idea: string): string {
+    // Simple inference logic - can be enhanced with ML
+    const problemKeywords = {
+      'efficiency': 'Inefficient processes and wasted time',
+      'communication': 'Poor communication and collaboration',
+      'automation': 'Manual tasks consuming valuable resources',
+      'analytics': 'Lack of data-driven insights',
+      'customer': 'Difficulty understanding customer needs',
+      'scale': 'Challenges scaling operations effectively',
+      'cost': 'High operational costs and budget constraints'
+    };
+
+    const lowerIdea = idea.toLowerCase();
+    for (const [keyword, problem] of Object.entries(problemKeywords)) {
+      if (lowerIdea.includes(keyword)) {
+        return problem;
+      }
+    }
+
+    return 'Addressing key market inefficiencies and customer pain points';
+  }
+
+  private inferContentFromAudience(audience: string): string {
+    const audienceTemplates = {
+      'small business': 'Content focused on practical solutions for small business owners, emphasizing cost-effectiveness and ease of implementation.',
+      'enterprise': 'Enterprise-grade content highlighting scalability, security, and ROI for large organizations.',
+      'startup': 'Startup-focused content emphasizing agility, innovation, and rapid growth potential.',
+      'healthcare': 'Healthcare-specific content addressing compliance, patient care, and operational efficiency.',
+      'education': 'Educational content focusing on learning outcomes, accessibility, and institutional needs.'
+    };
+
+    const lowerAudience = audience.toLowerCase();
+    for (const [key, template] of Object.entries(audienceTemplates)) {
+      if (lowerAudience.includes(key)) {
+        return template;
+      }
+    }
+
+    return `Tailored content for ${audience}, addressing their specific needs and challenges.`;
+  }
+
+  private inferDifferentiatorFromIdea(idea: string, industry: string): string {
+    const differentiatorTemplates = {
+      'saas': 'Unique SaaS solution with innovative features and superior user experience',
+      'ecommerce': 'Distinctive e-commerce platform with enhanced customer journey',
+      'healthcare': 'Advanced healthcare solution improving patient outcomes',
+      'fintech': 'Cutting-edge financial technology with enhanced security and usability',
+      'education': 'Revolutionary educational platform transforming learning experiences'
+    };
+
+    const industryDiff = differentiatorTemplates[industry.toLowerCase() as keyof typeof differentiatorTemplates];
+    if (industryDiff) {
+      return industryDiff;
+    }
+
+    return `Innovative approach combining ${idea} with industry-leading practices`;
+  }
+
+  private inferFounderFromContext(emotionalContext: BusinessPlanInput['emotionalContext']): string {
+    if (!emotionalContext) {
+      return 'Experienced entrepreneur with deep industry knowledge and passion for innovation';
+    }
+
+    const { personalStory, founderBackground, motivator } = emotionalContext;
+    
+    if (founderBackground) {
+      return founderBackground;
+    }
+
+    if (personalStory && motivator) {
+      return `${personalStory} Driven by ${motivator} to create meaningful impact.`;
+    }
+
+    if (personalStory) {
+      return personalStory;
+    }
+
+    return 'Passionate founder with vision to transform the industry through innovative solutions';
+  }
+
+  // Enhance processPrompt to include MCP enhancers
   async processPrompt(input: BusinessPlanInput): Promise<PromptSession> {
-    // Apply smart defaults before validation
-    const enhancedInput = this.applyFinancialDefaults(input);
+    // Apply MCP enhancers first
+    const mcpEnhanced = this.applyMCPEnhancers(input);
+    
+    // Apply smart defaults after MCP enhancement
+    const enhancedInput = this.applyFinancialDefaults(mcpEnhanced);
 
     // 1. Input Validation
     const validationStatus = await this.validateInput(enhancedInput);
@@ -241,7 +374,7 @@ export class BusinessPlanMCP extends EventEmitter {
       return this.handleEmotionalMismatch(enhancedInput, validationStatus, scoreBreakdown);
     }
 
-    // 4. Log Session with smart defaults flag
+    // 4. Log Session with enhancement flags
     const session: PromptSession = {
       promptType: 'business_plan',
       input: enhancedInput,
@@ -252,7 +385,8 @@ export class BusinessPlanMCP extends EventEmitter {
         strategy: '', 
         attempts: 0, 
         success: true,
-        smartDefaultUsed: Object.keys(input.financials || {}).length < Object.keys(enhancedInput.financials || {}).length
+        smartDefaultUsed: Object.keys(input.financials || {}).length < Object.keys(enhancedInput.financials || {}).length,
+        mcpEnhancementUsed: this.hasMCPEnhancements(input, enhancedInput)
       },
       revisionCount: 0
     };
@@ -452,6 +586,15 @@ export class BusinessPlanMCP extends EventEmitter {
       recoveryStatus,
       revisionCount: 0
     };
+  }
+
+  private hasMCPEnhancements(original: BusinessPlanInput, enhanced: BusinessPlanInput): boolean {
+    return (
+      (!original.problemSolved && !!enhanced.problemSolved) ||
+      (!original.customerContent && !!enhanced.customerContent) ||
+      (!original.differentiator && !!enhanced.differentiator) ||
+      (!original.founderBio && !!enhanced.founderBio)
+    );
   }
 }
 

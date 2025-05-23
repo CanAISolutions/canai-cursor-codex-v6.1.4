@@ -6,17 +6,15 @@
  */
 
 import { NextApiRequest, NextApiResponse } from "next";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import { composePrompt } from "../prompts/composePrompt";
-import { enforceHttpMethod, safeTrim } from "../utils/requestHelpers";
+import { enforceHttpMethod, safeTrim } from "./utils/requestHelpers";
 import { enforceChecklistStatusGuard } from '../cursor/monitoring/enforceChecklistStatusGuard';
 
 // Required environment variable
-const config = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
-
-const openai = new OpenAIApi(config);
 
 /**
  * Handles POST request to fulfill a structured promptType and input using GPT-4o.
@@ -50,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // --- Basic Input Validation ---
-    const safePromptType = safeTrim(promptType);
+    const safePromptType = safeTrim(promptType, "promptType");
     if (!safePromptType || !input) {
       return res.status(400).json({
         success: false,
@@ -59,10 +57,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // --- Compose Final Prompt ---
-    const finalPrompt = composePrompt(safePromptType, input);
+    const composedPrompt = composePrompt(safePromptType, input);
 
     // --- Fulfill with OpenAI ---
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -71,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         {
           role: "user",
-          content: finalPrompt,
+          content: composedPrompt.prompt,
         },
       ],
       temperature: 0.7,
@@ -81,8 +79,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // --- Successful Response ---
     res.status(200).json({
       success: true,
-      result: completion.data.choices[0].message?.content ?? "",
-      prompt: finalPrompt,
+      result: completion.choices[0].message?.content ?? "",
+      prompt: composedPrompt.prompt,
     });
   } catch (error) {
     console.error("[prompt_handler] Fatal error:", error);

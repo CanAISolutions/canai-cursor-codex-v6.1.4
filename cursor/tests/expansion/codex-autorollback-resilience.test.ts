@@ -49,6 +49,8 @@ describe('Codex-AutoRollback-Resilience — Ritual Enforcement', () => {
     const result = await initiateRollback(sessionId, currentDelta, triggerLog);
     expect(result).toContain('✅ No rollback needed.');
     logAction('Rollback skipped. No fallback needed.');
+  });
+
   it('handles total rollback failure with emotional fallback and logs', async () => {
     const result = await initiateRollback({ simulate: 'failure' });
     expect(result.success).toBe(false);

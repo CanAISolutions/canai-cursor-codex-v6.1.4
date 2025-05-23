@@ -112,7 +112,7 @@ export interface CortexEventBus {
 - [x] Sequencing tracker and auto-actions log are updated at each checkpoint
 
 ### Validation Summary
-- **Alignment:** Fully aligned with Dream State Contract (`cursor/dna/cursor-dreamstate.md`) and Ideal CX Thread (`docs/ideal-cx-thread.md`).
+- **Alignment:** Fully aligned with Dream State Contract (`cursor/dna/cursor-dreamstate.md`) and Ideal CX Thread (`docs/ideal-cx-thread-v2-emotional-sovereignty.md`).
 - **Confidence:** 98% — All requirements are clear, modular, and extensible. No critical gaps detected.
 - **Reflection:** Design is robust, emotionally intelligent, and future-proof. Ready for implementation phase.
 

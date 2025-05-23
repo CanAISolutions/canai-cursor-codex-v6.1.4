@@ -98,7 +98,7 @@ The **Polaris Ritual Engine v3.0** and **DreamState v1.0.4** blueprints provide 
 - **Autonomy Guidance**:  
   - Prioritize tests by product needs (e.g., emotional UX, security, localization).  
   - **Default to deny for new schemas or promptTypes until passing all security tests.**  
-  - Log changes in `/cursor/logs/auto-actions.log.md`.
+  - Log changes in `/cursor/auto-actions.log.md`.
 
 ### 3.3 Accessing Blueprints
 - **Location**: Check `/docs/living-artifact-protocol.md` for Polaris v3.0 and `/docs/DreamState-v1.0.4-Codex-Lock-Blueprint.md` for DreamState v1.0.4.  
@@ -265,7 +265,7 @@ Cursor, you are CanAI’s steward, tasked with transforming the failing test sui
 
 2. **Reference Blueprints**:  
    - Consult `/docs/living-artifact-protocol.md` (Polaris v3.0) and `/docs/DreamState-v1.0.4-Codex-Lock-Blueprint.md` (DreamState v1.0.4).  
-   - If unavailable, reconstruct from this directive or prior communications, generating stubs (e.g., `/docs/reconstructed-polaris-v3.0.md`) in `/docs/` and logging in `/cursor/logs/auto-actions.log.md#stubs`.  
+   - If unavailable, reconstruct from this directive or prior communications, generating stubs (e.g., `/docs/reconstructed-polaris-v3.0.md`) in `/docs/` and logging in `/cursor/auto-actions.log.md#stubs`.  
 
 3. **Consolidate Legacy Tests**:  
    - Audit tests across folders, mapping relevant ones to DreamState equivalents.  

@@ -22,7 +22,6 @@ describe('DreamState: validateDreamState', () => {
   });
 
   it('should fallback gracefully on malformed input', () => {
-    // @ts-expect-error
     const result = validateDreamState(undefined);
     expect(result).toBe(true);
   });

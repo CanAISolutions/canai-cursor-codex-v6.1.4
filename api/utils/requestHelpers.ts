@@ -9,42 +9,42 @@ import { NextApiRequest } from "next";
 import { throwApiError } from "../errors/errorResponses";
 
 /**
- * Ensures the incoming request is the correct HTTP method.
- * 
- * @param req - The incoming Next.js API request.
- * @param allowedMethods - Array of allowed HTTP methods (e.g., ['POST']).
+ * Enforces HTTP method for API endpoints
+ * @param req - Next.js API request object
+ * @param allowedMethods - Array of allowed HTTP methods
+ * @throws Error if method not allowed
  */
 export function enforceHttpMethod(req: NextApiRequest, allowedMethods: string[]): void {
-  if (!allowedMethods.includes(req.method || "")) {
-    throwApiError("FORBIDDEN");
+  if (!req.method || !allowedMethods.includes(req.method)) {
+    throw new Error(`Method ${req.method} not allowed. Allowed methods: ${allowedMethods.join(', ')}`);
   }
 }
 
 /**
- * Safely parses the JSON body of a request.
- * 
- * @param req - The incoming Next.js API request.
- * @returns - The parsed JSON body.
+ * Safely parses JSON with fallback
+ * @param jsonString - JSON string to parse
+ * @param fallback - Fallback value if parsing fails
+ * @returns Parsed object or fallback
  */
-export async function safeParseJson(req: NextApiRequest): Promise<any> {
+export function safeParseJson<T>(jsonString: string, fallback: T): T {
   try {
-    const body = await new Promise<string>((resolve, reject) => {
-      let data = "";
-      req.on("data", (chunk) => {
-        data += chunk;
-      });
-      req.on("end", () => {
-        resolve(data);
-      });
-      req.on("error", (err) => {
-        reject(err);
-      });
-    });
-
-    return JSON.parse(body);
+    return JSON.parse(jsonString) as T;
   } catch (error) {
-    throwApiError("VALIDATION_FAILED");
+    console.warn('JSON parsing failed:', error);
+    return fallback;
   }
+}
+
+/**
+ * Safely trims string input with null/undefined handling
+ * @param input - Input string to trim
+ * @returns Trimmed string or empty string if input is null/undefined
+ */
+export function safeTrim(input: string | null | undefined): string {
+  if (input === null || input === undefined) {
+    return '';
+  }
+  return String(input).trim();
 }
 
 /**

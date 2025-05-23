@@ -24,8 +24,7 @@ describe('DreamState: validateSession', () => {
   });
 
   it('should fallback gracefully on malformed session', async () => {
-    // @ts-expect-error
-    const score = await validator.validateSession(undefined);
+    const score = await validator.validateSession(undefined as any);
     expect(score).toBeLessThanOrEqual(4.5);
   });
 }); 

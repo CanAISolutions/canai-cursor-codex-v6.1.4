@@ -26,7 +26,7 @@ The directive outlines a nine-step plan to achieve Codex alignment, with all act
 To prevent drift, simulation, or silent failure:
 - No execution without Cofounder-confirmed context lock.
 - All tests must be Real System Bound, per `/cursor/mock-integrity-audit.md`.
-- Emotional outcomes (Calm Trust, Clarity & Trust, Strategic Continuity) must align with `/docs/ideal-cx-thread.md`.
+- Emotional outcomes (Calm Trust, Clarity & Trust, Strategic Continuity) must align with `/docs/ideal-cx-thread-v2-emotional-sovereignty.md`.
 - CI must fail on any pillar violation, with escalation to Cofounder.
 
 ## Operator Guidance
@@ -43,4 +43,4 @@ To prevent drift, simulation, or silent failure:
 - `/cursor/mock-integrity-audit.md`: Mock audit for Real System Bound compliance.
 
 ## Emotional Auditability
-The directive enforces emotional auditability by aligning all actions with `/docs/ideal-cx-thread.md`. Rituals and tests (e.g., `emotional-drift-detection.ts`, `emotional-ux-core.test.ts`) defend emotional outcomes, validated via CI in `.github/workflows/codex-enforcement.yml`. Public trust metrics in `/api/public/` ensure transparency.
+The directive enforces emotional auditability by aligning all actions with `/docs/ideal-cx-thread-v2-emotional-sovereignty.md`. Rituals and tests (e.g., `emotional-drift-detection.ts`, `emotional-ux-core.test.ts`) defend emotional outcomes, validated via CI in `.github/workflows/codex-enforcement.yml`. Public trust metrics in `/api/public/` ensure transparency.

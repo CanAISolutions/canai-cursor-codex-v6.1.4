@@ -11,11 +11,11 @@ The table below details each DreamState test, its legacy mappings, actions taken
 | 1 | emotional-ux-core.test.ts | tests/emotional-ux-snapshots.test.ts, cursor/validators/emotional-validator.test.ts | Refactor & Combine | Snapshot test detects tone drift; validator enforces scoring. Merged to defend fallback microcopy and tone override. | 98% | /cursor/accelerators/tone-override-agent/, /cursor/overlays/spark-layer.ts | validateToneEmotion(), renderFallbackCopy() | Emotional UX Fidelity |
 | 2 | decay-prevention-suite.test.ts | cursor/agents/__tests__/emotional-stability.test.ts, cursor/prompt-infrastructure/__tests__/prompt-evolver.test.ts | Refactor & Combine | Modernized drift/regression logic for Codex compliance, covering emotional and prompt stability. | 97% | /cursor/agents/emotional-intelligence/, /cursor/prompt-infrastructure/prompt-evolver.ts | detectEmotionalDrift(), evolvePromptVersion() | Emotional & Operational Decay Prevention |
 | 3 | validate-event-emotional.test.ts | cursor/validators/__tests__/event-validator.test.ts | Refactor | Updated to enforce emotional event validation with Codex-aligned scoring. | 96% | /cursor/validators/, /api/event/ | validateEvent(), scoreEmotionalImpact() | Emotional UX Fidelity |
-| 4 | calculate-dream-alignment-score.test.ts | cursor/prompt-infrastructure/__tests__/alignment-scorer.test.ts | Rewrite | Rewritten to align with DreamState’s dream alignment scoring model. | 95% | /cursor/prompt-infrastructure/ | calculateDreamAlignmentScore() | Emotional UX Fidelity |
+| 4 | calculate-dream-alignment-score.test.ts | cursor/prompt-infrastructure/__tests__/alignment-scorer.test.ts | Rewrite | Rewritten to align with DreamState's dream alignment scoring model. | 95% | /cursor/prompt-infrastructure/ | calculateDreamAlignmentScore() | Emotional UX Fidelity |
 | 5 | add-client-emotional-fallback.test.ts | cursor/api/__tests__/client-fallback.test.ts | Refactor | Enhanced to test emotional fallback insertion for client APIs. | 96% | /api/client/, /cursor/fallbacks/ | addClientEmotionalFallback() | Fallback Resilience |
 | 6 | trustscore-threshold-protection.test.ts | tests/trustscore-validator.test.ts | Refactor | Strengthened to enforce TrustScore thresholds in CI (minimum 75). | 97% | /cursor/trustscore/, /api/trust/ | enforceTrustScoreThreshold() | Trust |
 | 7 | fallback-depth-limit.test.ts | cursor/fallbacks/__tests__/depth-limiter.test.ts | Rewrite | Rewritten to prevent runaway fallback chains (depth ≤ 3). | 95% | /cursor/fallbacks/ | limitFallbackDepth() | Fallback Resilience |
-| 8 | ritual-orchestrator.test.ts | None | New | Tests Ritual Engine’s orchestration logic for CI enforcement. | 98% | /cursor/rituals/ | validateAllRituals(), getUnmetRituals() | Operational Resilience |
+| 8 | ritual-orchestrator.test.ts | None | New | Tests Ritual Engine's orchestration logic for CI enforcement. | 98% | /cursor/rituals/ | validateAllRituals(), getUnmetRituals() | Operational Resilience |
 | 9 | emotional-drift-detection.test.ts | cursor/agents/__tests__/drift-detector.test.ts | Refactor | Enhanced to simulate and log emotional drift scenarios. | 96% | /cursor/agents/emotional-intelligence/ | detectEmotionalDrift() | Emotional UX Fidelity |
 | 10 | prompt-schema-stability.test.ts | cursor/prompt-infrastructure/__tests__/schema-validator.test.ts | Refactor | Ensures prompt schema stability across versions. | 97% | /cursor/prompt-infrastructure/ | validatePromptSchema() | Operational Resilience |
 | 11 | session-auth-validator.test.ts | tests/auth-validator.test.ts | Refactor | Updated to validate session authenticity and prevent hijacking. | 96% | /api/auth/, /api-router/auth/ | validateSession(), rejectInvalidSession() | Security & Trust |
@@ -51,7 +51,7 @@ The following legacy tests were archived as they lack direct DreamState mappings
 
 ## Operator Guidance
 - **Cursor Usage:** Index this file for all test-related queries. Reference it before implementing, auditing, or updating tests to ensure Codex alignment.
-- **Escalation:** Escalate to Cofounder for review if a test’s confidence is <95%, mapping ambiguity arises, or pillar violations are detected.
+- **Escalation:** Escalate to Cofounder for review if a test's confidence is <95%, mapping ambiguity arises, or pillar violations are detected.
 - **Logging:** Log all test mapping changes in `/cursor/auto-actions.log.md`, referencing this file for traceability.
 - **Updates:** Propose new test mappings or updates via `/cursor/auto-actions.log.md` with Cofounder approval.
 - **CI Integration:** Tests are validated in `.github/workflows/codex-enforcement.yml`, failing on pillar violations or missing coverage.
@@ -64,7 +64,7 @@ The following legacy tests were archived as they lack direct DreamState mappings
 - `/cursor/auto-actions.log.md` [2025-05-21T13:00Z]: Original mapping and audit details.
 
 ## Emotional Auditability
-All tests align with `/docs/ideal-cx-thread.md`, ensuring emotional outcomes: Calm Trust (`auth-session-security.test.ts`, `trustscore-threshold-protection.test.ts`), Clarity & Trust (`multilingual-ux.test.ts`, `trust-metrics-public.test.ts`), Strategic Continuity (`workflow-continuity.test.ts`), and Inclusion (`a11y-standards.test.ts`). Tests like `emotional-ux-core.test.ts` and `emotional-range-coverage.test.ts` explicitly defend emotional fidelity, audited via CI in `.github/workflows/codex-enforcement.yml`. Public metrics in `/api/public/test-health` ensure transparency.
+All tests align with `/docs/ideal-cx-thread-v2-emotional-sovereignty.md`, ensuring emotional outcomes: Calm Trust (`auth-session-security.test.ts`, `trustscore-threshold-protection.test.ts`), Clarity & Trust (`multilingual-ux.test.ts`, `trust-metrics-public.test.ts`), Strategic Continuity (`workflow-continuity.test.ts`), and Inclusion (`a11y-standards.test.ts`). Tests like `emotional-ux-core.test.ts` and `emotional-range-coverage.test.ts` explicitly defend emotional fidelity, audited via CI in `.github/workflows/codex-enforcement.yml`. Public metrics in `/api/public/test-health` ensure transparency.
 
 ## Notes
 - **Completeness:** This table includes all 33 tests, with Tests 27 and 28 (`chaos-agent-outage.test.ts`, `chaos-disk-failure.test.ts`) added per the finalized DreamState v1.0.4 blueprint, addressing R2 chaos testing requirements.

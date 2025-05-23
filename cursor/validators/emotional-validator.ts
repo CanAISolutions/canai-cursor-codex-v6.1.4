@@ -65,25 +65,60 @@ export class EmotionalValidator {
       'empathetic',
       'confident',
       'inspiring',
-      'analytical'
+      'analytical',
+      'warm',
+      'supportive',
+      'reassuring',
+      'neutral',
+      'positive',
+      'encouraging',
+      'caring',
+      'gentle',
+      'grateful'
     ]);
   }
 
   async validateEvent(event: any): Promise<number> {
-    // Implement event emotional validation
-    // This is a placeholder that returns a valid score
-    return 4.5;
+    // Handle undefined/null input gracefully
+    if (event === undefined || event === null) {
+      return 3.0; // Fallback score for invalid input
+    }
+
+    // Extract message content from event
+    let messageContent = '';
+    if (typeof event === 'string') {
+      messageContent = event;
+    } else if (event.message) {
+      messageContent = event.message;
+    } else if (event.content) {
+      messageContent = event.content;
+    } else {
+      // Try to stringify the event
+      messageContent = JSON.stringify(event);
+    }
+
+    // Calculate emotional score based on content
+    return this.calculateEmotionalScore(messageContent.toLowerCase());
   }
 
   async validateMessage(message: string): Promise<number> {
+    if (!message || typeof message !== 'string') {
+      return 3.0; // Fallback score for invalid input
+    }
     return this.calculateEmotionalScore(message.toLowerCase());
   }
 
   async validateContent(content: string): Promise<number> {
+    if (!content || typeof content !== 'string') {
+      return 3.0; // Fallback score for invalid input
+    }
     return this.calculateEmotionalScore(content.toLowerCase());
   }
 
-  async validateScore(score: number): Promise<number> {
+  async validateScore(score: number | undefined | null): Promise<number> {
+    if (score === undefined || score === null || typeof score !== 'number') {
+      return 3.0; // Fallback score for invalid input
+    }
     // Implement score emotional validation
     // This is a placeholder that returns a valid score
     return 4.5;
@@ -96,6 +131,9 @@ export class EmotionalValidator {
   }
 
   async validateResponse(response: any): Promise<number> {
+    if (response === undefined || response === null) {
+      return 3.0; // Fallback score for invalid input
+    }
     const responseString = JSON.stringify(response).toLowerCase();
     const score = this.calculateEmotionalScore(responseString);
     return score;
@@ -185,7 +223,16 @@ export class EmotionalValidator {
       'empathetic': 0.9,
       'confident': 0.8,
       'inspiring': 0.9,
-      'analytical': 0.7
+      'analytical': 0.7,
+      'warm': 0.8,
+      'supportive': 0.9,
+      'reassuring': 0.9,
+      'neutral': 0.6,
+      'positive': 0.8,
+      'encouraging': 0.9,
+      'caring': 0.9,
+      'gentle': 0.8,
+      'grateful': 0.9
     };
 
     return depthScores[tone.toLowerCase()] || 0.5;

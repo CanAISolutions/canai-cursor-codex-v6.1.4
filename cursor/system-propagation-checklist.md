@@ -56,7 +56,7 @@ This document ensures all rule, tone, intelligence, and collaboration logic has 
 ## ✅ DOCUMENTATION
 
 - [ ] `/docs/system-map.md` — add layer: `Codex Governance + Collaboration Contract`
-- [ ] `/docs/ideal-cx-thread.md` — update dreamstate UX components with `.mdc` references
+- [ ] `/docs/ideal-cx-thread-v2-emotional-sovereignty.md` — update dreamstate UX components with `.mdc` references
 - [ ] `/docs/relationship-protocol.md` — add three-mind operational structure (Cofounder, ChatGPT, Cursor)
 - [x] `/cursor/rules/README.md` — already updated with all rules and protocols
 
@@ -65,14 +65,6 @@ This document ensures all rule, tone, intelligence, and collaboration logic has 
 ## ✅ CURSOR SETTINGS
 
 - [ ] `User Rules` → paste:  
-  - “All decisions must be confirmed across ChatGPT, Cofounder, and Cursor”  
-  - “Output must always be copy/paste-ready and echoed”  
-- [ ] `Docs` → ensure `.mdc`, `self-awareness.json`, and `codex-traits.json` are loaded
-- [ ] `Command Allowlist` → include logging, diff, snapshot, idea append (optional)
-
----
-
-## 🧭 FINAL ACTIONS
-
-- [ ] Create `/docs/system-lockpoints.md` — list all major Codex checkpoints (this is one)
-- [ ] Add log entry to `/cursor/auto-actions.log.md` once all boxes above are ✅ checked
+  - "All decisions must be confirmed across ChatGPT, Cofounder, and Cursor"  
+  - "Output must always be copy/paste-ready and echoed"  
+- [ ] `Docs` → ensure `.mdc`, `

@@ -1,14 +1,14 @@
 /**
  * @file add_client.ts
- * @description API endpoint for adding new client metadata into Airtable for personalization and lifecycle tracking.
+ * @description API endpoint for logging new client requests into Airtable.
  * Version: 1.0.0
  * Codex Enforcement: Prime Directive Compliant
  */
 
 import { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
-import { enforceHttpMethod, safeTrim } from "../utils/requestHelpers";
-import { getCurrentTimestamp } from "../utils/common";
+import { enforceHttpMethod, safeTrim } from "./utils/requestHelpers";
+import { getCurrentTimestamp } from "./utils/common";
 
 // Required environment variables
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY!;
@@ -18,20 +18,20 @@ const CLIENTS_TABLE_ID = process.env.CLIENTS_TABLE_ID!;
 /**
  * Adds a new client record to Airtable.
  * 
- * Fields: email (required), industry, persona, source (optional)
+ * Fields: clientName (required), email (optional), phone (optional)
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     enforceHttpMethod(req, ["POST"]);
 
-    const { email, industry, persona, source } = req.body;
+    const { clientName, email, phone } = req.body;
 
     // --- Basic Input Validation ---
-    const safeEmail = safeTrim(email);
-    if (!safeEmail) {
+    const safeClientName = safeTrim(clientName);
+    if (!safeClientName) {
       return res.status(400).json({
         success: false,
-        error: { code: "VALIDATION_FAILED", message: "Missing or invalid email address." },
+        error: { code: "VALIDATION_FAILED", message: "Missing or invalid clientName." },
       });
     }
 
@@ -40,10 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       records: [
         {
           fields: {
-            Email: safeEmail,
-            Industry: industry ? safeTrim(industry) : "Unspecified",
-            Persona: persona ? safeTrim(persona) : "Unspecified",
-            Source: source ? safeTrim(source) : "Direct",
+            ClientName: safeClientName,
+            Email: email ? safeTrim(email) : "",
+            Phone: phone ? safeTrim(phone) : "",
+            Status: "Active",
             CreatedAt: getCurrentTimestamp(),
           },
         },

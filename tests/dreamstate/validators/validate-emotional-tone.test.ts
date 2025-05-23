@@ -28,8 +28,7 @@ describe('DreamState: validateEmotionalTone', () => {
 
   it('should fallback gracefully on error', async () => {
     // Simulate error by passing undefined
-    // @ts-expect-error
-    const score = await validator.validateEmotionalTone(undefined);
+    const score = await validator.validateEmotionalTone(undefined as any);
     // Codex: Fallback to low score
     expect(score).toBeLessThanOrEqual(0.3);
   });

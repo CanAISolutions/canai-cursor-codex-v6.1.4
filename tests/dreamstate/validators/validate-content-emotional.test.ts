@@ -24,8 +24,7 @@ describe('DreamState: validateContent', () => {
   });
 
   it('should fallback gracefully on malformed content', async () => {
-    // @ts-expect-error
-    const score = await validator.validateContent(undefined);
+    const score = await validator.validateContent(undefined as any);
     expect(score).toBeLessThanOrEqual(4.5);
   });
 }); 

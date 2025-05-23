@@ -23,9 +23,8 @@ describe('DreamState: DreamStateChecker.validate', () => {
     expect(result).toBe(false);
   });
 
-  it('should fallback gracefully on malformed result', async () => {
-    // @ts-expect-error
-    const result = await checker.validate(undefined);
+  it('should fallback gracefully on malformed dream state', async () => {
+    const result = await checker.validate(undefined as any);
     expect(result).toBe(false);
   });
 }); 

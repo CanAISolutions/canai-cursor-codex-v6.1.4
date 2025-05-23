@@ -14,6 +14,11 @@ export class DreamStateChecker {
   ];
 
   async validate(result: any): Promise<boolean> {
+    // Handle undefined/null input gracefully
+    if (result === undefined || result === null) {
+      return false; // Fallback for invalid input
+    }
+    
     // Check if result contains dream state indicators
     const resultString = JSON.stringify(result).toLowerCase();
     const hasIndicators = this.DREAM_STATE_INDICATORS.some(

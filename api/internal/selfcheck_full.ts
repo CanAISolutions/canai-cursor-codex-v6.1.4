@@ -24,10 +24,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fetch(`${baseUrl}/api/internal/admin_status`).then((res) => res.json()),
     ]);
 
-    const parsedResults = {
-      selfcheck: results[0].status === "fulfilled" ? results[0].value : null,
-      webhookHealth: results[1].status === "fulfilled" ? results[1].value : null,
-      adminStatus: results[2].status === "fulfilled" ? results[2].value : null,
+    const parsedResults: {
+      selfcheck: { success?: boolean } | null;
+      webhookHealth: { success?: boolean } | null;
+      adminStatus: { success?: boolean } | null;
+    } = {
+      selfcheck: results[0].status === "fulfilled" ? (results[0].value as { success?: boolean }) : null,
+      webhookHealth: results[1].status === "fulfilled" ? (results[1].value as { success?: boolean }) : null,
+      adminStatus: results[2].status === "fulfilled" ? (results[2].value as { success?: boolean }) : null,
     };
 
     const allPassed = parsedResults.selfcheck?.success && parsedResults.webhookHealth?.success && parsedResults.adminStatus?.success;

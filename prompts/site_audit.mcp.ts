@@ -7,6 +7,7 @@
  * 
  * TAP-Status: Locked
  * Codex: v6.1.4
+ * MCP Enhancement: Enabled (v3 Schema Lock)
  */
 
 import { validateInput } from '../cursor/agents/input-validator';
@@ -21,6 +22,16 @@ interface SiteAuditInput {
   focusAreas: string[];
   goals: string[];
   tone: string;
+  // Enhanced fields from schema lock v3
+  idea?: string;
+  audience?: string;
+  problemSolved?: string;
+  differentiator?: string;
+  customerContent?: string;
+  founderBio?: string;
+  archetype?: string;
+  voice?: string;
+  vibe?: string;
   enhancers?: Record<string, boolean>;
 }
 
@@ -68,6 +79,7 @@ interface SiteAuditSession {
     version: string;
     timestamp: string;
     trustScore: number;
+    mcpEnhancementUsed: boolean;
   };
 }
 
@@ -83,20 +95,114 @@ const validationSchema = {
   validTones: ['analytical', 'professional', 'technical', 'strategic', 'constructive']
 };
 
+// MCP Enhancer Logic - Auto-fill missing fields
+function applyMCPEnhancers(input: SiteAuditInput): SiteAuditInput {
+  const enhanced = { ...input };
+
+  // Infer problemSolved from goals/auditType
+  if (!enhanced.problemSolved && (enhanced.goals?.length || enhanced.auditType)) {
+    enhanced.problemSolved = inferProblemFromGoals(enhanced.goals || [], enhanced.auditType);
+  }
+
+  // Infer customerContent from siteUrl analysis
+  if (!enhanced.customerContent && enhanced.siteUrl) {
+    enhanced.customerContent = inferContentFromSite(enhanced.siteUrl, enhanced.auditType);
+  }
+
+  // Infer differentiator from audit focus areas
+  if (!enhanced.differentiator && enhanced.focusAreas?.length) {
+    enhanced.differentiator = inferDifferentiatorFromFocus(enhanced.focusAreas);
+  }
+
+  // Infer founderBio from audit context
+  if (!enhanced.founderBio) {
+    enhanced.founderBio = inferFounderFromAudit(enhanced.auditType, enhanced.goals || []);
+  }
+
+  // Apply emotional defaults if missing
+  if (!enhanced.tone) {
+    enhanced.tone = 'supportive';
+  }
+  if (!enhanced.voice) {
+    enhanced.voice = 'empowering';
+  }
+  if (!enhanced.vibe) {
+    enhanced.vibe = 'professional';
+  }
+
+  return enhanced;
+}
+
+function inferProblemFromGoals(goals: string[], auditType: string): string {
+  const problemTemplates = {
+    'performance': 'Site performance issues affecting user experience and conversions',
+    'seo': 'Poor search engine visibility limiting organic traffic growth',
+    'security': 'Security vulnerabilities exposing business and customer data risks',
+    'accessibility': 'Accessibility barriers preventing inclusive user experiences',
+    'conversion': 'Low conversion rates due to UX and optimization gaps',
+    'mobile': 'Mobile experience issues impacting user engagement'
+  };
+
+  const auditTypeLower = auditType.toLowerCase();
+  for (const [key, problem] of Object.entries(problemTemplates)) {
+    if (auditTypeLower.includes(key)) {
+      return problem;
+    }
+  }
+
+  if (goals.length > 0) {
+    return `Addressing challenges related to: ${goals.join(', ')}`;
+  }
+
+  return 'Identifying and resolving key website performance and user experience issues';
+}
+
+function inferContentFromSite(siteUrl: string, auditType: string): string {
+  const domain = siteUrl.replace(/^https?:\/\//, '').split('/')[0];
+  
+  return `Comprehensive analysis of ${domain} focusing on ${auditType} optimization. Content includes detailed findings, actionable recommendations, and implementation roadmap for improved performance and user experience.`;
+}
+
+function inferDifferentiatorFromFocus(focusAreas: string[]): string {
+  const focusTemplates = {
+    'performance': 'Advanced performance optimization with cutting-edge techniques',
+    'seo': 'Comprehensive SEO strategy with data-driven insights',
+    'security': 'Enterprise-grade security assessment and hardening',
+    'accessibility': 'Inclusive design principles with WCAG compliance',
+    'conversion': 'Conversion rate optimization with behavioral analysis',
+    'mobile': 'Mobile-first optimization with responsive design excellence'
+  };
+
+  const primaryFocus = focusAreas[0]?.toLowerCase();
+  if (primaryFocus && focusTemplates[primaryFocus as keyof typeof focusTemplates]) {
+    return focusTemplates[primaryFocus as keyof typeof focusTemplates];
+  }
+
+  return `Specialized audit approach combining ${focusAreas.join(', ')} for maximum impact`;
+}
+
+function inferFounderFromAudit(auditType: string, goals: string[]): string {
+  return `Experienced web optimization specialist with expertise in ${auditType} audits. Passionate about helping businesses achieve their digital goals through data-driven improvements and user-centered design.`;
+}
+
 export async function generateSiteAudit(input: SiteAuditInput): Promise<SiteAuditSession> {
+  // Apply MCP enhancers first
+  const enhancedInput = applyMCPEnhancers(input);
+
   const session: SiteAuditSession = {
-    input,
+    input: enhancedInput,
     validationStatus: { isValid: false, issues: [] },
     metadata: {
       version: '6.1.4',
       timestamp: new Date().toISOString(),
-      trustScore: 0
+      trustScore: 0,
+      mcpEnhancementUsed: hasMCPEnhancements(input, enhancedInput)
     }
   };
 
   try {
     // 1. Validate input
-    const validationResult = await validateInput(input, validationSchema);
+    const validationResult = await validateInput(enhancedInput, validationSchema);
     session.validationStatus = {
       isValid: validationResult.isValid,
       issues: [
@@ -109,7 +215,7 @@ export async function generateSiteAudit(input: SiteAuditInput): Promise<SiteAudi
       await routeFailure({
         type: 'validation',
         severity: 2,
-        details: { input, validationResult },
+        details: { input: enhancedInput, validationResult },
         timestamp: session.metadata.timestamp
       });
       return session;
@@ -191,7 +297,7 @@ export async function generateSiteAudit(input: SiteAuditInput): Promise<SiteAudi
 
     // 4. Validate empathy
     const empathyResult = await validateEmpathy(output, {
-      targetTone: input.tone,
+      targetTone: enhancedInput.tone,
       emotionalDepth: 0.7
     });
 
@@ -242,11 +348,20 @@ export async function generateSiteAudit(input: SiteAuditInput): Promise<SiteAudi
     await routeFailure({
       type: 'system',
       severity: 3,
-      details: { error, input },
+      details: { error, input: enhancedInput },
       timestamp: session.metadata.timestamp
     });
     throw error;
   }
+}
+
+function hasMCPEnhancements(original: SiteAuditInput, enhanced: SiteAuditInput): boolean {
+  return (
+    (!original.problemSolved && !!enhanced.problemSolved) ||
+    (!original.customerContent && !!enhanced.customerContent) ||
+    (!original.differentiator && !!enhanced.differentiator) ||
+    (!original.founderBio && !!enhanced.founderBio)
+  );
 }
 
 // Export singleton instance

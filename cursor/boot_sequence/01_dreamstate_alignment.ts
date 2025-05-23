@@ -18,20 +18,25 @@ interface DreamstateAlignmentResult {
 
 export async function runDreamstateAlignmentCheck(): Promise<DreamstateAlignmentResult> {
   const priorState = await readSelfAwarenessJournal();
-  const { score, issues } = calculateDreamAlignmentScore(priorState);
+  const score = calculateDreamAlignmentScore(priorState, { state: 'target', context: 'alignment-check' });
+  const issues: string[] = [];
 
   const passed = score >= 92; // Codex-mandated threshold
 
   if (!passed) {
-    emitSystemLog("dream-alignment-failed", {
-      score,
-      issues,
+    issues.push('Dream alignment score below threshold');
+    await emitSystemLog("dream-alignment-failed", {
+      path: "cursor/logs/dreamstate-alignment.log",
+      content: `Dream alignment failed: score=${score}, issues=${JSON.stringify(issues)}`
     });
   } else {
-    emitSystemLog("dream-alignment-passed", { score });
+    await emitSystemLog("dream-alignment-passed", {
+      path: "cursor/logs/dreamstate-alignment.log", 
+      content: `Dream alignment passed: score=${score}`
+    });
   }
 
-  await recordAlignmentDelta({ score, passed, timestamp: Date.now() });
+  await recordAlignmentDelta({ lastEmotionalScore: score });
 
   return {
     score,

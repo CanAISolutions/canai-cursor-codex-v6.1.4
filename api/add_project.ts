@@ -25,8 +25,8 @@
 
 import { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
-import { enforceHttpMethod, safeParseJson, safeTrim } from "../utils/requestHelpers";
-import { getCurrentTimestamp } from "../utils/common";
+import { enforceHttpMethod, safeParseJson, safeTrim } from "./utils/requestHelpers";
+import { getCurrentTimestamp } from "./utils/common";
 
 // Required environment variables
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY!;

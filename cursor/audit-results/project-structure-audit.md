@@ -16,7 +16,7 @@
 | /components                | ✅ Exists  | Discovery funnel test exists                           |
 | /emails                    | ⚠️ Partial | Lifecycle logic present, test coverage incomplete      |
 | /scripts                   | ✅ Exists  | CLI tool scaffold in place                             |
-| /tests/emotional-ux        | ✅ Exists  | Reference to ideal-cx-thread.md needed                 |
+| /tests/emotional-ux        | ✅ Exists  | Reference to ideal-cx-thread-v2-emotional-sovereignty.md needed                 |
 | /cursor/audit-results      | ✅ Exists  | This audit added manually                              |
 | /test-reports              | ✅ Exists  | Auto-generated from orchestrator                       |
 

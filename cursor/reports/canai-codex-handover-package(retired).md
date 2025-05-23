@@ -118,7 +118,679 @@ Every CanAI product experience is governed by the Ideal-CX model:
 
 * `.cursorrules` — Codex law, agent config, fallback tiers
 * `cursor/auto-actions.log.md` — Every mutation, lock, escalation
-* `docs/ideal-cx-thread.md` — Emotional UX system law
+* `docs/ideal-cx-thread-v2-emotional-sovereignty.md` — Emotional OS and user experience contract
+* `docs/reference/dreamstate-test-mappings.md` — Ritual map per test
+* `cursor/reports/mock-remediation-tracker.md` — Per-test mock fix log
+* `cursor/claude-agent-context.ts` — Claude memory injection (to be activated post-transition)
+
+---
+
+## 8. Continuous Improvement Engine
+
+All prompt runs, feedback, drift, and outputs are logged and used for self-evolution:
+
+* **Airtable Bases**: `PromptLogs`, `FeedbackLogs`, `SessionAnalytics`, `ReferralTriggers`, `DeliveryCostLogs`
+* **Make Automations**: Enrichment, tagging, fallback path inference
+* **TrustScore Deltas**: Measured, replayed, and improved over time
+* **Prompt Evolution Loop**: Output diffs are tracked and versioned
+
+---
+
+## 9. Claude Integration (Pending Default Activation)
+
+Claude 3.7 Sonnet is the approved default agent pending activation. It will:
+* Improve emotional resilience
+* Provide better long-context reasoning
+* Reinforce fallback and UX compliance
+
+Once activated:
+* System prompts will include `.cursorrules`, `auto-actions.log.md`, and emotional UX contracts
+* GPT-4o will remain as the low-latency fallback tier
+
+---
+
+## 10. What Must Never Be Lost
+
+* Trust UX is sacred
+* Every test is a trust contract
+* Drift without fallback is failure
+* All green states must be real
+* Mock illusions destroy reliability
+* Cursor must always log its actions
+* Agents must enforce Codex law
+* No launch happens without DreamState clearance
+
+---
+
+> This guide is the definitive map of CanAI's system, products, rituals, and emotional fidelity. If all else is lost, this guide is enough to rebuild. Lock it. Evolve it. Protect it.
+
+---
+
+# CanAI Codex Handover Package — System, Codex, and DreamState Blueprint
+
+---
+
+## 1. System Map & Directory Overview
+
+**Purpose:** This section provides a literal, actionable map of the CanAI Cursor Codex platform, including all critical directories, files, and their roles. It is sufficient for a full system rebuild and operator onboarding.
+
+### Directory Structure (Key Folders)
+- `/agents/` — Core and debug agents, context, plugins, and utilities
+- `/api/` — API endpoints, types, validators, and webhooks
+- `/cursor/` — Accelerators, agents, context, memory, overlays, rules, scripts, services, tests, and validators
+- `/tests/` — DreamState, system-wide, compliance, and utility tests
+- `/docs/` — Emotional OS, Codex standards, test mappings, and reference guides
+- `/prompts/` — Prompt blueprints, schemas, and versioning
+- `/gpt-templates/` — Prompt templates, logs, and evolution maps
+- `/ci/`, `/.github/` — CI/CD, workflows, and enforcement
+- `/infra/airtable/` — Canonical tables, fields, schemas, blueprints (see Section 3)
+
+> This matrix is the single source of truth for folder-level audit, onboarding, and recovery. Every critical folder must have its intent, logging, and audit status declared and tracked. Use this table to confirm system integrity, pass audits, and onboard new operators.
+
+| Folder                  | Required Files                        | Audit Block(s)         | Purpose/Role                                 |
+|-------------------------|---------------------------------------|------------------------|----------------------------------------------|
+| `/cursor/`              | README.md, intent-token.json, log-expectation.md | Intent Pass A, A1, A2, C | Orchestrator, fallback, memory, boot         |
+| `/api/`                 | README.md, intent-token.json          | Intent Pass A, C       | Public endpoints, session init               |
+| `/analytics/`           | README.md, intent-token.json, log-expectation.md | Intent Pass A, A1, A2, B | Telemetry, trust scoring, signal awareness   |
+| `/prompts/`             | README.md, intent-token.json, log-expectation.md, delta.md | Intent Pass A, B | Prompt logic, versioning, evolution          |
+| `/tests/`               | README.md, intent-token.json, log-expectation.md | Intent Pass A, E         | Test coverage, chaos, CI                     |
+| `/gpt-templates/`       | README.md, intent-token.json, log-expectation.md | Intent Pass A, B         | Prompt source, seed memory                   |
+| `/llm/`                 | README.md, intent-token.json, delta.md | Intent Pass B           | LLM wrappers, prompt injection               |
+| `/validators/`          | README.md, intent-token.json, delta.md | Intent Pass B           | Output enforcement, fallback checks          |
+| `/system-intel/`        | README.md, intent-token.json, log-expectation.md, delta.md | Intent Pass B, A2, C, D | Score tracking, event handling, insights      |
+| `/preprocessors/`       | README.md, intent-token.json, delta.md | Intent Pass B           | Preflight prompt/request modifications       |
+| `/intelligence/`        | README.md, intent-token.json, delta.md | Intent Pass B, A2       | Prediction, insight modeling, drift analysis |
+| `/stressbox/`           | README.md, intent-token.json, log-expectation.md, delta.md | Intent Pass B, A2, E    | Chaos testing, fallback probes               |
+| `/fallback/`            | README.md, intent-token.json, log-expectation.md | Intent Pass B, A1        | Recovery flows, user-protective defaults     |
+| `/event-bus/`           | README.md, intent-token.json, log-expectation.md | Intent Pass B, D         | Pub/sub logic, async processing              |
+| `/services/`            | README.md, intent-token.json, log-expectation.md | Intent Pass B, D         | Internal utility logic, helper engines       |
+| `/cursor/memory/`       | README.md, intent-token.json, log-expectation.md | A1                      | Session memory, continuity                   |
+| `/cursor/self-heal/`    | README.md, intent-token.json, log-expectation.md | A2                      | Self-healing, state fix, auto-repair         |
+| `/cursor/boot_sequence/`| README.md, intent-token.json, log-expectation.md | C                       | Boot/init logic, phase checkpoints           |
+| `/cursor/plugins/`      | README.md, intent-token.json, log-expectation.md | D                       | Plugin modularity, fallback, versioning      |
+| `/cursor/self-refine/`  | README.md, intent-token.json, log-expectation.md | B                       | Automated prompt scoring, evolution          |
+| `/ai-ops/`              | README.md, intent-token.json, log-expectation.md | B                       | Prompt evolution, scoring, ops intelligence  |
+| `/simversion-engine/`   | README.md, intent-token.json, log-expectation.md | E                       | Simulation, regression, persona modeling     |
+| `/simulation-engine/`   | README.md, intent-token.json, log-expectation.md | E                       | Simulation, regression, persona modeling     |
+| `/persona-cluster-reports/` | README.md, intent-token.json, log-expectation.md | A2                  | Audit intelligence memory                    |
+| `/insights/`            | README.md, intent-token.json, log-expectation.md | B                       | Aggregated prompt signals, performance       |
+| `/reports/`             | README.md, intent-token.json, log-expectation.md | B                       | Prompt evaluation summaries, delta logs      |
+| `/cursor/self-awareness/`| README.md, intent-token.json, log-expectation.md | A2                      | Self-awareness, audit registry               |
+| `/cursor/self-expansion/`| README.md, intent-token.json, log-expectation.md | A2                      | Self-evolving agent proposals, codex traits  |
+
+> **Operator Ritual:** Confirm presence and accuracy of all required files in each folder before passing audits or onboarding new operators. Log all confirmations and remediations in `/cursor/auto-actions.log.md`.
+
+> This matrix is the operator's source of truth for CI/CD trust, enforcement, and recovery. Every workflow below is a Codex contract—blocking, alerting, or auto-remediating any violation of system, prompt, or emotional OS standards. Use this table to understand what is enforced, where, and how escalation or recovery is triggered.
+
+| Workflow File | Enforcement Purpose | Key Checks & Triggers | Operational Impact / Escalation |
+|--------------|---------------------|-----------------------|-------------------------------|
+| `ci.yml` | Codex CI Pipeline, QA Fortress, prompt integrity, test coverage, promotion log enforcement | Lint, test:all, prompt diff safety, prompt structure/versioning, Cursor rules compliance, test file count, promotion log, placeholder secret scan, Codex checkpoint directive | Blocks deploy on any failure; blocks prompt changes without promotion; blocks on TODOs, insufficient tests, or placeholder secrets; enforces "build forever" principle |
+| `clarity-engine-check.yml` | Clarity Engine & Red Team audit, prompt evolution, hallucination/fallback/injection defense | Clarity audit, artifact upload, threshold checks, PR comments, red team tests, log update validation | Blocks PRs on critical/high-impact issues, hallucination/injection/fallback failures; requires log updates for simulation changes; posts audit results to PR |
+| `codex-enforcement.yml` | Codex & DreamState enforcement, test health, mock remediation, escalation | DreamState tests, required file presence, archived log checks, mock remediation, test health API, Slack escalation | Blocks on missing files, unhealthy tests, unjustified mocks, or partial mock remediation; escalates to Slack on failure |
+| `codex-qa.yml` | Codex QA for test-data, prompt shape, coverage, delta drift | Runs targeted QA test suite on test-data, prompt shape, snapshot consistency, output delta drift | Blocks on any test failure in test-data; ensures prompt/test-data integrity |
+| `ingest-drift-check.yml` | Ingest drift detection for self-awareness, system map, and tests | Runs ingest drift test on key files; triggers on changes to self-awareness, ingest, system map, or tests | Blocks on drift or mismatch; ensures system map and self-awareness are always in sync |
+| `prompt-validation.yml` | Prompt validation matrix for self-healing flows | Runs prompt validation, coverage, mutation tests, uploads results, updates dashboard | Blocks on <90% coverage, failed mutation tests, or validation errors; ensures prompt self-healing and test rigor |
+| `test-snapshot-coverage.yml` | Snapshot and input test coverage enforcement | Runs Jest suite, enforces snapshot coverage, outputs summary | Blocks on coverage failure; future-proofs prompt/test-data regression safety |
+| `validate-dreamstate-config.yml` | Dream-State config validation | Runs Dream-State config validation script on push/PR | Blocks on config validation failure; ensures DreamState config is always valid |
+
+---
+
+### Operator Protocols & Escalation
+- **All critical failures block deploy or PR merge.**
+- **Slack escalation** is triggered for Codex enforcement failures.
+- **Promotion log and log update checks** ensure all prompt and simulation changes are auditable.
+- **Red Team and Clarity audits** surface hallucination, fallback, and injection issues before merge.
+- **Drift and coverage checks** ensure system memory, prompt, and test integrity are never lost.
+- **Artifact uploads** (audit dashboards, summaries) provide traceability and post-mortem review.
+
+---
+
+> **Codex Principle:** CI/CD is not just automation—it is the living enforcement of trust, memory, and emotional safety. Every workflow is a contract. Every failure is a signal to block, recover, or escalate.
+
+
+**Key Files:**
+- `cursor/auto-actions.log.md` — Canonical audit and action log (all changes, blockers, escalations)
+- `cursor/flowlocked-action-plan.md` — Test remediation and status tracker
+- `cursor/reports/` — All phase, audit, and remediation reports
+- `docs/ideal-cx-thread-v2-emotional-sovereignty.md` — Emotional OS and user experience contract
+- `docs/reference/dreamstate-test-mappings.md` — Test-to-pillar mapping
+- `cursor/mock-integrity-audit.md` — Mock usage and remediation status
+- `.cursorrules` — Codex enforcement and configuration
+- `cursor/self-awareness.json` — Central registry of rule contracts, agent boundaries, Codex traits, and lockpoints
+- `cursor/system-intel/` — All audit, drift, opportunity, and evolution logs
+- `cursor/system-roles.ts` — Agent registry and role mapping
+- `infra/airtable/` — Canonical tables, fields, schemas, blueprints
+
+---
+
+## 2. Codex Pillars, Enforcement, and Recovery Backbone
+
+**Codex v6.1.4 Pillars:**
+- **Security:** No silent failures, trust erosion, or unvalidated logic
+- **Operational Resilience:** Fallbacks, chaos, and recovery are real, not simulated
+- **Emotional UX Fidelity:** Every output, prompt, and fallback must pass the Emotional OS
+- **Accessibility & Inclusion:** Multilingual, a11y, and edge-case coverage
+- **Agent Enablement:** Agents must be testable, auditable, and emotionally intelligent
+
+**Enforcement Protocols:**
+- All tests must be Real System Bound (no unjustified mocks)
+- Emotional volatility, agent trace, and fallback chains must be validated with live logic
+- CI/CD gates block non-compliant tests and pillar violations
+- All actions, blockers, and escalations are logged in `/cursor/auto-actions.log.md`
+- Operator feedback and escalation protocol is always active
+- **CI Enforcement Test:** `/cursor/tests/enforcement/ci-checklist-verification.test.ts` fails CI if any enforcement item is not complete. Output is machine-readable for audit and dashboard use.
+- **Runtime Enforcement Guard:** `/cursor/runtime/enforceChecklistStatusGuard.ts` and `/cursor/runtime-hooks/enforce-checklist-guard.ts` are injected into all critical runtime flows (prompt, Make, schema mutation). If enforcement is incomplete, the system logs a `SchemaEvents` entry, flags the session as `blocked`, and triggers an emotionally intelligent fallback or graceful halt.
+- **Drift Sentinel:** `/cursor/heartbeat/driftWatchdog.ts` logs all contract, schema, and version change events to `/cursor/system-intel/drift-trace-log.json`.
+- **Universal Contract Registry:** `/cursor/contracts/universal-contract-registry.ts` logs all contract, field, and alias registrations. CI diff check blocks unregistered or missing contracts/fields.
+- **Immutable Backup & Disaster Recovery:** Nightly Airtable → S3 backup, with weekly CI restore test. All restore events are logged and auditable.
+- **Cost & Compliance Logging:** `/infra/airtable/tables/delivery-cost-logs.json` logs all ops with cost, token, and operational telemetry. Consent, deletion, and agent actions are logged in `/cursor/logs/AgentActions.json` and enforced by CI.
+- **Rollback Mechanisms:** `rollback_airtable.sh` and `rollback_prompts.sh` restore from versioned backups, with all actions logged to `/cursor/system-intel/rollback-events.json`.
+
+---
+
+## 3. Schema, Table, and Field Orchestration
+
+- **Canonical Table Scaffolding:**
+  - `/infra/airtable/tables/` — Table configs
+  - `/infra/airtable/fields/` — Field definitions
+  - `/infra/airtable/schemas/` — Human-readable schema docs
+  - `/infra/airtable/blueprints/` — Canonical summaries, emotional metadata, orchestration mapping
+- **Field Metadata:** Every field includes type, required, default, emotionalRole, dataSensitivity, contextScope, orchestrationNotes, and codexEnforcement.
+- **Naming:** kebab-case for files, camelCase for fields, all versioned.
+- **Table Buildout Order:**
+  - **Tier 1:** PromptLogs, FeedbackLogs, SessionAnalytics, ReferralTriggers, DeliveryCostLogs, UserContext
+  - **Tier 2:** EmotionTensor, EmotionTrendScore, CanAIImpactScore, CohortEmotionModel
+  - ... (see `/infra/airtable/blueprints/` for full sequence)
+- **Emotional Annotation & Fallbacks:**
+  - Every field/table is annotated for emotional role and user/system impact.
+  - Fallback logic is explicit for every field, with emotionally intelligent microcopy for user-facing errors.
+- **Auditability & Traceability:**
+  - Every change, fallback, and orchestration path is logged and traceable.
+  - Schema drift detection: `/scripts/template-schema-checker.ts` compares live Airtable schema with canonical JSON/MD, reporting to `/cursor/system-intel/drift-findings.md`.
+
+---
+
+## 4. Prompt, Agent, and Test Layer
+
+- **Prompt & Template Standards:**
+  - All prompts are modular, versioned, markdown-commented, with named inputs and version suffixes.
+  - Audit scaffolds: README.md, intent-token.json, log-expectation.md present in every prompt directory.
+  - Prompt evolution: All changes tracked in `/prompt-versions/`, with delta logs and version metadata.
+- **Agent & Plugin Governance:**
+  - All agents are registered in `/cursor/system-roles.ts`, with roles, promptTypes, and status.
+  - Plugins are modular, versioned, with explicit behavior contracts and event logging.
+  - Fallbacks: All error states route to user-safe fallback with graceful UX, logged in PromptLogs and auto-actions.
+- **Test & Simulation Layer:**
+  - 100% coverage for all critical modules, with chaos, edge-case, and regression tests.
+  - Integration test framework: Modular, composable, and scenario-driven, with invariants documented in `/cursor/tests/README.md`.
+  - Simulation: StressBox, confirmation-ux, and mutation fuzzer ensure resilience and Codex alignment.
+
+---
+
+## 5. Emotional OS, Rituals, and Operator Guidance
+
+- **Ideal CX Thread:** `/docs/ideal-cx-thread-v2-emotional-sovereignty.md` is the north star for all emotional, trust, and fallback flows.
+- **Soulfire Protocols:** All outputs, fallbacks, and CTAs are emotionally intelligent, cinematic, and momentum-driven.
+- **Reversal Test:** Every moment must pass the test: "Would you feel respected and want to continue?"
+- **Self-healing:** All agents log optimization patterns and risks to `/cursor/self-expansion/idea-log.json`.
+- **Recovery playbooks:** Modular, auditable, and versioned, with all actions logged and traceable.
+- **Operator rituals:** Soulfire Review, Empathy Echo, First-Use Blessing, Momentum Pulse.
+- **Operator Best Practices:**
+  - Every table is a contract: Scaffold for future understanding, not just current function.
+  - Auditability is non-negotiable: Log every change, fallback, and orchestration path.
+  - Resilience is built-in: Fallbacks, audit trails, and recovery logic are part of initial scaffolding.
+  - Emotional context is first-class: Annotate every field and table for emotional role and impact.
+
+---
+
+## 6. Cross-Linking & Reference Index
+
+| File/Doc                                      | Role/What It Protects                                      |
+|-----------------------------------------------|------------------------------------------------------------|
+| `/cursor/auto-actions.log.md`                 | Canonical log of all actions, audits, and escalations      |
+| `/cursor/system-intel/`                       | All audit, drift, opportunity, and evolution logs          |
+| `/infra/airtable/`                            | Canonical tables, fields, schemas, blueprints              |
+| `/cursor/rules/`                              | All Codex rules, contracts, and enforcement logic          |
+| `/docs/ideal-cx-thread-v2-emotional-sovereignty.md`                    | Emotional OS and user experience contract                  |
+| `/cursor/self-awareness.json`                 | Central registry of rule contracts, agent boundaries, Codex traits, and lockpoints |
+| `/cursor/self-expansion/idea-log.json`        | Intelligence inbox for self-evolving agent proposals       |
+| `/cursor/tests/README.md`                     | Test invariants, coverage, and integration framework       |
+| `/cursor/system-roles.ts`                     | Agent registry and role mapping                            |
+| `/cursor/system-intel/prompt-mapping-check.md`| Canonical mapping audit, drift detection                   |
+| `/cursor/system-intel/prompt-refactor-log.md` | Refactor trace, canonical variable enforcement             |
+| `/variable-alias-map.json`                    | Canonical variable/alias mapping, enhancer status          |
+
+---
+
+## Confirmed Codex Components & README Intents
+
+Below are the confirmed, enforced components of the CanAI Codex, with their directory, intent, and README purpose. Each is present, versioned, and mapped to a README or contract in the system.
+
+### 1. Agents Module
+- **Exists:** `/agents/`, `/cursor/agents/`
+- **Intent:** Core logic for emotional intelligence, Codex compliance, and self-healing. Input validation, empathy, QA, prompt logs management.
+- **README:** Documents agent roles, emotional validation, fallback, and Codex enforcement.
+
+### 2. Self-Healing System
+- **Exists:** `/cursor/self-healing/`
+- **Intent:** Automated recovery, emotional stabilization, modularity protection. Recovery strategies, drift detection, fallback logic.
+- **README:** Details recovery types, fallback chains, emotional safety, and audit protocols.
+
+### 3. Rules Engine
+- **Exists:** `/cursor/rules/`
+- **Intent:** Modular, audit-traceable rules for safety, quality, emotional resonance, and evolution. Enforced by agents and Codex logic.
+- **README:** Explains rule contracts, enforcement, auditability, and system mapping.
+
+### 4. System Intelligence Layer
+- **Exists:** `/cursor/system-intel/`
+- **Intent:** Scoring, structural validation, revision logging, emotional drift management. Backbone for self-awareness and integrity.
+- **README:** Documents audit utilities, drift detection, and contract validation.
+
+### 5. Boot Sequence
+- **Exists:** `/cursor/boot_sequence/`
+- **Intent:** System ignition, agent initialization, Codex readiness checks. Ensures safe, emotionally resonant startup.
+- **README:** Describes boot steps, alignment, and audit hooks.
+
+### 6. Self-Awareness System
+- **Exists:** `/cursor/self-awareness.json`, `/cursor/self-awareness/`
+- **Intent:** Tracks emotional health, modular cohesion, Codex alignment, and drift prediction.
+- **README:** Outlines journal management, drift prediction, and emotional resonance.
+
+### 7. Metrics Calculator / Analytics Layer
+- **Exists:** `/analytics/`
+- **Intent:** Session metrics, prompt performance, feedback heatmaps, dashboard state. Tracks trust, emotional depth, confirmation rates.
+- **README:** Explains metric calculation, thresholds, and risk levels.
+
+### 8. Loggers System
+- **Exists:** `/cursor/system-intel/`, `/analytics/`
+- **Intent:** Journaling, telemetry, evolution triggers, emotional/modular deltas. Enables traceability and audit trails.
+- **README:** Documents log format, trail completeness, and audit hooks.
+
+### 9. Debug Copilot Bridge
+- **Exists:** `/cursor/accelerators/debug-copilot-bridge/`
+- **Intent:** Integrates debug agent with Copilot, trust scoring, and self-healing.
+- **README:** Describes bridge logic, trust validation, and performance hooks.
+
+### 10. Cursor Cognitive Cockpit
+- **Exists:** `/cursor/`
+- **Intent:** Orchestration, memory, recovery, Codex rule enforcement, and emotional UX.
+- **README:** Explains prompt evolution, fallback logic, and trust metrics.
+
+### 11. Webflow Automation Layer
+- **Exists:** `/webflow/`
+- **Intent:** Automates Webflow CMS pages from prompt outputs, with QA and audit logging.
+- **README:** Details scaffolds, versioning, and integration points.
+
+### 12. Codex Standards
+- **Exists:** `/cursor/rules/`, `/docs/`
+- **Intent:** Guidelines for Codex consistency, compatibility, and reliability.
+- **README:** Outlines rule enforcement, compliance, and continuous improvement.
+
+### 13. Tools
+- **Exists:** `/scripts/tools/`, `/cursor/utils/`
+- **Intent:** Configuration loading, validation, schema management, and operational stability.
+- **README:** Documents schema validation, configuration protection, and test coverage.
+
+### 14. Middleware
+- **Exists:** `/api-router/middleware/`, `/cursor/middleware/`
+- **Intent:** Modularizes and protects the Dream-State perimeter, error handling, and input validation.
+- **README:** Explains error normalization, rate limiting, and emotional UX safety.
+
+### 15. API Router
+- **Exists:** `/api-router/`
+- **Intent:** Orchestrates external/internal requests, validation, error handling, and webhook defense.
+- **README:** Documents endpoint groups, error normalization, and system monitoring.
+
+### 16. Validators
+- **Exists:** `/cursor/validators/`
+- **Intent:** Defends entrypoints against malformed input, unsafe payloads, and contract drift.
+- **README:** Details Zod schemas, safeParse, and error standardization.
+
+### 17. Types
+- **Exists:** `/types/`, `/api/types/`
+- **Intent:** Canonical data contracts, shared types, and runtime/compile-time safety.
+- **README:** Explains type evolution, contract validation, and versioning.
+
+### 18. Errors
+- **Exists:** `/api/errors/`, `/cursor/errors/`
+- **Intent:** Structured error handling, observability, and emotionally safe diagnostics.
+- **README:** Outlines error contracts, status mapping, and observability.
+
+### 19. Utils
+- **Exists:** `/cursor/utils/`
+- **Intent:** Centralized helpers for operational structure, emotional UX, and contract drift prevention.
+- **README:** Documents pure functions, test coverage, and Codex compliance.
+
+### 20. Webhook
+- **Exists:** `/api/webhook/`
+- **Intent:** Secure communication with external services, event-driven architecture.
+- **README:** Describes signature verification, payload validation, and event logging.
+
+### 21. README Assessment System
+- **Exists:** `/docs/readme-assessment-initialization.md`, `/cursor/auto-actions.log.md`
+- **Intent:** Framework for README quality, assessment, and progress tracking.
+- **README:** Explains assessment contracts, logging, and validation.
+
+### 22. Discovery Simulation System
+- **Exists:** `/docs/readme-discovery-sim-v2.log.json`
+- **Intent:** Automated README analysis, classification, and intent extraction.
+- **README:** Documents discovery process, confidence scoring, and log validation.
+
+### 23. Indexing Autonomous System
+- **Exists:** `/docs/readme-indexing-autonomous-directive.md`
+- **Intent:** Autonomous README discovery, classification, and indexing.
+- **README:** Outlines indexing process, contract generation, and memory protection.
+
+### 24. Intent Pass System
+- **Exists:** `/docs/readme-intent-pass-block-A.md`, `/docs/readme-intent-pass-block-B.md`
+- **Intent:** Auditing and declaring purpose, evolution, and emotional impact of system components.
+- **README:** Documents audit process, intent declaration, and log verification.
+
+### 25. Simulation Engine System
+- **Exists:** `/simulation-engine/`
+- **Intent:** Stress-tests and validates CanAI using real-world, persona-aligned business scenarios.
+- **README:** Details scenario injection, scoring, and reporting.
+
+### 26. Stress Testing System
+- **Exists:** `/cursor/stressbox/`
+- **Intent:** Error-handling, fallback mechanisms, and system-level failure resilience.
+- **README:** Explains fallback validation, audit logging, and user protection.
+
+### 27. Audit Self-Heal System
+- **Exists:** `/system-templates/audit-self-heal/`
+- **Intent:** Automated remediation and recovery for system-level failures.
+- **README:** Documents recovery automation, fallback handling, and audit tracking.
+
+### 28. Sentinel System
+- **Exists:** `/cursor/sentinel/`, `/docs/sentinel-README.md`
+- **Intent:** Guardian of clarity, trust, and Codex mission alignment.
+- **README:** Outlines onboarding, trust verification, and drift monitoring.
+
+### 29. Revisions System
+- **Exists:** `/gpt-templates/revisions/`, `/prompt-versions/`
+- **Intent:** Manages prompt improvements, A/B testing, and experimental versions.
+- **README:** Explains version control, review process, and evolution tracking.
+
+### 30. Events System
+- **Exists:** `/api/events/`, `/cursor/event-bus/`
+- **Intent:** Source-of-truth for system-triggered actions, errors, retries, and automation.
+- **README:** Documents event validation, routing, and error handling.
+
+### 31. Edge Cases System
+- **Exists:** `/test-data/edge-cases/`, `/docs/README.edge-cases.md`
+- **Intent:** Maintains contract-level failure conditions and edge-case coverage.
+- **README:** Details edge case detection, fallback management, and system protection.
+
+### 32. Templates System
+- **Exists:** `/gpt-templates/`, `/prompts/`
+- **Intent:** Maintains core prompt files, tools for testing, and performance tracking.
+- **README:** Explains versioning, testing, and feedback integration.
+
+### 33. Meta Registry System
+- **Exists:** `/cursor/system-intel/`, `/docs/meta-README.md`
+- **Intent:** Metadata brain for validation and snapshot ecosystem.
+- **README:** Documents coverage, edge case mapping, and pathway tracking.
+
+### 34. Snapshots System
+- **Exists:** `/test-data/snapshots/`, `/cursor/tests/__snapshots__/`
+- **Intent:** Maintains event snapshots for system validation and regression prevention.
+- **README:** Details snapshot validation, version control, and guardrail enforcement.
+
+### 35. Tests System
+- **Exists:** `/tests/`, `/cursor/tests/`
+- **Intent:** Provides comprehensive test coverage for every system-critical module.
+- **README:** Explains test categories, requirements, and integration.
+
+---
+
+## 7. Production Readiness & Operator Checklist
+
+1. **Enforcement, schema, and contract scaffolds are present and up to date.**
+2. **All tables in Tier 1 are scaffolded, versioned, and emotionally annotated.**
+3. **Test coverage is 100% for all critical modules, with chaos, edge-case, and regression tests.**
+4. **All prompt, agent, and plugin logic is modular, versioned, and Codex-compliant.**
+5. **All fallback and error states are emotionally intelligent, user-safe, and logged.**
+6. **All changes, reviews, and improvements are logged and auditable.**
+7. **No launch or phase is final until all Codex, DreamState, and emotional OS standards are met.**
+8. **If any ambiguity, drift, or gap is detected, escalate and log before proceeding.**
+9. **All operator rituals and emotional OS checkpoints are observed and enforced.**
+10. **All recovery, rollback, and disaster recovery protocols are tested and auditable.**
+
+---
+
+## 8. Standing Operator/Agent Contract
+
+- **No change is trusted unless echoed, confirmed, and recorded by all three roles: Cofounder, ChatGPT Cofounder, Cursor Execution Engine.**
+- **All actions, blockers, and improvements must be logged and auditable.**
+- **No launch or phase is final until all Codex, DreamState, and emotional OS standards are met.**
+- **If any ambiguity, drift, or gap is detected, escalate and log before proceeding.**
+
+---
+
+> **Codex Principle:**  
+> _"We do not just document systems. We encode trust, clarity, and emotional resonance into every contract, log, and fallback. Every field is a promise. Every log is a memory. Every fallback is a hand extended in trust."_
+
+---
+
+**This expanded handover package is now strong enough for a full system rebuild, operator onboarding, and future-proof orchestration. If you need a deep-dive on any product, table, or ritual, specify the target and I will expand with actionable, Codex-aligned detail.**
+
+---
+
+## Codex-Enforced .mdc Rules Deep Dive
+
+> This section details every Codex-enforced `.mdc` (Model Directive Contract) rule in `/cursor/rules/`, summarizing its purpose, enforcement logic, and operator implications. Each rule is cross-linked to its file and mapped to the system or emotional contract it protects. For full context, see `/cursor/rules/README.md`.
+
+### 🔐 System Rules
+
+- **[codex-tone.mdc](../rules/codex-tone.mdc)**
+  - **Purpose:** Protects emotional tone, fallback UX, and intelligent messaging integrity.
+  - **Enforcement:** All outputs must use emotionally intelligent, clear tone and "what/why/how" structure. Fallback UX is required unless intentionally omitted. Tone rules cannot be bypassed except via explicit override.
+  - **Operator Implication:** Any output that fails tone or fallback standards is a Codex violation and must be corrected or blocked.
+
+- **[system-map-alignment.mdc](../rules/system-map-alignment.mdc)**
+  - **Purpose:** Prevents untracked folder/structural changes not reflected in `system-map.md`.
+  - **Enforcement:** No folder creation/deletion unless reflected in `/docs/system-map.md` and logged in `auto-actions.log.md`. All changes must be re-ingested and validated.
+  - **Operator Implication:** Unauthorized structure changes are blocked; system map is the single source of truth.
+
+- **[agent-governance.mdc](../rules/agent-governance.mdc)**
+  - **Purpose:** Restricts agent behavior to approved roles, paths, and action types.
+  - **Enforcement:** All agents must be registered in `/cursor/system-roles.ts` and `self-awareness.json`. Agent changes require immediate log and revalidation.
+  - **Operator Implication:** Unregistered agents or unlogged changes are blocked; trust is revalidated on agent deletion.
+
+- **[ingestion-lock.mdc](../rules/ingestion-lock.mdc)**
+  - **Purpose:** Requires ingestion and validation for Codex-critical context files.
+  - **Enforcement:** Key docs must be re-ingested before logic changes. SHA hash changes trigger drift-check and logging.
+  - **Operator Implication:** Out-of-date or un-ingested files block execution; drift is enforced.
+
+- **[execution-logging.mdc](../rules/execution-logging.mdc)**
+  - **Purpose:** Enforces mandatory logging for all system-critical changes.
+  - **Enforcement:** All architecture, agent, prompt, or governance changes must be logged in `auto-actions.log.md` with present-tense summaries.
+  - **Operator Implication:** Unlogged changes are Codex violations and block deployment.
+
+### 💎 Dreamstate Experience Rules
+
+- **[cx-emotion.mdc](../rules/cx-emotion.mdc)**
+  - **Purpose:** Protects the emotional intelligence layer of the CanAI experience.
+  - **Enforcement:** All communication must be warm, clear, and emotionally resonant. Fallback UX is required for ambiguity or risk. Messaging must align with `ideal-cx-thread-v2-emotional-sovereignty.md`.
+  - **Operator Implication:** Any emotionally flat or generic output is a violation; user must always feel supported.
+
+- **[cx-reuse.mdc](../rules/cx-reuse.mdc)**
+  - **Purpose:** Enforces prompt reuse loop and lifecycle chaining for intelligent UX.
+  - **Enforcement:** All outputs must include a follow-up CTA or suggestion for reuse. Reuse logic must be tone- and context-matched.
+  - **Operator Implication:** Missing or generic reuse CTAs are violations; lifecycle personalization is required.
+
+- **[cx-first-impression.mdc](../rules/cx-first-impression.mdc)**
+  - **Purpose:** Enforces cinematic and emotionally resonant first-touch experience.
+  - **Enforcement:** First-time flows must include overlays or guidance. Confidence-building is required; raw content drops are blocked.
+  - **Operator Implication:** Any change to first-touch UX must be validated against `ideal-cx-thread-v2-emotional-sovereignty.md`.
+
+- **[cx-feedback-loop.mdc](../rules/cx-feedback-loop.mdc)**
+  - **Purpose:** Enforces feedback, analytics, and prompt evolution loop integrity.
+  - **Enforcement:** All user interactions must trigger data capture into logs. Edits to prompts/UX must be evaluated for analytics impact. High revise frequency triggers optimization.
+  - **Operator Implication:** Feedback bypass or analytics drift is a violation; prompt evolution must be logged.
+
+- **[cx-spark-layer.mdc](../rules/cx-spark-layer.mdc)**
+  - **Purpose:** Protects the Spark Layer — emotional teaser engine for user intent ignition.
+  - **Enforcement:** Spark Layer must always trigger after intent, return 3 concept names, and be tone-matched. No bypass unless user opts out.
+  - **Operator Implication:** Spark Layer failures or bypasses are violations; must follow `Intent → Intrigue → Ownership`.
+
+### 🧠 Self-Evolving System Rules
+
+- **[self-expansion.mdc](../rules/self-expansion.mdc)**
+  - **Purpose:** Enforces logging of self-evolving intelligence in `idea-log.json`.
+  - **Enforcement:** All agent-identified optimizations or risks must be logged with full metadata. Status updates required on implementation/rejection.
+  - **Operator Implication:** Silent improvements or unlogged ideas are violations; trust layer must be preserved.
+
+- **[self-strategy.mdc](../rules/self-strategy.mdc)**
+  - **Purpose:** Empowers agents to surface strategic improvements, not just execute.
+  - **Enforcement:** Repeated patterns or frequent updates trigger abstraction proposals. Friction or unclear UX must be logged and recovery suggested.
+  - **Operator Implication:** Missed abstraction or friction logging is a violation; system must evolve intelligently.
+
+### 🤝 Bridge Rule: Collaboration Contract
+
+- **[collaboration-contract.mdc](../rules/collaboration-contract.mdc)**
+  - **Purpose:** Enforces strategic collaboration protocols between Cursor, Cofounder, and ChatGPT Cofounder.
+  - **Enforcement:** All shared artifacts must be copy/paste-ready. Confirmation and echoing required before action. No decision is trusted until echoed and recorded by all three roles.
+  - **Operator Implication:** Unconfirmed or un-echoed changes are blocked; context integrity is paramount.
+
+---
+
+> **Codex Principle:** Every .mdc rule is a living contract. Violations are not just technical errors—they are trust breaches, emotional gaps, or architectural risks. All rules are enforced by agents, logged, and auditable. For full enforcement logic, see `/cursor/rules/rule-engine.ts`, `/cursor/rules/circuit-breaker.ts`, and `/cursor/rules/rule-contract.md`.
+
+---
+
+**This expanded handover package is now strong enough for a full system rebuild, operator onboarding, and future-proof orchestration. If you need a deep-dive on any product, table, or ritual, specify the target and I will expand with actionable, Codex-aligned detail.**
+
+---
+
+## Ideal CX Thread — Non-Negotiable System Mapping
+
+> This section breaks down every emotional and UX contract from `docs/ideal-cx-thread-v2-emotional-sovereignty.md` and maps it to the exact system features, rules, and operator actions that guarantee its fulfillment. Each promise is cross-linked to .mdc rules, prompt scaffolds, agent logic, and fallback protocols. This mapping is non-negotiable: if any link fails, the system must block, fallback, or escalate.
+
+| CX Moment / Emotional Contract         | System Feature / Enforcement Logic                                                                                                   | Operator/Agent Action                                                                                 |
+|---------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| **First click: Awe & intrigue**       | Cinematic overlays, onboarding flows, `/prompts/` scaffolds, `cx-first-impression.mdc`, `ideal-cx-thread-v2-emotional-sovereignty.md`                          | Validate overlays in onboarding; block raw content drops; test with new users                        |
+# CanAI Genesis Codex — Master Guide (v2.0)
+
+---
+
+**[Section 0: Operator Resurrection Guide]**
+
+> This section is the definitive, operator-facing map of CanAI's system, products, rituals, and emotional fidelity. If all else is lost, this guide is enough to rebuild. Lock it. Evolve it. Protect it. (See cross-links to detailed sections below.)
+
+## 1. What Is CanAI?
+
+CanAI is a Codex-powered, zero-manual-touch strategy engine for small businesses. It transforms user intent into emotionally intelligent, acquisition-ready outcomes using a system of productized prompt flows, emotionally aware UX, and fully automated fulfillment pipelines. It is not a toolkit or a prompt builder — it is a runtime-valid execution system governed by the Codex.
+
+**Mission**: Deliver emotionally resonant, strategy-first automation that feels handcrafted — at scale.
+
+**Moat**: Codex architecture, emotional design, automation engine, continuous improvement layer, and runtime truth enforcement.
+
+**Stack**: Webflow (UX), Airtable (data), Make (logic), Render (backend), GPT-4o (current agent), Claude 3.7 Sonnet (approved default candidate), Cursor (CI + cockpit).
+
+---
+
+## 2. The 7 CanAI Products (Locked PromptTypes)
+
+Each of the following is a Codex-locked product with prompt scaffolds, emotional goals, and system outputs:
+
+### 2.1. `business_plan` — Business Plan Builder
+* **Inputs**: Idea, audience, tone
+* **Output**: Executive summary, product structure, GTM flow
+* **Emotional Goal**: Clarity + confidence as a founder
+
+### 2.2. `email_campaign` — Email Campaign Launch Kit
+* **Inputs**: Campaign goal, tone, audience
+* **Output**: 3-email sequence (subject, body, CTA)
+* **Emotional Goal**: Launch-ready + persuasive
+
+### 2.3. `social_content` — Social Media Content Pack
+* **Inputs**: Platform, audience, message
+* **Output**: 5 social posts (with tone)
+* **Emotional Goal**: Feel relevant, authentic, clear
+
+### 2.4. `ai_blueprint` — AI Business Builder Blueprint
+* **Inputs**: Business type, desired automation
+* **Output**: Stack map, tools, workflow, MVP recs
+* **Emotional Goal**: Feel AI-native and ready to automate
+
+### 2.5. `site_audit` — Website Audit & Fix Strategy
+* **Inputs**: URL, audience, goal
+* **Output**: UX trust audit, clarity fixes, CTA improvements
+* **Emotional Goal**: Feel in control, fix-ready, and conversion smart
+
+### 2.6. `reverse_strategy` — Reverse Strategy Engine
+* **Inputs**: Audience + final offer
+* **Output**: Reverse-engineered funnel and growth logic
+* **Emotional Goal**: Feel like a funnel architect, not just a seller
+
+### 2.7. `ai_brand_identity` — AI Brand Identity Blueprint
+* **Inputs**: Values, voice, vibe, archetype
+* **Output**: Brand tone, archetype, UX triggers, vibe board
+* **Emotional Goal**: Feel magnetically understood
+
+---
+
+## 3. CanAI's Codex Architecture
+
+Codex is the operating law of CanAI — it enforces clarity, emotional resilience, test integrity, and continuous improvement.
+
+### Core Pillars:
+* **Security** — No silent logic failures
+* **Resilience** — Fallbacks are emergent, not simulated
+* **Emotional UX** — Every output passes the Emotional OS
+* **Accessibility** — Multilingual, edge case, tone-aware
+* **Agent Enablement** — Agents must be traceable, testable, emotionally aware
+
+### Enforcement Systems:
+* `.cursorrules` — Behavior contract for all agents and output
+* `prompt-schema.md`, `self-check-blocks.md`, `behavior-contract.md` — Prompt infrastructure scaffolds
+* `cursor/auto-actions.log.md` — Canonical action + escalation log
+* `cursor/flowlocked-action-plan.md` — Test remediation tracker
+
+---
+
+## 4. DreamState Test Suite
+
+The DreamState suite simulates emotional volatility, tone drift, multilingual UX, and recovery windows. No mock-based tests are permitted.
+
+### Enforcement:
+* `MockZero` — No test may use static mocks
+* `Polaris Rituals` — 7 ritual states enforced pre- and post-deployment
+* `SnapshotTrace` — All outputs must be traceable across fallbacks
+* `TrustScore Fluctuation` — Trust must be measured and recoverable
+
+---
+
+## 5. Ideal Customer Experience (CX Thread)
+
+Every CanAI product experience is governed by the Ideal-CX model:
+
+* Curiosity Hook → Personal Input Funnel → Spark Layer → Trust UX → Product Output → Feedback Option → Lifecycle Trigger
+* Emotional design must reinforce trust, ease, and empowerment
+* All fallback states must de-escalate tension and restore user control
+
+---
+
+## 6. Canonical Folder Map
+
+```
+/cursor/                 # Agents, enforcement logic, memory, logs, rituals
+/prompts/                # Product scaffolds, schemas, behavior contracts
+/gpt-templates/          # Output logs, prompt variations, enhancement maps
+/tests/                  # DreamState, resilience, UX tests
+/docs/                   # Codex rules, CX guides, test maps
+/.github/                # PR rules, contributor templates, CI guards
+/ci/                     # CI test logic, mock scanners, fallback enforcers
+```
+
+---
+
+## 7. Critical Files
+
+* `.cursorrules` — Codex law, agent config, fallback tiers
+* `cursor/auto-actions.log.md` — Every mutation, lock, escalation
+* `docs/ideal-cx-thread-v2-emotional-sovereignty.md` — Emotional OS and user experience contract
 * `docs/reference/dreamstate-test-mappings.md` — Ritual map per test
 * `cursor/reports/mock-remediation-tracker.md` — Per-test mock fix log
 * `cursor/claude-agent-context.ts` — Claude memory injection (to be activated post-transition)

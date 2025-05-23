@@ -39,7 +39,7 @@ export class SmartPromptScore {
    * Scores a prompt based on emotional fidelity and other metrics
    */
   async scorePrompt(prompt: string): Promise<PromptScore> {
-    const emotionalResonance = await calculateEmotionalResonanceScore();
+    const emotionalResonance = calculateEmotionalResonanceScore(prompt);
     
     const score: PromptScore = {
       emotionalFidelity: this.calculateEmotionalFidelity(emotionalResonance),
@@ -87,7 +87,7 @@ export class SmartPromptScore {
     this.eventBus.on('EMOTIONAL_STATE_CHANGED', this.handleEmotionalStateChange.bind(this));
   }
 
-  private handlePromptRevision(event: any): void {
+  private async handlePromptRevision(event: any): Promise<void> {
     // Handle prompt revision events
     emitSystemLog('prompt-revision-handled', {
       originalScore: event.originalScore,
@@ -96,7 +96,7 @@ export class SmartPromptScore {
     });
   }
 
-  private handleEmotionalStateChange(event: any): void {
+  private async handleEmotionalStateChange(event: any): Promise<void> {
     // Handle emotional state changes
     emitSystemLog('emotional-state-updated', {
       previousState: event.previousState,

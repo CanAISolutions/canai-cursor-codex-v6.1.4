@@ -25,11 +25,14 @@ interface AlignmentAuditResult {
   }[];
 }
 
-export async function runAlignmentAudit(): Promise<AlignmentAuditResult> {
+export async function auditAlignment(): Promise<AlignmentAuditResult> {
   const issues: AlignmentAuditResult["issues"] = [];
 
-  const dreamAlignment = await calculateDreamAlignmentScore();
-  if (dreamAlignment.score < 92) {
+  const dreamAlignmentScore = await calculateDreamAlignmentScore(
+    { goal: 'clarity', state: 'operational' }, 
+    { goal: 'clarity', state: 'optimal' }
+  );
+  if (dreamAlignmentScore < 0.92) {
     issues.push({
       type: "emotional",
       description: "Emotional resonance drift detected.",
@@ -68,11 +71,13 @@ export async function runAlignmentAudit(): Promise<AlignmentAuditResult> {
 // Event handling
 const eventBus = EventBus.getInstance();
 
-function handleCodexAlignment(event: any) {
+async function handleCodexAlignment(event: any) {
   const { aligned, issues } = event;
   if (!aligned && issues) {
     emitSystemLog("codex-alignment-issues", { issues });
   }
 }
 
-eventBus.on('CODEX_ALIGNMENT_VERIFIED', handleCodexAlignment);
+eventBus.on('CODEX_ALIGNMENT_VERIFIED', async (event) => {
+  await handleCodexAlignment(event);
+});

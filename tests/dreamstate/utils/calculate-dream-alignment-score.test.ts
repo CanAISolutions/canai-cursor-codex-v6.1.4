@@ -22,7 +22,6 @@ describe('DreamState: calculateDreamAlignmentScore', () => {
   });
 
   it('should fallback gracefully on malformed input', () => {
-    // @ts-expect-error
     const score = calculateDreamAlignmentScore(undefined, undefined);
     expect(score).toBeLessThanOrEqual(0.85);
   });

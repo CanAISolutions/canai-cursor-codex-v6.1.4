@@ -9,7 +9,6 @@
  */
 
 import handler from '../../../api/webhook_health';
-// @ts-expect-error: node-mocks-http types must be installed as a dev dependency
 import { createMocks } from 'node-mocks-http';
 
 describe('DreamState: webhook_health.ts — Operational Resilience & Emotional UX Fallback', () => {

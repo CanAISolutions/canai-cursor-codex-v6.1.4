@@ -5,6 +5,8 @@
  * Codex Enforcement: Prime Directive Compliant
  */
 
+import * as crypto from 'crypto';
+
 /**
  * Safely trims a string, returning undefined if input is not a string.
  *
@@ -43,5 +45,33 @@ export function safeTrim(input: unknown): string | undefined {
     }
   
     return crypto.timingSafeEqual(bufferA, bufferB);
+  }
+  
+  /**
+   * Formats timestamp for display
+   * @param timestamp - ISO timestamp string
+   * @returns Formatted timestamp
+   */
+  export function formatTimestamp(timestamp: string): string {
+    try {
+      return new Date(timestamp).toLocaleString();
+    } catch (error) {
+      console.warn('Invalid timestamp format:', timestamp);
+      return timestamp;
+    }
+  }
+  
+  /**
+   * Validates timestamp format
+   * @param timestamp - Timestamp to validate
+   * @returns True if valid ISO timestamp
+   */
+  export function isValidTimestamp(timestamp: string): boolean {
+    try {
+      const date = new Date(timestamp);
+      return !isNaN(date.getTime()) && timestamp === date.toISOString();
+    } catch {
+      return false;
+    }
   }
   

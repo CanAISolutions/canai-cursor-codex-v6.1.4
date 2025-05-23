@@ -42,7 +42,7 @@ export class SparkLayer {
    * Activates spark layer with emotional resonance
    */
   async activateSparkLayer(context: string): Promise<SparkMetrics> {
-    const emotionalResonance = await calculateEmotionalResonanceScore();
+    const emotionalResonance = await calculateEmotionalResonanceScore(context);
     
     // Update metrics based on emotional resonance
     this.metrics = {
@@ -73,7 +73,7 @@ export class SparkLayer {
     };
 
     // Emit spark trigger event
-    this.eventBus.emit('SPARK_TRIGGERED', trigger);
+    await this.eventBus.emit('SPARK_TRIGGERED', trigger, 'SparkLayer');
 
     // Log trigger
     emitSystemLog('spark-triggered', trigger);
@@ -87,7 +87,7 @@ export class SparkLayer {
     suggestedTone: string;
     trustScore: number;
   }> {
-    const emotionalResonance = await calculateEmotionalResonanceScore();
+    const emotionalResonance = await calculateEmotionalResonanceScore(cta);
     
     return {
       emotionalResonance: emotionalResonance.score,
@@ -108,13 +108,13 @@ export class SparkLayer {
     this.eventBus.on('TRUST_SCORE_UPDATED', this.handleTrustScoreUpdate.bind(this));
   }
 
-  private handleEmotionalStateChange(event: any): void {
+  private async handleEmotionalStateChange(event: any): Promise<void> {
     // Update metrics based on emotional state change
     this.metrics.toneMatchScore = this.calculateToneMatchScore(event.resonance);
     emitSystemLog('spark-metrics-updated', { metrics: this.metrics });
   }
 
-  private handleTrustScoreUpdate(event: any): void {
+  private async handleTrustScoreUpdate(event: any): Promise<void> {
     // Update trust building score
     this.metrics.trustBuildingScore = this.calculateTrustBuildingScore(event.resonance);
     emitSystemLog('spark-trust-updated', { metrics: this.metrics });

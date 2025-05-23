@@ -8,7 +8,7 @@ To build Sentinel Prime as a living, emotionally adaptive, and self-evolving fou
 ---
 
 ## I. Guiding Principles
-- **Emotional Resonance:** Every module, decision, and fallback must reinforce the emotional heartbeat of CanAI (see: ideal-cx-thread.md).
+- **Emotional Resonance:** Every module, decision, and fallback must reinforce the emotional heartbeat of CanAI (see: ideal-cx-thread-v2-emotional-sovereignty.md).
 - **Meta-Orchestration:** The system must be able to reconfigure itself in real time to optimize for emotional, ethical, and performance outcomes.
 - **Self-Reflection & Healing:** Proactive self-audits, emotional drift detection, and auto-remediation are first-class features.
 - **Synthetic Persona Simulation:** Continuous generation and testing of new personas and edge cases to ensure inclusivity and resilience.

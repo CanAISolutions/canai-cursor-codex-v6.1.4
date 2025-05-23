@@ -1,7 +1,7 @@
 # Ritual Engine Specification
 
 ## Overview
-The Ritual Engine in `/cursor/rituals/` enforces Codex v6.1.4 pillars (Emotional UX Fidelity, Trust, Operational Resilience, Fallback Resilience) through runtime checks, CI integration, and test-driven enforcement. It prevents emotional drift, trust violations, and operational failures, ensuring CanAI’s alignment with the Polaris-DreamState-Codex-Lock Directive. This file is the canonical reference for ritual specifications, replacing verbose log entries in `/cursor/auto-actions.log.md`. Cursor must index this file to enforce rituals and validate tests with confidence.
+The Ritual Engine in `/cursor/rituals/` enforces Codex v6.1.4 pillars (Emotional UX Fidelity, Trust, Operational Resilience, Fallback Resilience) through runtime checks, CI integration, and test-driven enforcement. It prevents emotional drift, trust violations, and operational failures, ensuring CanAI's alignment with the Polaris-DreamState-Codex-Lock Directive. This file is the canonical reference for ritual specifications, replacing verbose log entries in `/cursor/auto-actions.log.md`. Cursor must index this file to enforce rituals and validate tests with confidence.
 
 ## Canonical Rituals
 The Ritual Engine comprises 7 canonical rituals, implemented as TypeScript files in `/cursor/rituals/`. Each ritual enforces specific Codex pillars and integrates with CI via `.github/workflows/ritual-check.yml`.
@@ -76,4 +76,4 @@ The following tests in `/tests/dreamstate/` enforce ritual contracts, tagged wit
 - `/cursor/auto-actions.log.md` [2025-05-21T17:15Z]: Ritual scaffolding details.
 
 ## Emotional Auditability
-Rituals align with `/docs/ideal-cx-thread.md`, defending emotional outcomes (Calm Trust, Clarity & Trust, Inclusion). Tests like `validate-event-emotional.test.ts` and `a11y-standards.test.ts` ensure fidelity and accessibility, validated via CI. Public metrics in `/api/public/ritual-health` provide transparency.
+Rituals align with `/docs/ideal-cx-thread-v2-emotional-sovereignty.md`, defending emotional outcomes (Calm Trust, Clarity & Trust, Inclusion). Tests like `validate-event-emotional.test.ts` and `a11y-standards.test.ts` ensure fidelity and accessibility, validated via CI. Public metrics in `/api/public/ritual-health` provide transparency.

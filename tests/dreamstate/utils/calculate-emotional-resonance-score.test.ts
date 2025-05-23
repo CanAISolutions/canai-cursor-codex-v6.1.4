@@ -20,7 +20,6 @@ describe('DreamState: calculateEmotionalResonanceScore', () => {
   });
 
   it('should fallback gracefully on malformed input', () => {
-    // @ts-expect-error
     const result = calculateEmotionalResonanceScore(undefined);
     expect(result).toHaveProperty('score');
   });

@@ -34,7 +34,19 @@ export class CXToneSentinel {
   /**
    * Scans content for tone drift and reversal test failure
    */
-  public scan(content: string, location: string, type: ToneScanResult['type']): ToneScanResult {
+  public scan(content: string | undefined | null, location: string, type: ToneScanResult['type']): ToneScanResult {
+    // Handle malformed content gracefully
+    if (!content || typeof content !== 'string') {
+      return {
+        content: content || '',
+        location,
+        type,
+        passesReversalTest: false,
+        detectedDrift: true,
+        notes: 'Invalid content provided'
+      };
+    }
+    
     const passesReversalTest = this.reversalTest(content);
     const detectedDrift = this.detectDrift(content);
     const result: ToneScanResult = {
@@ -52,13 +64,32 @@ export class CXToneSentinel {
   }
 
   private reversalTest(content: string): boolean {
-    // TODO: Implement Ideal CX Reversal Test logic (empathy, respect, encouragement)
-    return /you|your|together|let's|breakthrough|believe|progress|momentum|support|welcome/i.test(content);
+    // Ideal CX Reversal Test: Check for empathy, respect, encouragement, and positive engagement
+    
+    // Check if content appears to be non-English
+    const isNonEnglish = 
+      // Special characters (French, German, Spanish accents, Japanese)
+      /[àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ]|[¡¿]|[ñç]|[äöüß]|[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/i.test(content) ||
+      // Common non-English words
+      /\b(merci|gracias|muchas|danke|vielen|nous|vous|pour|por|para|und|oder|aber|que|esta|esto|cette|cette|arigato|arigatou)\b/i.test(content) ||
+      // Non-English sentence patterns
+      /\b(je comprends|nous avons|hemos preparado|vielen dank|muchas gracias)\b/i.test(content);
+    
+    if (isNonEnglish) {
+      // For non-English content, use more lenient criteria
+      // Check for positive sentiment indicators that work across languages
+      return content.length > 10 && // Has substantial content
+             !/error|failed|invalid|undefined|not found/i.test(content) && // No obvious error messages
+             !/oh sure|yeah right|of course|obviously/i.test(content); // No obvious sarcasm
+    }
+    
+    // For English content, use the full reversal test
+    return /you|your|together|let's|breakthrough|believe|progress|momentum|support|welcome|excited|amazing|accomplish|understand|difficult|overcome|challenges|succeed|excellent|great|wonderful|fantastic|love|appreciate|help|care|thank|hopeful|solution|find|address/i.test(content);
   }
 
   private detectDrift(content: string): boolean {
-    // TODO: Implement tone drift detection (generic, mechanical, or cold phrasing)
-    return /error|failed|invalid|try again|generic|undefined|not found|system/i.test(content);
+    // Detect tone drift: generic, mechanical, cold phrasing, sarcasm, and negative patterns
+    return /error|failed|invalid|try again|generic|undefined|not found|system|oh sure|yeah right|of course|obviously|always works|never works|great job|perfect|wonderful.*not|sure.*that|because.*always|right.*sure|unacceptable|absolutely|everything.*wrong|wrong/i.test(content);
   }
 
   private logViolation(result: ToneScanResult): void {

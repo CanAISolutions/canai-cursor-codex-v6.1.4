@@ -26,18 +26,22 @@ export async function generateDeltaMap(): Promise<DeltaRecord[]> {
   const journal = await readSelfAwarenessJournal();
   const deltas: DeltaRecord[] = [];
 
-  const currentEmotional = await calculateDreamAlignmentScore();
-  if (currentEmotional.score !== journal.lastEmotionalScore) {
+  const currentEmotional = await calculateDreamAlignmentScore(
+    { state: 'current', context: 'delta-generation' },
+    { state: 'target', context: 'optimal-delta' }
+  );
+  if (currentEmotional !== journal.lastEmotionalScore) {
     deltas.push({
       timestamp: Date.now(),
       dimension: "emotional",
       deltaType: "emotional-drift",
       oldState: journal.lastEmotionalScore,
-      newState: currentEmotional.score,
+      newState: currentEmotional,
     });
+    journal.lastEmotionalScore = currentEmotional;
   }
 
-  const currentModules = await introspectModules();
+  const currentModules = await introspectModules(['delta-generation']);
   if (JSON.stringify(currentModules) !== JSON.stringify(journal.lastModularSnapshot)) {
     deltas.push({
       timestamp: Date.now(),
@@ -49,13 +53,14 @@ export async function generateDeltaMap(): Promise<DeltaRecord[]> {
   }
 
   const currentCodex = await fetchCanonicalCodexDirectives();
-  if (currentCodex.version !== journal.lastCodexVersion) {
+  const currentCodexVersion = Array.isArray(currentCodex) ? currentCodex.length.toString() : '1.0.0';
+  if (currentCodexVersion !== journal.lastCodexVersion) {
     deltas.push({
       timestamp: Date.now(),
       dimension: "codex",
       deltaType: "codex-evolution",
       oldState: journal.lastCodexVersion,
-      newState: currentCodex.version,
+      newState: currentCodexVersion,
     });
   }
 

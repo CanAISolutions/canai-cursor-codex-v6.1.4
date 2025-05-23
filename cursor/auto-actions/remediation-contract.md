@@ -10,7 +10,7 @@ This contract governs the automated and manual remediation of failed tests in th
 ## Core Principles
 - **Resilience:** No failure is skipped, hidden, or left unaddressed. All actions are recoverable and futureproofed.
 - **Auditability:** Every action, decision, and outcome is logged in a clear, traceable, and emotionally intelligent format.
-- **Codex Alignment:** All remediations, logs, and communications must honor Codex v6.1.4 standards and the emotional OS in `ideal-cx-thread.md`.
+- **Codex Alignment:** All remediations, logs, and communications must honor Codex v6.1.4 standards and the emotional OS in `ideal-cx-thread-v2-emotional-sovereignty.md`.
 - **Confidence Gating:** No fix is accepted unless ≥95% confidence in correctness, safety, and Codex compliance.
 - **Emotional UX:** All fallback, error, and remediation messages must be emotionally intelligent, operator-centric, and pass the Reversal Test.
 - **Escalation:** Any ambiguous, unfixable, or high-risk issue is flagged for manual review with full context and next steps.

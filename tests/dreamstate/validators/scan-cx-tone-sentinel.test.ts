@@ -26,7 +26,6 @@ describe('DreamState: CXToneSentinel.scan', () => {
   });
 
   it('should fallback gracefully on malformed content', () => {
-    // @ts-expect-error
     const result = sentinel.scan(undefined, 'output', 'output');
     expect(result.passesReversalTest).toBe(false);
   });
