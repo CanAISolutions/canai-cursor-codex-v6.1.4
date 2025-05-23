@@ -116,7 +116,7 @@ export class AgentOrchestrator {
         // Execute fallback agent
         const fallbackConfig: AgentConfig = {
           type: agentConfig.fallbackAgent,
-          failureRate: 0.1 // Lower failure rate for fallback
+          failureRate: 0.01 // Very low failure rate for fallback (1% instead of 10%)
         };
         const fallbackStep = await this.executeAgentStep(fallbackConfig, currentPayload);
         steps.push(fallbackStep);
