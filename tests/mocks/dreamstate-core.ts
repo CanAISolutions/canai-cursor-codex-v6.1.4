@@ -63,6 +63,39 @@ export const mockChaosNetworkFailure = {
   recovery: false
 };
 
+// Mock: README assessment data
+export const mockReadmeAssessment = {
+  clarityScore: 0.92,
+  inclusionScore: 0.88,
+  completeness: 0.95,
+  emotionalResonance: 0.87,
+  trustIndicators: ['clear-language', 'inclusive-tone', 'comprehensive-coverage']
+};
+
+// Mock: Load balancer status
+export const mockLoadBalancerStatus = {
+  nodes: [
+    { id: 'node-1', load: 0.45, status: 'healthy' },
+    { id: 'node-2', load: 0.67, status: 'healthy' },
+    { id: 'node-3', load: 0.23, status: 'healthy' }
+  ],
+  failoverTriggered: false,
+  totalCapacity: 0.78,
+  responseTime: 120
+};
+
+// Mock: Intent extraction data
+export const mockIntentExtraction = {
+  accuracy: 0.94,
+  emotionalFidelity: 0.91,
+  intentCategories: ['support', 'information', 'action'],
+  confidenceScore: 0.89,
+  extractedIntents: [
+    { intent: 'support', confidence: 0.95 },
+    { intent: 'information', confidence: 0.87 }
+  ]
+};
+
 // Fallback logic: If any mock is missing, throw with Codex-aligned error
 export function requireMock(name: string): never {
   throw new Error(`Codex: Required DreamState mock missing: ${name}`);

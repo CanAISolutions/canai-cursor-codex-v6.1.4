@@ -27,15 +27,15 @@ export class HeartbeatReporter {
    * Sets up event listeners for heartbeat events
    */
   private setupEventListeners(): void {
-    this.eventBus.on('heartbeat', (event: HeartbeatEvent) => {
-      this.handleHeartbeatEvent(event);
+    this.eventBus.on('heartbeat', async (event: HeartbeatEvent) => {
+      await this.handleHeartbeat(event);
     });
   }
 
   /**
    * Handles heartbeat events
    */
-  private async handleHeartbeatEvent(event: HeartbeatEvent): Promise<void> {
+  private async handleHeartbeat(event: HeartbeatEvent): Promise<void> {
     // Log to metrics
     this.logMetrics(event);
 
@@ -121,7 +121,7 @@ export class HeartbeatReporter {
    */
   private async updateTrustScore(event: HeartbeatEvent): Promise<void> {
     const severity = this.calculateWarningSeverity(event);
-    await this.trustScorer.adjustTrustScore(event.agentId, -severity);
+    await this.trustScorer.adjustTrustScore(event.agentId, -severity, 'heartbeat-warning');
   }
 
   /**
@@ -178,16 +178,17 @@ export class HeartbeatReporter {
   private async feedToEvolutionTriggers(event: HeartbeatEvent): Promise<void> {
     const metrics = event.metrics;
     
-    // Create evolution event
-    const evolutionEvent = {
-      type: 'heartbeat',
+    // Create evolution event with proper type
+    const evolutionEvent: HeartbeatEvent = {
+      type: 'warning' as const,
       agentId: event.agentId,
       metrics: {
         responsiveness: metrics.responsiveness,
         resourceUsage: metrics.resourceUsage,
         trustScore: metrics.trustScore
       },
-      timestamp: event.timestamp
+      timestamp: event.timestamp,
+      message: event.message
     };
 
     // Trigger evolution

@@ -29,7 +29,7 @@
 | Engine               | Strategy                                                         |
 |----------------------|------------------------------------------------------------------|
 | SEO                  | Webflow CMS + Use Case pages auto-populated from Airtable        |
-| UGC / Social Proof   | Placid testimonial previews from golden prompt outputs           |
+| UGC / Social Proof   | Web-based testimonial previews from golden prompt outputs           |
 | Referral             | Rewardful or webhook → output + CTA → trackable referrals        |
 | Retention            | Klaviyo lifecycle flows tied to feedback logs + session reuse    |
 | Product-Led Growth   | Every output becomes a branded, shareable asset                  |
@@ -57,7 +57,7 @@
 ## 🔮 Future Plays
 
 - AI Concierge UX layer (email + on-site)
-- GPT-backed session replays + “Ask Me Anything” from past outputs
+- GPT-backed session replays + "Ask Me Anything" from past outputs
 - White-label mode (custom branding, custom prompts, own domain)
 
 > CanAI grows through outcomes, not ads.  

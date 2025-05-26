@@ -18,9 +18,9 @@
 - Use markdown in outputs: `# Heading`, `**Bold**`, `- Bullets`
 - Avoid generic tone: never say "output complete"
 - Use phrases like:
-  - “Here’s your strategy.”
-  - “Launch-ready.”
-  - “You’re set up for success.”
+  - "Here's your strategy."
+  - "Launch-ready."
+  - "You're set up for success."
 
 ---
 
@@ -67,10 +67,10 @@ All prompt outputs should:
 - `canai-logo.svg` (main)
 - `canai-logo.png` (fallback)
 - `favicon-kit/` (32x32, 64x64, 180x180)
-- `placid-headers/` (PDF banners, testimonial headers)
+- `web-headers/` (HTML banners, testimonial headers)
 - `variables.css` + `colors.json` → brand color references
 
 ---
 
-> A strong brand doesn’t just look great —  
+> A strong brand doesn't just look great —  
 > It *feels like clarity* in every touchpoint.

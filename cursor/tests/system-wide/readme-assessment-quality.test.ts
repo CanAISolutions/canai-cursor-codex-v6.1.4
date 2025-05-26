@@ -6,7 +6,7 @@
 // CX Emotion Protected: Clarity & Inclusion
 // Ideal CX Impact: Ensures contributors feel welcomed, empowered, and able to trust documentation
 
-import { mockReadmeAssessment, requireMock } from '../../mocks/dreamstate-core';
+import { mockReadmeAssessment, requireMock } from '../../../tests/mocks/dreamstate-core';
 import { describe, it, expect } from '@jest/globals';
 
 describe('SystemWide: readme-assessment-quality', () => {

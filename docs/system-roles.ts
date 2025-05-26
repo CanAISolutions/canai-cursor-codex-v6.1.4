@@ -9,7 +9,11 @@ export type PromptType =
   | 'ai_blueprint'
   | 'site_audit'
   | 'reverse_strategy'
-  | 'ai_brand_identity';
+  | 'ai_brand_identity'
+  | 'sparksplit'
+  | 'profile_makeover'
+  | 'blogblitz'
+  | 'ad_amplify';
 
 export type AgentRole =
   | 'defaults-engine'
@@ -18,12 +22,14 @@ export type AgentRole =
   | 'spark-generator'
   | 'prompt-router'
   | 'session-reuse'
-  | 'analytics-emitter';
+  | 'analytics-emitter'
+  | 'ab-testing-engine'
+  | 'continuous-improvement';
 
 export interface AgentMetadata {
   id: string;
   file: string;
-  promptTypesUsed: PromptType[];
+  promptTypesUsed: PromptType[] | ['all'];
   role: AgentRole;
   test: boolean;
   status: 'active' | 'legacy' | 'in-dev';
@@ -33,7 +39,7 @@ export const SystemAgents: AgentMetadata[] = [
   {
     id: 'smart-defaults',
     file: 'cursor/agents/smart-defaults-engine.ts',
-    promptTypesUsed: ['business_plan', 'email_campaign'],
+    promptTypesUsed: ['business_plan', 'email_campaign', 'profile_makeover', 'blogblitz', 'ad_amplify'],
     role: 'defaults-engine',
     test: true,
     status: 'active',
@@ -41,7 +47,7 @@ export const SystemAgents: AgentMetadata[] = [
   {
     id: 'emotional-checker',
     file: 'cursor/agents/emotion-validator.ts',
-    promptTypesUsed: ['social_content', 'ai_brand_identity'],
+    promptTypesUsed: ['social_content', 'ai_brand_identity', 'profile_makeover', 'blogblitz', 'ad_amplify'],
     role: 'emotion-validator',
     test: true,
     status: 'active',
@@ -55,9 +61,33 @@ export const SystemAgents: AgentMetadata[] = [
     status: 'active',
   },
   {
+    id: 'sparksplit-engine',
+    file: 'cursor/agents/sparksplit-trust-engine.ts',
+    promptTypesUsed: ['sparksplit'],
+    role: 'trust-score-enforcer',
+    test: true,
+    status: 'active',
+  },
+  {
+    id: 'sparksplit-ab-testing',
+    file: 'cursor/services/sparksplit-ab-testing-engine.ts',
+    promptTypesUsed: ['all'],
+    role: 'ab-testing-engine',
+    test: true,
+    status: 'active',
+  },
+  {
+    id: 'continuous-improvement',
+    file: 'cursor/services/sparksplit-continuous-improvement.ts',
+    promptTypesUsed: ['all'],
+    role: 'continuous-improvement',
+    test: true,
+    status: 'active',
+  },
+  {
     id: 'session-memory',
     file: 'cursor/agents/session-reuse-engine.ts',
-    promptTypesUsed: ['business_plan', 'site_audit'],
+    promptTypesUsed: ['business_plan', 'site_audit', 'profile_makeover', 'blogblitz', 'ad_amplify'],
     role: 'session-reuse',
     test: true,
     status: 'active',

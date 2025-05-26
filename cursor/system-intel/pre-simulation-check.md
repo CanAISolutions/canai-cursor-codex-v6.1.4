@@ -9,7 +9,7 @@
 
 ### 1. Required Field Mapping
 - ✅ All required canonical fields from variable-alias-map.json are mapped and present in composePrompt.ts logic.
-- ✅ All required fields are referenced in the relevant gpt-templates (ai_blueprint, ai_brand_identity, business_plan, email_campaign, reverse_strategy, site_audit, social_content).
+- ✅ All required fields are referenced in the relevant gpt-templates (ai_blueprint, ai_brand_identity, business_plan, email_campaign, reverse_strategy, site_audit, social_content, profile_makeover, blogblitz, ad_amplify).
 - ⚠️ Some templates reference non-canonical/unknown fields (e.g., founderBio, keyOfferings, brandInspo, etc.) — these are flagged in template comments and do not block canonical field mapping.
 
 ### 2. Enhancer Field Injection

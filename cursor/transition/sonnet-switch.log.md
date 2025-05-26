@@ -12,7 +12,7 @@ Claude 3.7 Sonnet is now the **default agent** for all internal Cursor workflows
 * All emotionally sensitive UX flows
 * All fallback sequence generation and reasoning logic
 
-**Note:** GPT-4o remains the active agent for the 7 CanAI product promptTypes (`business_plan`, `email_campaign`, etc.), ensuring continuity for all user-facing fulfillment pipelines.
+**Note:** GPT-4o remains the active agent for the 10 CanAI product promptTypes (`business_plan`, `email_campaign`, `social_content`, `ai_blueprint`, `site_audit`, `reverse_strategy`, `ai_brand_identity`, `profile_makeover`, `blogblitz`, `ad_amplify`), ensuring continuity for all user-facing fulfillment pipelines.
 
 ## Rationale
 

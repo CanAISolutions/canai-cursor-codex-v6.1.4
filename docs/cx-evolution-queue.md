@@ -11,7 +11,7 @@
 | CX-002 | Spark Save + Memory Recall | ✅ Complete | System | `/cursor/spark-save-trigger.ts` | Triggers lifecycle nudge if unused |
 | CX-003 | Spark Flavor Learning | ✅ Complete | System | `/cursor/concept-spark.ts` | Adds `sparkFlavor[]` signal |
 | CX-004 | Spark Library Page | ⏳ In Design | UI Lead | `/site/sparks-preview-gallery.md` | Needs dynamic CMS render logic |
-| CX-005 | Spark Share + Attribution | ✅ Complete | System | `/cursor/spark-share.ts`, Placid integration | Supports referrals |
+| CX-005 | Spark Share + Attribution | ✅ Complete | System | `/cursor/spark-share.ts`, Web integration | Supports referrals |
 | CX-006 | Spark Quality Benchmark | ✅ Complete | System | `/cursor/spark-quality-index.ts` | Internal performance grading |
 | CX-007 | Spark Monetization (Microoffer) | ✅ Complete | System | `/cursor/spark-conversion-trigger.ts`, `/site/spark-microoffer-banner.tsx` | Uses `spark_mini_bundle` in Stripe |
 | CX-008 | Spark Ownership Layer (NFT) | Planned | Research | `/cursor/spark-ip-registry.ts` | Not active yet |
@@ -30,5 +30,5 @@
 - Developers use this file to align code branches.
 - Cursor copilots use it to preload relevant logic during prompt-assisted dev.
 
-> If you’re working on any output, refinement, feedback, lifecycle, or spark logic — check this file first.
+> If you're working on any output, refinement, feedback, lifecycle, or spark logic — check this file first.
 

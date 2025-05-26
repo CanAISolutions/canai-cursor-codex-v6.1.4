@@ -5,6 +5,7 @@
  * @maturity Stable
  * @status Active
  */
+import { EventBus as CanonicalEventBus } from '../../event-bus/eventBus';
 import { appendToFixContextAsync } from '../../context/fix-context-utils';
 import { logInnovationMetric } from '../../utils/telemetry';
 import { loadConfig } from '../../utils/config-manager';
@@ -21,44 +22,68 @@ export interface Event {
 }
 
 export class EventBus {
-  private handlers: Map<string, Set<EventCallback>>;
+  private canonicalEventBus: CanonicalEventBus;
+  private agentHandlers: Map<string, Set<EventCallback>>;
 
   constructor() {
-    this.handlers = new Map();
+    this.canonicalEventBus = CanonicalEventBus.getInstance();
+    this.agentHandlers = new Map();
   }
 
-  public on(eventType: string, handler: EventCallback): void {
-    if (!this.handlers.has(eventType)) {
-      this.handlers.set(eventType, new Set());
+  // Delegate to canonical EventBus for standard functionality
+  public on(event: string, handler: (data: any) => Promise<void>): void {
+    this.canonicalEventBus.on(event, handler);
+  }
+
+  public off(event: string, handler: (data: any) => Promise<void>): void {
+    this.canonicalEventBus.off(event, handler);
+  }
+
+  public async emit(event: string, data: any, source?: string): Promise<void> {
+    await this.canonicalEventBus.emit(event, data, source);
+  }
+
+  public clear(event?: string): void {
+    this.canonicalEventBus.clear(event);
+  }
+
+  public clearAll(): void {
+    this.canonicalEventBus.clearAll();
+  }
+
+  // Agent-specific functionality
+  public onAgent(eventType: string, handler: EventCallback): void {
+    if (!this.agentHandlers.has(eventType)) {
+      this.agentHandlers.set(eventType, new Set());
     }
-    this.handlers.get(eventType)!.add(handler);
+    this.agentHandlers.get(eventType)!.add(handler);
   }
 
-  public off(eventType: string, handler: EventCallback): void {
-    const handlers = this.handlers.get(eventType);
+  public offAgent(eventType: string, handler: EventCallback): void {
+    const handlers = this.agentHandlers.get(eventType);
     if (handlers) {
       handlers.delete(handler);
       if (handlers.size === 0) {
-        this.handlers.delete(eventType);
+        this.agentHandlers.delete(eventType);
       }
     }
   }
 
-  public async emit(eventType: string, data: unknown): Promise<void> {
+  public async emitAgent(eventType: string, data: unknown): Promise<void> {
     const event: Event = {
       type: eventType,
       data,
       timestamp: new Date().toISOString()
     };
 
-    const handlers = this.handlers.get(eventType);
+    const handlers = this.agentHandlers.get(eventType);
     if (handlers) {
       await Promise.all(Array.from(handlers).map(handler => handler(event)));
     }
   }
 
   public async publish(event: Event, priority: 'high' | 'medium' | 'low' = 'medium'): Promise<void> {
-    const handlers = this.handlers.get(event.type);
+    const handlers = this.agentHandlers.get(event.type);
     if (handlers) {
       const promises = Array.from(handlers).map(async handler => {
         try {
@@ -74,11 +99,11 @@ export class EventBus {
   }
 
   public subscribe(eventType: string, handler: EventCallback): void {
-    this.on(eventType, handler);
+    this.onAgent(eventType, handler);
   }
 
-  public clear(): void {
-    this.handlers.clear();
+  public clearAgent(): void {
+    this.agentHandlers.clear();
   }
 }
 

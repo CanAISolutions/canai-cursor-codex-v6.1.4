@@ -9,7 +9,7 @@ This document outlines how data flows through the CanAI system — and how we lo
 | Source            | Purpose                                 | Logged via     |
 |-------------------|------------------------------------------|----------------|
 | Prompt Input       | Structure used to generate the output    | Make → Airtable |
-| Output Response    | GPT result, markdown-formatted           | Make → Email, Placid, Airtable |
+| Output Response    | GPT result, markdown-formatted           | Make → Email, Airtable, Web |
 | Feedback Form      | Rating + open text + session ID         | API → `feedback_logger_scenario.json` |
 | Revision Trigger   | Manual revise button / feedback          | API → `trigger_revision.ts` |
 | Session Telemetry  | Tokens used, reuse count, prompt type    | API → `session_logger_scenario.json` |
@@ -116,4 +116,4 @@ No prompt can run without schema alignment.
 ---
 
 > CanAI learns from every click, session, and strategy delivered.  
-> We don’t just serve prompts — we listen to their performance, and we improve with every outcome.
+> We don't just serve prompts — we listen to their performance, and we improve with every outcome.

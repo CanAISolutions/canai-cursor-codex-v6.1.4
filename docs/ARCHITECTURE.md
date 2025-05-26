@@ -38,12 +38,8 @@ It is powered by:
 
 ## 🧬 Data Flow
 
-User Input → API `/add_project`  
-→ Airtable log (via Make)  
-→ GPT-4o Prompt Composition  
-→ Output sent to User + Airtable + Email + Placid (via Make)  
-→ Feedback logged + Revision triggers  
-→ SmartPromptScore / Enrichment / Version Control (cursor/)
+User Input (Webflow) → Memberstack (capture) → Make.com (webhook) → Render API (GPT) 
+→ Output sent to User + Airtable + Email (via Make)
 
 ---
 
@@ -73,5 +69,14 @@ User Input → API `/add_project`
 - Customers feel clarity, support, and speed
 - System evolves with every usage, not just updates
 
-> This isn’t a backend.  
+> This isn't a backend.  
 > This is a leverage engine.
+
+## Core Stack
+
+- Webflow (canai.so frontend)
+- Memberstack (auth + field capture)
+- Make.com (webhook orchestration)
+- Airtable (analytics + logs)
+- Render API (GPT fulfillment)
+- Klaviyo (email automation)

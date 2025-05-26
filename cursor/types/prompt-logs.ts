@@ -169,6 +169,155 @@ export interface PromptLogs {
       fieldsNeedingTuning: string[];
       promptTypesAtRisk: string[];
     };
+    // SparkSplit v7.2.0 Analytics Fields
+    sparkSplitMetrics?: {
+      sessionId: string;
+      timestamp: number;
+      promptType: string;
+      comparisonId: string;
+      trustDelta: number;
+      userSelection: 'sterile' | 'canai' | 'both' | 'neither' | 'skip' | null;
+      timeToSelection: number | null;
+      emotionalCompass: {
+        aweScore: number | null;
+        ownershipScore: number | null;
+        wonderScore: number | null;
+        calmScore: number | null;
+        powerScore: number | null;
+      };
+      competitiveAdvantage: number | null;
+      trustTransparencyScore: number | null;
+      emotionalEducationScore: number | null;
+      wouldRefer: boolean | null;
+      sharedOutput: boolean;
+      circuitBreakerTriggered: boolean;
+    };
+    sparkSplitAggregates?: {
+      current: {
+        sessionId: string;
+        timestamp: number;
+        promptType: string;
+        comparisonId: string;
+        trustDelta: number;
+        userSelection: 'sterile' | 'canai' | 'both' | 'neither' | 'skip' | null;
+        timeToSelection: number | null;
+        emotionalCompass: {
+          aweScore: number | null;
+          ownershipScore: number | null;
+          wonderScore: number | null;
+          calmScore: number | null;
+          powerScore: number | null;
+        };
+        competitiveAdvantage: number | null;
+        trustTransparencyScore: number | null;
+        emotionalEducationScore: number | null;
+        wouldRefer: boolean | null;
+        sharedOutput: boolean;
+        circuitBreakerTriggered: boolean;
+      };
+      aggregates: {
+        canaiSelectionRate: number;
+        averageTrustDelta: number;
+        averageTimeToSelection: number;
+        referralRate: number;
+        viralSharingRate: number;
+        circuitBreakerRate: number;
+      };
+      competitiveMetrics: {
+        trustTransparencyAdvantage: number;
+        userEducationImpact: number;
+        marketDifferentiation: number;
+      };
+    };
+    sparkSplitTrends?: {
+      trustDeltaTrend: number[];
+      selectionRateTrend: number[];
+      competitiveAdvantageTrend: number[];
+      userEducationTrend: number[];
+    };
+    // Goldmine Layer Intelligence Fields
+    goldmineIntelligence?: {
+      eventType: string;
+      data: any;
+      intelligence: {
+        totalOutputs: number;
+        highValueOutputs: number;
+        averageResonanceScore: number;
+        topIndustries: Array<{ industry: string; count: number; averageResonance: number }>;
+        reusableAssets: {
+          templates: number;
+          caseStudies: number;
+          contentAssets: number;
+        };
+        monetizationPotential: number;
+        compoundGrowthRate: number;
+      };
+      timestamp: number;
+    };
+    outputGoldmine?: {
+      recordId: string;
+      sessionId: string;
+      userId: string | null;
+      promptType: string;
+      outputHash: string;
+      resonanceScore: number;
+      trustScore: number;
+      emotionalFingerprint: {
+        tone: string;
+        energy: string;
+        style: string;
+        vocabulary: string;
+      };
+      industryCluster: string | null;
+      intentSummary: string;
+      sparkConcept: string | null;
+      reuseCategory: string | null;
+      reusePotential: number;
+      compoundValue: number;
+    };
+    miningAgentRuns?: Array<{
+      recordId: string;
+      agentType: string;
+      agentName: string;
+      runId: string;
+      patternsDetected: Array<{
+        pattern: string;
+        confidence: number;
+        description: string;
+        impact: string;
+      }>;
+      trendsIdentified: Array<{
+        trend: string;
+        industry: string;
+        growth: number;
+        confidence: number;
+      }>;
+      monetizationOpportunities: Array<{
+        opportunity: string;
+        description: string;
+        estimatedDemand: number;
+        targetIndustries: string[];
+      }>;
+      impactScore: number;
+    }>;
+    userAIProfile?: {
+      recordId: string;
+      userId: string;
+      totalSessions: number;
+      preferredTone: string | null;
+      industryFocus: string[];
+      businessGoals: string[];
+      personalizationScore: number;
+      predictiveInsights: {
+        nextLikelyProducts: string[];
+        optimalTiming: string;
+        preferredCommunicationFrequency: string;
+        growthOpportunities: string[];
+      };
+      lifetimeValue: number;
+      churnRisk: number;
+      engagementTrend: string;
+    };
   };
   /**
    * Indicates if user consent was explicitly given for this prompt/session

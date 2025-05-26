@@ -26,6 +26,43 @@ export interface AuditReport {
   summary: string[];
 }
 
+export interface HealthMetrics {
+  systemHealth: number;
+  emotionalResonance: number;
+  trustScore: number;
+  performanceScore: number;
+  stabilityScore: number;
+  timestamp: number;
+  modulesChanged?: boolean;
+  emotionalDelta?: number;
+  codexEvolutionSignal?: boolean;
+}
+
+export async function gatherHealthMetrics(): Promise<HealthMetrics> {
+  // Gather system health metrics from various sources
+  const systemSnapshot = "current-system-state"; // This would be actual system data
+  
+  const emotionalResonance = calculateEmotionalResonanceScore(systemSnapshot).score;
+  const modularityScore = evaluateModularCohesion(systemSnapshot);
+  const uxConsistency = checkUXConsistency(systemSnapshot);
+  const directiveCoverage = checkDirectiveCoverage(systemSnapshot);
+  
+  // Calculate composite scores
+  const systemHealth = (modularityScore + uxConsistency + (directiveCoverage.percent / 100)) / 3;
+  const trustScore = Math.min(0.95, systemHealth * 0.9 + emotionalResonance * 0.1 / 100);
+  const performanceScore = 0.85; // Would be calculated from actual performance metrics
+  const stabilityScore = 0.92; // Would be calculated from error rates and uptime
+  
+  return {
+    systemHealth,
+    emotionalResonance,
+    trustScore,
+    performanceScore,
+    stabilityScore,
+    timestamp: Date.now()
+  };
+}
+
 export async function runAudit(systemSnapshot: string): Promise<AuditReport> {
   const modularityScore = evaluateModularCohesion(systemSnapshot);
   const emotionalResonanceScore = calculateEmotionalResonanceScore(systemSnapshot).score;

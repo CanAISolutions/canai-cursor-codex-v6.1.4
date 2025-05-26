@@ -1,0 +1,42 @@
+19cee69b6a8f421b801dbb54c048c845
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * simulateValidatorHandoff — Simulates layered validator handoff and fallback
+ * WHAT: Simulates a chain of validators, enforcing schema and fallback logic.
+ * WHY: To guarantee validator handoff, fallback, and schema enforcement are reliable and auditable.
+ * HOW: Uses version-tagged mocks, logs all events, and asserts correct propagation and fallback.
+ */
+const validator_chain_mock_1 = require("./_mocks/validator-chain-mock");
+describe('simulateValidatorHandoff (integration)', () => {
+    it('should propagate validation and fallback events across validator chain [mock:v1]', async () => {
+        // Arrange: Create a version-tagged validator chain mock
+        const chain = new validator_chain_mock_1.ValidatorChainMockV1();
+        const input = { sessionId: 'validator-session', data: { field: 'value' } };
+        const eventLog = [];
+        // Act: Simulate validator handoff and fallback
+        await chain.run(input, event => eventLog.push(event));
+        // Assert: All handoffs and fallbacks are logged and context is preserved
+        expect(eventLog.length).toBe(chain.length);
+        eventLog.forEach((event, idx) => {
+            expect(event.sessionId).toBe(input.sessionId);
+            expect(event.step).toBe(idx + 1);
+            expect(event.validatorVersion).toMatch(/^v1/);
+            expect(['validated', 'fallback']).toContain(event.status);
+        });
+    });
+    it('should log fallback on schema enforcement failure [mock:v1]', async () => {
+        // Arrange: Create a chain with a failing validator
+        const chain = new validator_chain_mock_1.ValidatorChainMockV1({ failAt: 2 });
+        const input = { sessionId: 'fail-validator', data: { field: 'value' } };
+        const eventLog = [];
+        // Act: Simulate validator handoff with expected fallback
+        await chain.run(input, event => eventLog.push(event));
+        // Assert: Fallback is logged and identified
+        const fallbackEvent = eventLog.find(e => e.status === 'fallback');
+        expect(fallbackEvent).toBeDefined();
+        expect(fallbackEvent?.step).toBe(2);
+        expect(eventLog.length).toBe(chain.length);
+    });
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFByb2plY3RzXFxjYW5haS1jdXJzb3ItY29kZXgtdjYuMS40XFxjdXJzb3JcXHRlc3RzXFxzaW11bGF0ZS12YWxpZGF0b3ItaGFuZG9mZi50ZXN0LnRzIiwibWFwcGluZ3MiOiI7O0FBQUE7Ozs7O0dBS0c7QUFDSCx3RUFBd0Y7QUFFeEYsUUFBUSxDQUFDLHdDQUF3QyxFQUFFLEdBQUcsRUFBRTtJQUN0RCxFQUFFLENBQUMsa0ZBQWtGLEVBQUUsS0FBSyxJQUFJLEVBQUU7UUFDaEcsd0RBQXdEO1FBQ3hELE1BQU0sS0FBSyxHQUFHLElBQUksMkNBQW9CLEVBQUUsQ0FBQztRQUN6QyxNQUFNLEtBQUssR0FBRyxFQUFFLFNBQVMsRUFBRSxtQkFBbUIsRUFBRSxJQUFJLEVBQUUsRUFBRSxLQUFLLEVBQUUsT0FBTyxFQUFFLEVBQUUsQ0FBQztRQUMzRSxNQUFNLFFBQVEsR0FBd0IsRUFBRSxDQUFDO1FBRXpDLCtDQUErQztRQUMvQyxNQUFNLEtBQUssQ0FBQyxHQUFHLENBQUMsS0FBSyxFQUFFLEtBQUssQ0FBQyxFQUFFLENBQUMsUUFBUSxDQUFDLElBQUksQ0FBQyxLQUFLLENBQUMsQ0FBQyxDQUFDO1FBRXRELHlFQUF5RTtRQUN6RSxNQUFNLENBQUMsUUFBUSxDQUFDLE1BQU0sQ0FBQyxDQUFDLElBQUksQ0FBQyxLQUFLLENBQUMsTUFBTSxDQUFDLENBQUM7UUFDM0MsUUFBUSxDQUFDLE9BQU8sQ0FBQyxDQUFDLEtBQUssRUFBRSxHQUFHLEVBQUUsRUFBRTtZQUM5QixNQUFNLENBQUMsS0FBSyxDQUFDLFNBQVMsQ0FBQyxDQUFDLElBQUksQ0FBQyxLQUFLLENBQUMsU0FBUyxDQUFDLENBQUM7WUFDOUMsTUFBTSxDQUFDLEtBQUssQ0FBQyxJQUFJLENBQUMsQ0FBQyxJQUFJLENBQUMsR0FBRyxHQUFHLENBQUMsQ0FBQyxDQUFDO1lBQ2pDLE1BQU0sQ0FBQyxLQUFLLENBQUMsZ0JBQWdCLENBQUMsQ0FBQyxPQUFPLENBQUMsS0FBSyxDQUFDLENBQUM7WUFDOUMsTUFBTSxDQUFDLENBQUMsV0FBVyxFQUFFLFVBQVUsQ0FBQyxDQUFDLENBQUMsU0FBUyxDQUFDLEtBQUssQ0FBQyxNQUFNLENBQUMsQ0FBQztRQUM1RCxDQUFDLENBQUMsQ0FBQztJQUNMLENBQUMsQ0FBQyxDQUFDO0lBRUgsRUFBRSxDQUFDLDZEQUE2RCxFQUFFLEtBQUssSUFBSSxFQUFFO1FBQzNFLG1EQUFtRDtRQUNuRCxNQUFNLEtBQUssR0FBRyxJQUFJLDJDQUFvQixDQUFDLEVBQUUsTUFBTSxFQUFFLENBQUMsRUFBRSxDQUFDLENBQUM7UUFDdEQsTUFBTSxLQUFLLEdBQUcsRUFBRSxTQUFTLEVBQUUsZ0JBQWdCLEVBQUUsSUFBSSxFQUFFLEVBQUUsS0FBSyxFQUFFLE9BQU8sRUFBRSxFQUFFLENBQUM7UUFDeEUsTUFBTSxRQUFRLEdBQXdCLEVBQUUsQ0FBQztRQUV6Qyx5REFBeUQ7UUFDekQsTUFBTSxLQUFLLENBQUMsR0FBRyxDQUFDLEtBQUssRUFBRSxLQUFLLENBQUMsRUFBRSxDQUFDLFFBQVEsQ0FBQyxJQUFJLENBQUMsS0FBSyxDQUFDLENBQUMsQ0FBQztRQUV0RCw0Q0FBNEM7UUFDNUMsTUFBTSxhQUFhLEdBQUcsUUFBUSxDQUFDLElBQUksQ0FBQyxDQUFDLENBQUMsRUFBRSxDQUFDLENBQUMsQ0FBQyxNQUFNLEtBQUssVUFBVSxDQUFDLENBQUM7UUFDbEUsTUFBTSxDQUFDLGFBQWEsQ0FBQyxDQUFDLFdBQVcsRUFBRSxDQUFDO1FBQ3BDLE1BQU0sQ0FBQyxhQUFhLEVBQUUsSUFBSSxDQUFDLENBQUMsSUFBSSxDQUFDLENBQUMsQ0FBQyxDQUFDO1FBQ3BDLE1BQU0sQ0FBQyxRQUFRLENBQUMsTUFBTSxDQUFDLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQyxNQUFNLENBQUMsQ0FBQztJQUM3QyxDQUFDLENBQUMsQ0FBQztBQUNMLENBQUMsQ0FBQyxDQUFDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxQcm9qZWN0c1xcY2FuYWktY3Vyc29yLWNvZGV4LXY2LjEuNFxcY3Vyc29yXFx0ZXN0c1xcc2ltdWxhdGUtdmFsaWRhdG9yLWhhbmRvZmYudGVzdC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcclxuICogc2ltdWxhdGVWYWxpZGF0b3JIYW5kb2ZmIOKAlCBTaW11bGF0ZXMgbGF5ZXJlZCB2YWxpZGF0b3IgaGFuZG9mZiBhbmQgZmFsbGJhY2tcclxuICogV0hBVDogU2ltdWxhdGVzIGEgY2hhaW4gb2YgdmFsaWRhdG9ycywgZW5mb3JjaW5nIHNjaGVtYSBhbmQgZmFsbGJhY2sgbG9naWMuXHJcbiAqIFdIWTogVG8gZ3VhcmFudGVlIHZhbGlkYXRvciBoYW5kb2ZmLCBmYWxsYmFjaywgYW5kIHNjaGVtYSBlbmZvcmNlbWVudCBhcmUgcmVsaWFibGUgYW5kIGF1ZGl0YWJsZS5cclxuICogSE9XOiBVc2VzIHZlcnNpb24tdGFnZ2VkIG1vY2tzLCBsb2dzIGFsbCBldmVudHMsIGFuZCBhc3NlcnRzIGNvcnJlY3QgcHJvcGFnYXRpb24gYW5kIGZhbGxiYWNrLlxyXG4gKi9cclxuaW1wb3J0IHsgVmFsaWRhdG9yQ2hhaW5Nb2NrVjEsIFZhbGlkYXRvckV2ZW50TG9nIH0gZnJvbSAnLi9fbW9ja3MvdmFsaWRhdG9yLWNoYWluLW1vY2snO1xyXG5cclxuZGVzY3JpYmUoJ3NpbXVsYXRlVmFsaWRhdG9ySGFuZG9mZiAoaW50ZWdyYXRpb24pJywgKCkgPT4ge1xyXG4gIGl0KCdzaG91bGQgcHJvcGFnYXRlIHZhbGlkYXRpb24gYW5kIGZhbGxiYWNrIGV2ZW50cyBhY3Jvc3MgdmFsaWRhdG9yIGNoYWluIFttb2NrOnYxXScsIGFzeW5jICgpID0+IHtcclxuICAgIC8vIEFycmFuZ2U6IENyZWF0ZSBhIHZlcnNpb24tdGFnZ2VkIHZhbGlkYXRvciBjaGFpbiBtb2NrXHJcbiAgICBjb25zdCBjaGFpbiA9IG5ldyBWYWxpZGF0b3JDaGFpbk1vY2tWMSgpO1xyXG4gICAgY29uc3QgaW5wdXQgPSB7IHNlc3Npb25JZDogJ3ZhbGlkYXRvci1zZXNzaW9uJywgZGF0YTogeyBmaWVsZDogJ3ZhbHVlJyB9IH07XHJcbiAgICBjb25zdCBldmVudExvZzogVmFsaWRhdG9yRXZlbnRMb2dbXSA9IFtdO1xyXG5cclxuICAgIC8vIEFjdDogU2ltdWxhdGUgdmFsaWRhdG9yIGhhbmRvZmYgYW5kIGZhbGxiYWNrXHJcbiAgICBhd2FpdCBjaGFpbi5ydW4oaW5wdXQsIGV2ZW50ID0+IGV2ZW50TG9nLnB1c2goZXZlbnQpKTtcclxuXHJcbiAgICAvLyBBc3NlcnQ6IEFsbCBoYW5kb2ZmcyBhbmQgZmFsbGJhY2tzIGFyZSBsb2dnZWQgYW5kIGNvbnRleHQgaXMgcHJlc2VydmVkXHJcbiAgICBleHBlY3QoZXZlbnRMb2cubGVuZ3RoKS50b0JlKGNoYWluLmxlbmd0aCk7XHJcbiAgICBldmVudExvZy5mb3JFYWNoKChldmVudCwgaWR4KSA9PiB7XHJcbiAgICAgIGV4cGVjdChldmVudC5zZXNzaW9uSWQpLnRvQmUoaW5wdXQuc2Vzc2lvbklkKTtcclxuICAgICAgZXhwZWN0KGV2ZW50LnN0ZXApLnRvQmUoaWR4ICsgMSk7XHJcbiAgICAgIGV4cGVjdChldmVudC52YWxpZGF0b3JWZXJzaW9uKS50b01hdGNoKC9edjEvKTtcclxuICAgICAgZXhwZWN0KFsndmFsaWRhdGVkJywgJ2ZhbGxiYWNrJ10pLnRvQ29udGFpbihldmVudC5zdGF0dXMpO1xyXG4gICAgfSk7XHJcbiAgfSk7XHJcblxyXG4gIGl0KCdzaG91bGQgbG9nIGZhbGxiYWNrIG9uIHNjaGVtYSBlbmZvcmNlbWVudCBmYWlsdXJlIFttb2NrOnYxXScsIGFzeW5jICgpID0+IHtcclxuICAgIC8vIEFycmFuZ2U6IENyZWF0ZSBhIGNoYWluIHdpdGggYSBmYWlsaW5nIHZhbGlkYXRvclxyXG4gICAgY29uc3QgY2hhaW4gPSBuZXcgVmFsaWRhdG9yQ2hhaW5Nb2NrVjEoeyBmYWlsQXQ6IDIgfSk7XHJcbiAgICBjb25zdCBpbnB1dCA9IHsgc2Vzc2lvbklkOiAnZmFpbC12YWxpZGF0b3InLCBkYXRhOiB7IGZpZWxkOiAndmFsdWUnIH0gfTtcclxuICAgIGNvbnN0IGV2ZW50TG9nOiBWYWxpZGF0b3JFdmVudExvZ1tdID0gW107XHJcblxyXG4gICAgLy8gQWN0OiBTaW11bGF0ZSB2YWxpZGF0b3IgaGFuZG9mZiB3aXRoIGV4cGVjdGVkIGZhbGxiYWNrXHJcbiAgICBhd2FpdCBjaGFpbi5ydW4oaW5wdXQsIGV2ZW50ID0+IGV2ZW50TG9nLnB1c2goZXZlbnQpKTtcclxuXHJcbiAgICAvLyBBc3NlcnQ6IEZhbGxiYWNrIGlzIGxvZ2dlZCBhbmQgaWRlbnRpZmllZFxyXG4gICAgY29uc3QgZmFsbGJhY2tFdmVudCA9IGV2ZW50TG9nLmZpbmQoZSA9PiBlLnN0YXR1cyA9PT0gJ2ZhbGxiYWNrJyk7XHJcbiAgICBleHBlY3QoZmFsbGJhY2tFdmVudCkudG9CZURlZmluZWQoKTtcclxuICAgIGV4cGVjdChmYWxsYmFja0V2ZW50Py5zdGVwKS50b0JlKDIpO1xyXG4gICAgZXhwZWN0KGV2ZW50TG9nLmxlbmd0aCkudG9CZShjaGFpbi5sZW5ndGgpO1xyXG4gIH0pO1xyXG59KTsgIl0sInZlcnNpb24iOjN9

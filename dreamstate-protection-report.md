@@ -1,6 +1,6 @@
 # 🛡️ DreamState Protection Report
 
-**Date**: 2025-05-23T21:22:29.939Z
+**Date**: 2025-05-23T21:31:37.665Z
 **Protection Status**: ✅ PROTECTED
 
 ## 📊 Test Results
@@ -24,7 +24,12 @@
 
 ## ⚠️ Warnings
 - ⚠️ Critical file modified: tests/dreamstate/. Ensure changes maintain 100% test success rate.
+- ⚠️ Critical file modified: cursor/services/emotional-ux-renderer.ts. Ensure changes maintain 100% test success rate.
+- ⚠️ Critical file modified: cursor/services/trust-score-manager.ts. Ensure changes maintain 100% test success rate.
+- ⚠️ Critical file modified: cursor/services/fallback-manager.ts. Ensure changes maintain 100% test success rate.
 - ⚠️ Critical file modified: cursor/validators/cx-tone-sentinel.ts. Ensure changes maintain 100% test success rate.
+- ⚠️ Critical file modified: cursor/services/performance-monitor.ts. Ensure changes maintain 100% test success rate.
+- ⚠️ Critical file modified: cursor/utils/emotion-payload-builder.ts. Ensure changes maintain 100% test success rate.
 
 ## 🔍 Protection Checks Performed
 - ✅ DreamState test suite execution

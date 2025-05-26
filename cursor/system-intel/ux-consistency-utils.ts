@@ -28,12 +28,16 @@ export function checkUXConsistency(output: string): number {
       issues.push("Insufficient section spacing.");
     }
   
-    // Emoji check — too few or spammed
-    const emojiMatches = output.match(/[\u{1F600}-\u{1F6FF}]/gu) || [];
-    if (emojiMatches.length > 6) {
+    // Emoji check — simplified approach without Unicode regex
+    const commonEmojis = ['😀', '😊', '🎯', '🚀', '✨', '💡', '🔥', '⚡', '🎉', '👍', '💪', '🌟'];
+    let emojiCount = 0;
+    for (const emoji of commonEmojis) {
+      emojiCount += (output.match(new RegExp(emoji, 'g')) || []).length;
+    }
+    if (emojiCount > 6) {
       score -= 0.05;
       issues.push("Excessive emoji usage.");
-    } else if (emojiMatches.length < 1) {
+    } else if (emojiCount < 1) {
       score -= 0.05;
       issues.push("No emoji cues present (optional but encouraged).");
     }

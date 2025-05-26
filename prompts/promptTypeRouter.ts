@@ -11,7 +11,10 @@ const validPromptTypes = [
   "email_campaign",
   "reverse_strategy",
   "site_audit",
-  "social_content"
+  "social_content",
+  "profile_makeover",
+  "blogblitz",
+  "ad_amplify"
 ]
 
 type PromptInput = Record<string, any>

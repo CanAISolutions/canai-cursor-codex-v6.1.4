@@ -4,6 +4,7 @@
  * Purpose:
  * Evaluates loaded prompts, agent decisions, or memory payloads against Codex rules.
  * Emits violations and integrates with MetaEventRouter for rule enforcement.
+ * Enforces Test-First Truth principle across all system operations.
  */
 
 import { EventBus } from '../event-bus/eventBus';
@@ -18,9 +19,33 @@ import {
 } from './rules-schema';
 import { v4 as uuidv4 } from 'uuid';
 
+// Test-First Truth interfaces
+interface TestEvidence {
+  testFiles: string[];
+  testResults: {
+    passed: number;
+    failed: number;
+    total: number;
+  };
+  coverage?: number;
+  performance?: {
+    responseTime: number;
+    throughput?: number;
+  };
+  timestamp: number;
+}
+
+interface TestFirstTruthValidation {
+  hasTestEvidence: boolean;
+  testEvidence?: TestEvidence;
+  validationStatus: 'VALIDATED' | 'PENDING' | 'FAILED';
+  blockingIssues: string[];
+}
+
 export class CodexRuleEngine implements RuleEngine {
   private violations: Violation[] = [];
   private validationCache: Map<string, boolean> = new Map();
+  private testFirstTruthEnabled: boolean = true;
 
   constructor(
     private eventBus: EventBus,
@@ -28,7 +53,7 @@ export class CodexRuleEngine implements RuleEngine {
   ) {}
 
   /**
-   * Evaluates a single rule against a target
+   * Evaluates a single rule against a target with Test-First Truth validation
    */
   async evaluateRule(rule: Rule, target: unknown): Promise<boolean> {
     try {
@@ -36,6 +61,15 @@ export class CodexRuleEngine implements RuleEngine {
       
       if (this.validationCache.has(cacheKey)) {
         return this.validationCache.get(cacheKey)!;
+      }
+
+      // Test-First Truth validation
+      if (this.testFirstTruthEnabled && this.requiresTestValidation(rule, target)) {
+        const testValidation = await this.validateTestFirstTruth(target);
+        if (!testValidation.hasTestEvidence) {
+          await this.handleTestFirstTruthViolation(rule, target, testValidation);
+          return false;
+        }
       }
 
       const isValid = await this.validateTarget(rule, target);
@@ -52,6 +86,129 @@ export class CodexRuleEngine implements RuleEngine {
       console.error(`Error evaluating rule ${rule.id}:`, error);
       return false;
     }
+  }
+
+  /**
+   * Validates Test-First Truth requirements
+   */
+  private async validateTestFirstTruth(target: unknown): Promise<TestFirstTruthValidation> {
+    const validation: TestFirstTruthValidation = {
+      hasTestEvidence: false,
+      validationStatus: 'PENDING',
+      blockingIssues: []
+    };
+
+    try {
+      // Check if target includes test evidence
+      if (typeof target === 'object' && target !== null) {
+        const targetObj = target as any;
+        
+        // Look for test evidence in the target
+        if (targetObj.testEvidence) {
+          validation.testEvidence = targetObj.testEvidence;
+          validation.hasTestEvidence = true;
+          
+          // Validate test evidence quality
+          const testEvidence = targetObj.testEvidence as TestEvidence;
+          
+          if (testEvidence.testResults.failed > 0) {
+            validation.blockingIssues.push(`${testEvidence.testResults.failed} tests failing`);
+            validation.validationStatus = 'FAILED';
+          } else if (testEvidence.testResults.total === 0) {
+            validation.blockingIssues.push('No tests found');
+            validation.validationStatus = 'FAILED';
+          } else {
+            validation.validationStatus = 'VALIDATED';
+          }
+        } else {
+          validation.blockingIssues.push('No test evidence provided');
+        }
+      } else {
+        validation.blockingIssues.push('Target does not contain test evidence');
+      }
+    } catch (error) {
+      validation.blockingIssues.push(`Test validation error: ${error}`);
+      validation.validationStatus = 'FAILED';
+    }
+
+    return validation;
+  }
+
+  /**
+   * Determines if a rule/target combination requires test validation
+   */
+  private requiresTestValidation(rule: Rule, target: unknown): boolean {
+    // Check if rule has testFirstTruth flag
+    const ruleObj = rule as any;
+    if (ruleObj.testFirstTruth === 'mandatory') {
+      return true;
+    }
+
+    // Check target type for test requirements
+    if (typeof target === 'object' && target !== null) {
+      const targetObj = target as any;
+      
+      // Features, APIs, components, integrations require tests
+      if (targetObj.type && [
+        'feature', 'api', 'component', 'integration', 
+        'deployment', 'endpoint', 'service'
+      ].includes(targetObj.type)) {
+        return true;
+      }
+
+      // Code changes require tests
+      if (targetObj.files && Array.isArray(targetObj.files)) {
+        const codeFiles = targetObj.files.filter((file: string) => 
+          file.endsWith('.ts') || file.endsWith('.js') || 
+          file.endsWith('.tsx') || file.endsWith('.jsx')
+        );
+        if (codeFiles.length > 0) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Handles Test-First Truth violations
+   */
+  private async handleTestFirstTruthViolation(
+    rule: Rule, 
+    target: unknown, 
+    validation: TestFirstTruthValidation
+  ): Promise<void> {
+    const violation: Violation = {
+      id: uuidv4(),
+      ruleId: 'test-first-truth',
+      timestamp: Date.now(),
+      severity: 'critical' as SeverityLevel,
+      recoveryAction: 'block' as RecoveryAction,
+      context: {
+        target: typeof target === 'string' ? target : JSON.stringify(target),
+        targetType: 'test-validation',
+        value: target,
+        expected: 'Test evidence with passing tests'
+      },
+      metadata: {
+        stackTrace: new Error().stack,
+        trustScore: this.trustThreshold,
+        testFirstTruthViolation: true,
+        blockingIssues: validation.blockingIssues
+      }
+    };
+
+    this.violations.push(violation);
+
+    this.emitEvent('rule:test-first-truth-violation', {
+      ruleId: 'test-first-truth',
+      violation,
+      blockingIssues: validation.blockingIssues
+    });
+
+    // Block execution for Test-First Truth violations
+    throw new Error(`Test-First Truth Violation: ${validation.blockingIssues.join(', ')}`);
   }
 
   /**
@@ -84,6 +241,20 @@ export class CodexRuleEngine implements RuleEngine {
   clearViolations(): void {
     this.violations = [];
     this.validationCache.clear();
+  }
+
+  /**
+   * Enables or disables Test-First Truth enforcement
+   */
+  setTestFirstTruthEnabled(enabled: boolean): void {
+    this.testFirstTruthEnabled = enabled;
+  }
+
+  /**
+   * Gets Test-First Truth enforcement status
+   */
+  isTestFirstTruthEnabled(): boolean {
+    return this.testFirstTruthEnabled;
   }
 
   /**

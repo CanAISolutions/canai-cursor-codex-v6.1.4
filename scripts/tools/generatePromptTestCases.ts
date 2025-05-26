@@ -5,8 +5,8 @@
 import fs from "fs"
 import path from "path"
 
-const templateDir = path.resolve(__dirname, "../gpt-templates")
-const outputDir = path.resolve(__dirname, "../testcases")
+const templateDir = path.resolve(__dirname, "../../gpt-templates")
+const outputDir = path.resolve(__dirname, "../../testcases")
 
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true })

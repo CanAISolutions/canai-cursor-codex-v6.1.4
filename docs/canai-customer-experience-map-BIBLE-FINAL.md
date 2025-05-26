@@ -12,13 +12,13 @@ This file defines the entire CanAI customer journey from psychological state to 
 
 | Stage | Emotion | Narrative | Triggers |
 |-------|---------|-----------|----------|
-| Curiosity | Intrigued | “What is this?” | Initial page visit |
-| Discovery | Empowered | “It’s adapting to me.” | Funnel inputs logged |
-| Spark | Inspired | “That’s clever!” | SparkLayer triggers |
-| Recommendation | Pulled Forward | “Show me more.” | Spark click → promptType |
-| Output | Supported | “This is actually useful.” | Output rendered |
-| Validation | Confident | “I trust this.” | Validation bar seen |
-| Follow-up | Remembered | “They remembered me.” | Lifecycle trigger |
+| Curiosity | Intrigued | "What is this?" | Initial page visit |
+| Discovery | Empowered | "It's adapting to me." | Funnel inputs logged |
+| Spark | Inspired | "That's clever!" | SparkLayer triggers |
+| Recommendation | Pulled Forward | "Show me more." | Spark click → promptType |
+| Output | Supported | "This is actually useful." | Output rendered |
+| Validation | Confident | "I trust this." | Validation bar seen |
+| Follow-up | Remembered | "They remembered me." | Lifecycle trigger |
 
 **Fallback:**  
 > Confusion → Clarity  
@@ -44,11 +44,11 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 ## 3. Spark Layer
 
 **File:** `/cursor/concept-spark.ts`  
-**Output:** 3 Spark strategy names (e.g., “Crave Leak”)  
+**Output:** 3 Spark strategy names (e.g., "Crave Leak")  
 **Enhancements:**  
 - Visual shimmer + icons from `/site/ux/spark-visual-cues.md`  
 - Hover tooltips: `"tooltipIdeas[]"`  
-- Community showcase: “Top Sparks in *Your Industry*”
+- Community showcase: "Top Sparks in *Your Industry*"
 
 **Logs:** `previewIdeas[]`, `previewClicked`, `resonanceTag[]`
 
@@ -59,8 +59,8 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 **File:** `/cursor/recommendation-routing.ts`  
 **Enhancements:**  
 - Remix flow triggered by dwell time, multiple clicks  
-- Progress bar: “3 of 5 sparks remixed”  
-- Suggestion engine injects: “Want this as a launch play?”
+- Progress bar: "3 of 5 sparks remixed"  
+- Suggestion engine injects: "Want this as a launch play?"
 
 **Logs:** `recommendationUsed`, `remixMode[]`, `conceptFused[]`
 
@@ -85,7 +85,7 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 **Features:**  
 - Confidence meter  
 - Risk dial (based on industry/tone/audience)  
-- “Why this score?” explainer from `/cursor/consequence-explainer.ts`
+- "Why this score?" explainer from `/cursor/consequence-explainer.ts`
 
 **Logs:** `ForecastLog[]`, `confidenceScore`, `forecastExplanationSeen[]`
 
@@ -97,7 +97,7 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 **Features:**  
 - Originality %  
 - Remix buttons: [Add Humor], [Data-Focused], [Simplify Language]  
-- “Golden Prompt” tag if score > 90% + engagement high
+- "Golden Prompt" tag if score > 90% + engagement high
 
 **Logs:** `originalityScore`, `promptModifiers[]`, `goldPromptTag[]`
 
@@ -108,7 +108,7 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 **Files:** `/cursor/memory-loader.ts`, `/cursor/narrative-thread.ts`  
 **Enhancement:**  
 - Narrative variation system (`narrative-switcher.ts`)  
-  - Templates: “Progress Voice”, “Backstory Callback”, “Goal Loop”
+  - Templates: "Progress Voice", "Backstory Callback", "Goal Loop"
 
 **Data:** `UserStoryTrack`, `pastToneCluster`, `goalPath[]`
 
@@ -120,7 +120,7 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 **Features:**  
 - Suggest follow-ups at key moments  
 - Frequency toggle stored in `UserPreferences.suggestionCadence`  
-- “Snooze Suggestions” for session or week
+- "Snooze Suggestions" for session or week
 
 **Logs:** `suggestionUsed[]`, `followUpAccepted`, `snoozeActive`
 
@@ -129,7 +129,7 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 ## 10. Emotional Feedback Anchoring
 
 **Prompt:**  
-> “How did this feel?”  
+> "How did this feel?"  
 [Inspired] [Overwhelmed] [Clear] [Generic] [Loved it]
 
 **Adaptive Logic (via `/cursor/feedback-adaptation.ts`):**  
@@ -143,7 +143,7 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 
 **File:** `/site/community-previews.md`  
 **Enhancements:**  
-- Personalized: “Top Sparks in *your industry*”  
+- Personalized: "Top Sparks in *your industry*"  
 - Logged: `communityCluster`, `communityViewEvent[]`
 
 ---
@@ -154,8 +154,8 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 **Enhancements:**  
 - Progress Tracker: maps CX stages  
 - Badges = unlock perks:  
-  - “Spark Explorer” = unlock remix mode  
-  - “Feedback Giver” = early access to experimental tools  
+  - "Spark Explorer" = unlock remix mode  
+  - "Feedback Giver" = early access to experimental tools  
 - `gamifiedEvents[]`, `userProgressStage`, `badgePerkUsed[]`
 
 ---
@@ -187,8 +187,8 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 - System watches for common negative feedback patterns  
 - Auto-triggers prompt revisions, UX updates, fallback logic  
 - Examples:
-  - 5+ “Overwhelmed” = Simplify default output  
-  - 3+ “Generic” on Spark = Retire from active use
+  - 5+ "Overwhelmed" = Simplify default output  
+  - 3+ "Generic" on Spark = Retire from active use
 
 **Logs:** `selfEvolveTrigger[]`, `promptAutoUpdate[]`
 
@@ -222,7 +222,7 @@ Triggers when friction flags rise (e.g., user stalls, revises 3+ times)
 
 ## Final Doctrine
 
-> “Clarity through guidance. Trust through transparency. Loyalty through evolution.”  
+> "Clarity through guidance. Trust through transparency. Loyalty through evolution."  
 This map is alive. It updates itself. It evolves from your customers.  
 It is not a spec. It is a system of *emotional fidelity*.
 
@@ -231,7 +231,7 @@ Must honor this experience contract.**
 
 **Drift breaks trust.  
 Alignment builds magic.  
-This is CanAI’s soul.**
+This is CanAI's soul.**
 ---
 
 ## 17. Contextual Awareness Engine
@@ -240,9 +240,9 @@ This is CanAI’s soul.**
 
 **Enhancement:**  
 - Dynamically adjusts sparks and prompt suggestions using:  
-  - Current time (e.g. “Holiday Spark”)  
+  - Current time (e.g. "Holiday Spark")  
   - Global trends (e.g. trending keywords)  
-  - Location-based nuance (e.g. “Local Launch Hook”)  
+  - Location-based nuance (e.g. "Local Launch Hook")  
 - Feeds `ContextualState[]` into SparkLayer and PromptLogs
 
 **Logs:** `contextualSignal[]`, `trendOverlay[]`, `geoCue[]`
@@ -272,7 +272,7 @@ This is CanAI’s soul.**
   - Dwell time > 60 sec  
   - Revise count > 3  
   - Negative sentiment detected in feedback  
-- Triggers “Calm Mode” UI (simplified layout + slower pacing)
+- Triggers "Calm Mode" UI (simplified layout + slower pacing)
 
 **Logs:** `escalationTriggered[]`, `calmModeUsed[]`
 
@@ -310,10 +310,10 @@ This is CanAI’s soul.**
 **File:** `/cursor/gamification-core.ts`
 
 **Enhancement:**  
-- Leaderboards per industry: “Top 10 Sparks by Growth Founders”  
+- Leaderboards per industry: "Top 10 Sparks by Growth Founders"  
 - Social badges:  
-  - “Spark Mentor” → reviewed 10+ outputs  
-  - “Community Favorite” → upvoted by others
+  - "Spark Mentor" → reviewed 10+ outputs  
+  - "Community Favorite" → upvoted by others
 
 **Logs:** `leaderboardRank[]`, `socialBadge[]`, `communityVoteScore[]`
 
@@ -366,7 +366,7 @@ This is CanAI’s soul.**
 **Features:**
 - [Save This Spark] inline button under each idea
 - Saved sparks stored in `savedSparkID[]`
-- Triggers lifecycle email if unused: “Still thinking about [SparkName]?”
+- Triggers lifecycle email if unused: "Still thinking about [SparkName]?"
 
 **Logs:** `savedSparkID[]`, `sparkReminderSent[]`, `revisitTimestamp[]`
 
@@ -392,8 +392,8 @@ This is CanAI’s soul.**
 
 **Features:**
 - Filter by industry, style, emotion
-- CTA: “Use This Spark” → routes to pre-filled promptType
-- Metrics surfaced: “Used by 142 CanAI users this week”
+- CTA: "Use This Spark" → routes to pre-filled promptType
+- Metrics surfaced: "Used by 142 CanAI users this week"
 
 **Logs:** `sparkViewCount[]`, `publicSparkClick[]`, `libraryBrowseSession[]`
 
@@ -405,8 +405,8 @@ This is CanAI’s soul.**
 **Purpose:** Encourage spark virality and referrals via embedded visuals or copy+link sharing.
 
 **Features:**
-- Share as copy: [“Check out this idea from CanAI: The Crave Leak”]
-- Share as visual: Generated with Placid
+- Share as copy: ["Check out this idea from CanAI: The Crave Leak"]
+- Share as visual: Generated with web templates
 - Attribution includes referral ID
 
 **Logs:** `sharedSparkID[]`, `referralSourceSpark[]`, `sharedSparkClick[]`
@@ -439,9 +439,9 @@ This is CanAI’s soul.**
 - Stripe: SKU: `spark_mini_bundle`  
 
 **Offer:**  
-- “Spark Builder” — $7–15 micro product  
+- "Spark Builder" — $7–15 micro product  
 - Includes full fulfillment using chosen spark
-- Lifecycle follow-up if not converted: “Want to build this spark now?”
+- Lifecycle follow-up if not converted: "Want to build this spark now?"
 
 **Logs:** `sparkOfferShown[]`, `sparkConversionAccepted[]`, `sparkMicroPurchase[]`
 
@@ -459,8 +459,8 @@ This is CanAI’s soul.**
 
 ## Codified Doctrine Reminder
 
-> “Inspiration isn’t just a moment — it’s an emotional contract.  
-> A spark is a glimpse of possibility. If it resonates, we must protect it, learn from it, and elevate it into value.”
+> "Inspiration isn't just a moment — it's an emotional contract.  
+> A spark is a glimpse of possibility. If it resonates, we must protect it, learn from it, and elevate it into value."
 
 **This document — as saved now — is the foundational customer journey system of CanAI.  
 Every future feature, output, lifecycle message, and monetization experiment must honor this architecture.  

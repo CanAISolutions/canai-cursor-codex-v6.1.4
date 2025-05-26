@@ -75,7 +75,9 @@ describe('DreamState: chaos-agent-outage', () => {
     const chaosAgents: AgentConfig[] = [
       { type: 'Parser', failureRate: 1.0, fallbackAgent: 'Recovery' }, // 100% failure
       { type: 'Generator', failureRate: 1.0, fallbackAgent: 'Fallback' }, // 100% failure
-      { type: 'Validator', failureRate: 0.0 } // This one works, to test partial recovery
+      { type: 'Validator', failureRate: 0.0 }, // This one works, to test partial recovery
+      { type: 'Recovery', failureRate: 0.0 }, // Fallback agents should not fail
+      { type: 'Fallback', failureRate: 0.0 }  // Fallback agents should not fail
     ];
     
     // Run the workflow with real agent orchestration under chaos conditions

@@ -4,6 +4,7 @@
  * Purpose:
  * Defines core types and interfaces for Codex rule enforcement system.
  * Acts as the contract layer for behavior validation across prompts, agents, and memory.
+ * Includes Test-First Truth validation types and enforcement mechanisms.
  */
 
 import { EventBus } from '../utils/event-bus';
@@ -15,7 +16,8 @@ export type RuleType =
   | 'memory' 
   | 'evolution' 
   | 'trust' 
-  | 'structure';
+  | 'structure'
+  | 'test-first-truth';
 
 export type SeverityLevel = 
   | 'critical' 
@@ -58,6 +60,7 @@ export interface Rule {
     tags: string[];
     dependencies: string[];
   };
+  testFirstTruth?: 'mandatory' | 'optional' | 'disabled';
 }
 
 // Violation interface
@@ -69,7 +72,7 @@ export interface Violation {
   recoveryAction: RecoveryAction;
   context: {
     target: string;
-    targetType: 'prompt' | 'agent' | 'memory' | 'evolution';
+    targetType: 'prompt' | 'agent' | 'memory' | 'evolution' | 'test-validation' | 'feature' | 'api' | 'component' | 'integration' | 'deployment';
     value: unknown;
     expected: unknown;
   };
@@ -77,6 +80,8 @@ export interface Violation {
     stackTrace?: string;
     trustScore?: number;
     memoryContext?: object;
+    testFirstTruthViolation?: boolean;
+    blockingIssues?: string[];
   };
 }
 
@@ -116,6 +121,7 @@ export interface CircuitBreakerManager {
 export type RuleEventType = 
   | 'rule:violation' 
   | 'rule:passed' 
+  | 'rule:test-first-truth-violation'
   | 'circuit:opened' 
   | 'circuit:closed' 
   | 'circuit:half-open';
@@ -128,6 +134,7 @@ export interface RuleEvent {
     circuitId?: string;
     state?: CircuitBreakerState;
     timestamp: number;
+    blockingIssues?: string[];
   };
 }
 

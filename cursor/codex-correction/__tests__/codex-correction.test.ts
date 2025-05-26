@@ -69,15 +69,15 @@ describe('Codex Correction', () => {
   let emittedEvents: { type: string; data: any }[];
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = EventBus.getInstance();
     ruleEngine = new CodexRuleEngine(eventBus);
     correctionReasoner = new CorrectionReasoner(eventBus, ruleEngine, engineConfig);
     correctionEngine = new CodexCorrectionEngine(eventBus, ruleEngine, engineConfig);
 
     emittedEvents = [];
-    eventBus.on('codex.correction.proposed', (data) => emittedEvents.push({ type: 'proposed', data }));
-    eventBus.on('codex.correction.applied', (data) => emittedEvents.push({ type: 'applied', data }));
-    eventBus.on('codex.correction.rejected', (data) => emittedEvents.push({ type: 'rejected', data }));
+    eventBus.on('codex.correction.proposed', async (data) => { emittedEvents.push({ type: 'proposed', data }); });
+    eventBus.on('codex.correction.applied', async (data) => { emittedEvents.push({ type: 'applied', data }); });
+    eventBus.on('codex.correction.rejected', async (data) => { emittedEvents.push({ type: 'rejected', data }); });
   });
 
   describe('Drift Detection', () => {

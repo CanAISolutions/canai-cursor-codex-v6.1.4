@@ -11,7 +11,10 @@ const validPromptTypes = [
   "reverse_strategy",
   "ai_brand_identity",
   "site_audit",
-  "ai_blueprint"
+  "ai_blueprint",
+  "profile_makeover",
+  "blogblitz",
+  "ad_amplify"
 ]
 
 type RouteResult = {

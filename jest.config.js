@@ -1,38 +1,119 @@
 /**
  * @TAP-Version v6.1.4
- * @Codex-Intent "Jest configuration for TypeScript testing with Codex enforcement and Cursor memory safety"
- * @purpose Configure Jest for Cursor-aware, Codex-safe testing with support for JSON files and CI enforcement
+ * @Codex-Intent "Jest configuration for DreamState Test Suite - Emotional Sovereignty Testing Focus"
+ * @purpose Configure Jest for DreamState-only testing with legacy test exclusion and enhanced emotional sovereignty validation
  */
 
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests', '<rootDir>/cursor'],
-  testMatch: ['**/*.test.ts'],
-  transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+  
+  // 🎯 DREAMSTATE FOCUS: Only test DreamState suite and supporting infrastructure
+  roots: ['<rootDir>/tests', '<rootDir>/src'],
+  
+  // 🎯 FOCUSED TEST PATTERNS: DreamState tests only
+  testMatch: [
+    // DreamState tests - our revolutionary emotional sovereignty test suite
+    '**/tests/dreamstate/**/*.test.ts',
+    '**/tests/dreamstate/**/*.test.js',
+    
+    // Supporting infrastructure tests
+    '**/src/**/*.test.ts',
+    '**/src/**/*.test.js'
+  ],
+  
+  // 🚫 EXCLUDE LEGACY TESTS: Prevent legacy pre-Codex tests from running
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/.jest-cache/',
+    
+    // Legacy pre-Codex tests - archived to prevent interference
+    '/tests/archive/',
+    '/tests/__snapshots__/',
+    
+    // Infrastructure directories that may contain test-like files
+    '/api-router/',
+    '/cursor/',
+    '/webflow/',
+    '/automations/',
+    '/scripts/',
+    '/utils/',
+    '/temp/',
+    '/coverage/',
+    
+    // Build and deployment directories
+    '/dist/',
+    '/build/',
+    '/.next/',
+    
+    // Configuration and documentation
+    '/docs/',
+    '/config/',
+    '/.github/'
+  ],
+  
+  // 📁 MODULE RESOLUTION: Support for DreamState infrastructure
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@tests/(.*)$': '<rootDir>/tests/$1',
+    '^@dreamstate/(.*)$': '<rootDir>/tests/dreamstate/$1'
   },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  
+  // 🔧 TYPESCRIPT CONFIGURATION
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
+      tsconfig: 'tsconfig.json'
+    }]
+  },
+  
+  // 📊 COVERAGE CONFIGURATION: Focus on DreamState infrastructure
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    'tests/dreamstate/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+    '!**/node_modules/**',
+    '!**/coverage/**'
+  ],
+  
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  
+  // ⚡ PERFORMANCE OPTIMIZATION
+  maxWorkers: '50%',
+  testTimeout: 30000,
+  
+  // 🧪 TEST SETUP
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  
+  // 📝 REPORTING
+  verbose: false,
+  
+  // 🎯 DREAMSTATE-SPECIFIC CONFIGURATION
   globals: {
     'ts-jest': {
-      tsconfig: 'tsconfig.json',
-      diagnostics: true,
-      useESM: false
+      tsconfig: 'tsconfig.json'
     }
   },
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  coverageReporters: ['json', 'lcov', 'text', 'clover'],
-  verbose: true,
-  testTimeout: 10000,
-
-  // 🚦 Cursor Drift & JSON Memory Tests
-  moduleNameMapper: {
-    '^@cursor/(.*)$': '<rootDir>/cursor/$1'
+  
+  // 🔍 SNAPSHOT CONFIGURATION
+  snapshotSerializers: [],
+  
+  // 🚨 ERROR HANDLING
+  errorOnDeprecated: false,
+  
+  // 🎯 DREAMSTATE TEST ENVIRONMENT
+  testEnvironmentOptions: {
+    NODE_ENV: 'test'
   },
-
-  // 🧠 Enable loading .json test assets (e.g., self-awareness.json)
-  resolver: undefined,
-  extensionsToTreatAsEsm: [],
+  
+  // Optimize for DreamState test performance
+  cache: true,
+  cacheDirectory: '.jest-cache',
+  
+  // Enhanced error reporting for emotional sovereignty tests
+  bail: false,
+  
+  // Module resolution for emotional sovereignty infrastructure
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 };

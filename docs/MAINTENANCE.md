@@ -51,7 +51,7 @@ This document explains how to update, deploy, and evolve the CanAI system safely
 
 - Use `cursor/deltaDiff.ts` to compare past prompt vs new
 - Run `tests/*.test.ts` for output formatting tests
-- Re-test critical promptTypes: `business_plan`, `email_campaign`, `site_audit`
+- Re-test critical promptTypes: `business_plan`, `email_campaign`, `site_audit`, `profile_makeover`, `blogblitz`, `ad_amplify`
 
 ---
 

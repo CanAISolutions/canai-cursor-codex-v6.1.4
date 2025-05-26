@@ -76,6 +76,9 @@ export class EventBus {
       const index = subscriptions.findIndex(sub => sub.handler === handler);
       if (index !== -1) {
         subscriptions.splice(index, 1);
+        if (subscriptions.length === 0) {
+          this.handlers.delete(event);
+        }
       }
     }
   }
@@ -144,6 +147,25 @@ export class EventBus {
       }
     });
     await Promise.all(promises);
+  }
+
+  /**
+   * Clear all handlers for a specific event
+   */
+  clear(event?: string): void {
+    if (event) {
+      this.handlers.delete(event);
+    } else {
+      this.handlers.clear();
+    }
+  }
+
+  /**
+   * Clear all events and handlers
+   */
+  clearAll(): void {
+    this.handlers.clear();
+    this.eventLog = [];
   }
 
   /**

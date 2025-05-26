@@ -36,7 +36,7 @@ Each item in the array must conform to the following structure:
 ### 🔹 `promptType`  
 - **Type:** `string`  
 - **Required:** ✅  
-- **Enum:** `business_plan`, `email_campaign`, `ai_blueprint`, etc.
+- **Enum:** `business_plan`, `email_campaign`, `ai_blueprint`, `site_audit`, `ai_brand_identity`, `reverse_strategy`, `social_content`, `profile_makeover`, `blogblitz`, `ad_amplify`, `sparksplit`, etc.
 
 ---
 

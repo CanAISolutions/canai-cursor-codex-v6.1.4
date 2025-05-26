@@ -7,7 +7,7 @@ description: |
   Canonical directive activating the Polaris Ritual Engine 
   (v3.0) and DreamState Testing Suite (v1.0.4). Grants Cursor 
   full autonomy to enforce emotional fidelity, schema resilience, 
-  operational trust, and governance across all seven Codex-aligned 
+  operational trust, and governance across all ten Codex-aligned 
   product launches.
 ---
 
