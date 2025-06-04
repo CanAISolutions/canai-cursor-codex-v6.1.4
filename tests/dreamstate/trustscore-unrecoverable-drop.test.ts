@@ -217,7 +217,8 @@ describe('DreamState: trustscore-unrecoverable-drop', () => {
       expect(enforcedScore).toBe(trustFloorManager.getTrustFloor());
 
       // Verify drop event was logged
-      const dropEvents = events.filter(e => e.eventType === 'trust-drop-detected');
+      const eventLog = global.eventLog || [];
+      const dropEvents = eventLog.filter(e => e.type === 'trust-drop-detected');
       expect(dropEvents).toHaveLength(1);
       expect(dropEvents[0].data.isFloor).toBe(true);
       expect(dropEvents[0].data.recoveryEligible).toBe(true);
@@ -272,7 +273,8 @@ describe('DreamState: trustscore-unrecoverable-drop', () => {
       expect(fallbackManager.isFallbackActive()).toBe(true);
       
       // Verify fallback event was logged
-      const fallbackEvents = events.filter(e => e.eventType === 'fallback:triggered');
+      const eventLog = global.eventLog || [];
+      const fallbackEvents = eventLog.filter(e => e.type === 'fallback:triggered');
       expect(fallbackEvents.length).toBeGreaterThan(0);
     });
 
@@ -319,7 +321,8 @@ describe('DreamState: trustscore-unrecoverable-drop', () => {
       expect(uxMessage.content.toLowerCase()).toMatch(/(safe|secure|here|support|together)/);
       
       // Verify UX rendering was logged
-      const uxEvents = events.filter(e => e.eventType === 'emotional-ux-rendered');
+      const eventLog = global.eventLog || [];
+      const uxEvents = eventLog.filter(e => e.type === 'emotional-ux-rendered');
       expect(uxEvents.length).toBeGreaterThan(0);
     });
 
@@ -362,7 +365,8 @@ describe('DreamState: trustscore-unrecoverable-drop', () => {
       trustFloorManager.enforceFloor(sessionId, -0.2, 'Ignored fallbacks', traceId);
 
       // Verify all drops were logged with floor flag
-      const dropEvents = events.filter(e => e.eventType === 'trust-drop-detected');
+      const eventLog = global.eventLog || [];
+      const dropEvents = eventLog.filter(e => e.type === 'trust-drop-detected');
       expect(dropEvents).toHaveLength(3);
       
       dropEvents.forEach(event => {
@@ -394,7 +398,8 @@ describe('DreamState: trustscore-unrecoverable-drop', () => {
       });
 
       // Verify audit trail
-      const dropEvents = events.filter(e => e.eventType === 'trust-drop-detected');
+      const eventLog = global.eventLog || [];
+      const dropEvents = eventLog.filter(e => e.type === 'trust-drop-detected');
       expect(dropEvents).toHaveLength(reasons.length);
       
       reasons.forEach((reason, index) => {
@@ -438,8 +443,9 @@ describe('DreamState: trustscore-unrecoverable-drop', () => {
       expect(finalScore).toBeGreaterThan(trustFloorManager.getTrustFloor());
       
       // Verify recovery events were logged
-      const trustEvents = events.filter(e => e.eventType === 'trust-score:updated');
-      const recoveryEvents = trustEvents.filter(e => e.data.eventType === 'recovery');
+      const eventLog = global.eventLog || [];
+      const trustEvents = eventLog.filter(e => e.type === 'trust-score:updated');
+      const recoveryEvents = trustEvents.filter(e => e.data && e.data.eventType === 'recovery');
       expect(recoveryEvents).toHaveLength(2);
     });
   });
@@ -523,7 +529,8 @@ describe('DreamState: trustscore-unrecoverable-drop', () => {
       expect(fallbackManager.isFallbackActive()).toBe(true);
       
       // Verify drop events were logged
-      const dropEvents = events.filter(e => e.eventType === 'trust-drop-detected');
+      const eventLog = global.eventLog || [];
+      const dropEvents = eventLog.filter(e => e.type === 'trust-drop-detected');
       expect(dropEvents.length).toBeGreaterThan(0);
       dropEvents.forEach(event => {
         expect(event.data.isFloor).toBe(true);

@@ -12,7 +12,7 @@ import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 // Schema lock reference
-const SCHEMA_LOCK_PATH = '../../schemas/airtable-v3.lock.json';
+const SCHEMA_LOCK_PATH = '../../airtable-rewrite-workspace/schema-lock.json';
 const PROMPTS_DIR = '../../prompts';
 const GPT_TEMPLATES_DIR = '../../gpt-templates';
 

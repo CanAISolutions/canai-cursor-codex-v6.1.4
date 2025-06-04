@@ -1,5 +1,5 @@
 // 🔍 discover-table-schemas.ts
-// Discover the actual field schemas of all 36 tables
+// Discover the actual field schemas of all 18 tables
 
 import Airtable from "airtable"
 import * as dotenv from "dotenv"
@@ -17,16 +17,12 @@ if (!AIRTABLE_API_KEY || !BASE_ID) {
 
 const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(BASE_ID)
 
-const ALL_TABLES = [
-  '01_PromptLogs', '02_SparkSplitAnalytics', '03_SessionAnalytics', '04_UserContext',
-  '05_OutputGoldmine', '06_FeedbackLogs', '07_DeliveryCostLogs', '08_ReferralTriggers',
-  '09_AIMiningAgents', '10_FieldGlossary', '11_SchemaEvents', '12_EmotionalCompass',
-  '13_TrustMetrics', '14_PersonaCluster', '15_ContentOptimization', '16_PredictiveInsights',
-  '17_CompetitiveIntel', '18_RevenueAttribution', '19_CustomerJourney', '20_BrandResonance',
-  '21_BehavioralPatterns', '22_EmotionalJourney', '23_TrustEvolution', '24_SystemPerformance',
-  '25_QualityMetrics', '26_UsageAnalytics', '27_GrowthMetrics', '28_RetentionAnalysis',
-  '29_ConversionFunnels', '30_EmotionalIntelligence', '31_SentimentAnalysis', '32_PersonalizationEngine',
-  '33_InnovationMetrics', '34_FutureInsights', '35_MetaIntelligence', '36_SystemEvolution'
+const ALL_CANAI_TABLES = [
+  // 18-Table Optimized Architecture
+  '01_PromptLogs', '02_SessionAnalytics', '03_SparkSplitAnalytics', '04_GoldmineOutput', '05_UserContext',
+  '06_EmotionalIntelligence', '07_TrustMetrics', '08_PerformanceMetrics', '09_WebhookLogs', '10_AirtableSync',
+  '11_ErrorLogs', '12_ProcessingResults', '13_SystemHealth', '14_PromptTypes', '15_EmotionalStates',
+  '16_TrustFactors', '17_SystemConfigs', '18_AnalyticsAggregates'
 ]
 
 async function discoverTableSchemas() {
@@ -35,7 +31,7 @@ async function discoverTableSchemas() {
   
   const schemas: Record<string, string[]> = {}
   
-  for (const tableName of ALL_TABLES) {
+  for (const tableName of ALL_CANAI_TABLES) {
     try {
       console.log(`\n📋 Analyzing ${tableName}...`)
       
@@ -131,7 +127,7 @@ async function discoverTableSchemas() {
   // Summary
   const tablesWithFields = Object.values(schemas).filter(fields => fields.length > 0).length
   console.log(`\n📊 SCHEMA DISCOVERY SUMMARY:`)
-  console.log(`✅ Tables with discovered fields: ${tablesWithFields}/${ALL_TABLES.length}`)
+  console.log(`✅ Tables with discovered fields: ${tablesWithFields}/${ALL_CANAI_TABLES.length}`)
   console.log(`📋 Total unique fields discovered: ${new Set(Object.values(schemas).flat()).size}`)
   
   return schemas

@@ -563,7 +563,7 @@ export class EmotionalContextPipeline {
       if (Math.abs(current.trustDelta - previous.trustDelta) > 0.5) {
         evolution.push({
           timestamp: current.timestamp,
-          evolutionType: current.trustDelta > previous.trustDelta ? 'trust_increase' : 'trust_decrease',
+          evolutionType: current.trustDelta > previous.trustDelta ? 'trust_increase' : 'need_shift',
           beforeState: { trustLevel: previous.trustDelta },
           afterState: { trustLevel: current.trustDelta },
           triggerEvent: 'interaction_outcome',
@@ -841,7 +841,8 @@ export class EmotionalContextPipeline {
     const now = Date.now();
     const maxAge = 30 * 60 * 1000; // 30 minutes
     
-    for (const [sessionId, context] of this.contextCache.entries()) {
+    const entries = Array.from(this.contextCache.entries());
+    for (const [sessionId, context] of entries) {
       if (now - context.lastEnrichmentTimestamp.getTime() > maxAge) {
         this.contextCache.delete(sessionId);
       }

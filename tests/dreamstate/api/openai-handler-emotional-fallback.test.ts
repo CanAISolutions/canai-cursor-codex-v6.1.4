@@ -28,7 +28,7 @@ describe('DreamState: openaiHandler.ts — Emotional UX & Fallback', () => {
     // Reset all mocks before each test
     jest.clearAllMocks();
     
-    // Default successful mock implementation
+    // Production-ready mock setup with realistic OpenAI response structure
     mockCreate.mockResolvedValue({
       choices: [
         {

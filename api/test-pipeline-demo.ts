@@ -14,7 +14,7 @@ import { SessionDataPipeline, SessionInput } from './pipelines/session-pipeline'
 
 async function runPipelineDemo() {
   console.log('🚀 CanAI Emotional Intelligence Pipeline Demo\n');
-  console.log('🌟 Testing revolutionary 36-table infrastructure with live data processing...\n');
+  console.log('🌟 Testing revolutionary 18-table infrastructure with live data processing...\n');
 
   try {
     // Configure Airtable service with known working credentials

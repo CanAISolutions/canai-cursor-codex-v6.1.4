@@ -1,3 +1,20 @@
+/**
+ * email_campaign.ts
+ * 
+ * Purpose:
+ * Simple TypeScript interface for Email Campaign prompt type.
+ * Provides type safety and validation for prompt inputs.
+ */
+
+export interface EmailCampaignPrompt {
+  campaignGoal: string;
+  targetAudience: string;
+  keyMessage: string;
+  callToAction: string;
+  tone: string;
+  enhancers?: Record<string, boolean>;
+}
+
 // 🧠 email_campaign.ts
 // Generates the final prompt string for the Email Campaign Builder product.
 // Returns full structured metadata including version, fallback fields, cost, and SmartPromptScore.

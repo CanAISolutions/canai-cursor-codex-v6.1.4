@@ -2,7 +2,7 @@
  * Session Data Pipeline for CanAI Emotional Intelligence Platform
  * 
  * Real-time pipeline that processes user sessions, calculates emotional intelligence
- * metrics, trust scores, and populates the revolutionary 36-table infrastructure
+ * metrics, trust scores, and populates the revolutionary 18-table optimized infrastructure
  * with live data for trust transparency and predictive analytics.
  * 
  * @version 1.0.0

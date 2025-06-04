@@ -1,39 +1,35 @@
 // 🎯 validate-complete-infrastructure.ts
-// Comprehensive validation of all 36 CanAI tables for complete infrastructure readiness
+// Comprehensive validation of all 18 CanAI tables for complete infrastructure readiness
 
 import Airtable from "airtable"
 import * as dotenv from "dotenv"
-import { AIRTABLE_TABLES } from "./types/airtable"
 
 // Load environment variables
-dotenv.config({ path: '../.env.local' })
+dotenv.config()
 
+// Configuration
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY!
 const BASE_ID = process.env.AIRTABLE_BASE_ID!
 
-if (!AIRTABLE_API_KEY || !BASE_ID) {
-  console.error("❌ Missing environment variables")
-  process.exit(1)
-}
-
+// Initialize Airtable
 const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(BASE_ID)
 
-// Expected 36 tables for complete infrastructure
-const EXPECTED_TABLES = [
-  // Core Analytics Platform (1-12)
-  '01_PromptLogs', '02_SparkSplitAnalytics', '03_SessionAnalytics', '04_UserContext',
-  '05_OutputGoldmine', '06_FeedbackLogs', '07_DeliveryCostLogs', '08_ReferralTriggers',
-  '09_AIMiningAgents', '10_FieldGlossary', '11_SchemaEvents', '12_EmotionalCompass',
+// Expected 18 tables for complete infrastructure
+const ALL_CANAI_TABLES = [
+  // TIER 1: CORE TABLES (3)
+  '01_PromptLogs', '02_SessionAnalytics', '03_SparkSplitAnalytics', 
   
-  // Advanced Intelligence (13-20)
-  '13_TrustMetrics', '14_PersonaCluster', '15_ContentOptimization', '16_PredictiveInsights',
-  '17_CompetitiveIntel', '18_RevenueAttribution', '19_CustomerJourney', '20_BrandResonance',
+  // TIER 2: INTELLIGENCE TABLES (5)
+  '04_GoldmineOutput', '05_UserContext', '06_EmotionalIntelligence', 
+  '07_TrustMetrics', '08_PerformanceMetrics',
   
-  // Meta-Intelligence System (21-36)
-  '21_ConversionFunnels', '22_GrowthMetrics', '23_EmotionalIntelligence', '24_EmotionalJourney',
-  '25_SentimentAnalysis', '26_BehavioralPatterns', '27_SystemEvolution', '28_MetaIntelligence',
-  '29_InnovationMetrics', '30_FutureInsights', '31_TrustEvolution', '32_LearningExtraction',
-  '33_CompoundIntelligence', '34_PredictiveModeling', '35_EvolutionTracking', '36_IntelligenceCompound'
+  // TIER 3: INTEGRATION INFRASTRUCTURE (5)
+  '09_WebhookLogs', '10_AirtableSync', '11_ErrorLogs', 
+  '12_ProcessingResults', '13_SystemHealth',
+  
+  // TIER 4: REFERENCE TABLES (5)
+  '14_PromptTypes', '15_EmotionalStates', '16_TrustFactors', 
+  '17_SystemConfigs', '18_AnalyticsAggregates'
 ]
 
 interface TableValidationResult {
@@ -47,13 +43,13 @@ interface TableValidationResult {
 
 async function validateCompleteInfrastructure(): Promise<void> {
   console.log("🎯 CanAI Complete Infrastructure Validation")
-  console.log("🚀 Testing all 36 tables for emotional sovereignty platform readiness\n")
+  console.log("🚀 Testing all 18 tables for emotional sovereignty platform readiness\n")
   
   const results: TableValidationResult[] = []
   let accessibleCount = 0
   let totalRecords = 0
   
-  for (const tableName of EXPECTED_TABLES) {
+  for (const tableName of ALL_CANAI_TABLES) {
     try {
       console.log(`🔍 Validating: ${tableName}`)
       
@@ -91,9 +87,9 @@ async function validateCompleteInfrastructure(): Promise<void> {
   console.log(`═══════════════════════════════════════════════`)
   
   console.log(`\n🎯 OVERALL STATUS:`)
-  console.log(`   Tables Accessible: ${accessibleCount}/${EXPECTED_TABLES.length}`)
+  console.log(`   Tables Accessible: ${accessibleCount}/${ALL_CANAI_TABLES.length}`)
   console.log(`   Total Records: ${totalRecords}`)
-  console.log(`   Infrastructure Completeness: ${Math.round((accessibleCount / EXPECTED_TABLES.length) * 100)}%`)
+  console.log(`   Infrastructure Completeness: ${Math.round((accessibleCount / ALL_CANAI_TABLES.length) * 100)}%`)
   
   // Categorize results
   const accessibleTables = results.filter(r => r.accessible)
@@ -120,7 +116,7 @@ async function validateCompleteInfrastructure(): Promise<void> {
   }
   
   // API Integration Test
-  if (accessibleCount >= 20) {
+  if (accessibleCount >= 10) {
     console.log(`\n🧪 TESTING API INTEGRATION...`)
     await testAPIIntegration(accessibleTables)
   }
@@ -128,9 +124,9 @@ async function validateCompleteInfrastructure(): Promise<void> {
   // Final Assessment
   console.log(`\n🎯 INFRASTRUCTURE READINESS ASSESSMENT:`)
   
-  if (accessibleCount === EXPECTED_TABLES.length) {
+  if (accessibleCount === ALL_CANAI_TABLES.length) {
     console.log(`🌟 PERFECT! COMPLETE INFRASTRUCTURE OPERATIONAL!`)
-    console.log(`✅ All 36 tables accessible`)
+    console.log(`✅ All 18 tables accessible`)
     console.log(`✅ Complete emotional intelligence platform ready`)
     console.log(`✅ Advanced meta-intelligence capabilities available`)
     console.log(`✅ Predictive modeling infrastructure operational`)
@@ -143,19 +139,19 @@ async function validateCompleteInfrastructure(): Promise<void> {
     console.log(`✅ Future-proof architecture`)
     console.log(`✅ Market leadership position secured`)
     
-  } else if (accessibleCount >= 30) {
-    console.log(`🎉 EXCELLENT! Near-complete infrastructure (${accessibleCount}/36)`)
+  } else if (accessibleCount >= 15) {
+    console.log(`🎉 EXCELLENT! Near-complete infrastructure (${accessibleCount}/18)`)
     console.log(`✅ Core platform operational`)
     console.log(`✅ Most competitive advantages available`)
-    console.log(`🔧 ${36 - accessibleCount} tables remaining for complete setup`)
+    console.log(`🔧 ${18 - accessibleCount} tables remaining for complete setup`)
     
-  } else if (accessibleCount >= 20) {
-    console.log(`✅ GOOD! Core infrastructure operational (${accessibleCount}/36)`)
+  } else if (accessibleCount >= 10) {
+    console.log(`✅ GOOD! Core infrastructure operational (${accessibleCount}/18)`)
     console.log(`✅ Essential capabilities available`)
-    console.log(`🔧 ${36 - accessibleCount} tables remaining for full platform`)
+    console.log(`🔧 ${18 - accessibleCount} tables remaining for full platform`)
     
   } else {
-    console.log(`⚠️  PARTIAL SETUP (${accessibleCount}/36)`)
+    console.log(`⚠️  PARTIAL SETUP (${accessibleCount}/18)`)
     console.log(`🔧 Significant setup required for complete platform`)
     console.log(`💡 Focus on core tables first, then expand`)
   }

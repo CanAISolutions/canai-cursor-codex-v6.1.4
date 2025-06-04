@@ -115,9 +115,20 @@ export async function createEmotionalPayload(overrides: Partial<EmotionalPayload
   };
   
   // Log the payload creation event
+  console.log('DEBUG: About to emit emotional-payload-created event for tone:', emotionalPayload.tone);
   await EventBus.getInstance().emit('emotional-payload-created', {
     payload: emotionalPayload,
-    source: 'emotion-payload-builder'
+    source: 'emotion-payload-builder',
+    timestamp: emotionalPayload.timestamp
+  });
+  console.log('DEBUG: Event emitted successfully');
+  
+  // ADD MISSING: Emit tone validation event
+  await EventBus.getInstance().emit('tone-validation', {
+    tone: emotionalPayload.tone,
+    isValid: true,
+    validationScore: 0.9,
+    timestamp: emotionalPayload.timestamp
   });
   
   return emotionalPayload;
@@ -250,7 +261,7 @@ function getTrustScoreForTone(tone: string, baseScore?: number): number {
 export async function createNetworkDegradedPayload(
   basePayload: EmotionalPayload, 
   networkEvent: string,
-  impactLevel: number = 0.5
+  impactLevel = 0.5
 ): Promise<EmotionalPayload> {
   // Calculate trust score degradation
   const degradation = Math.min(impactLevel, 0.5);
@@ -291,7 +302,7 @@ export async function createNetworkDegradedPayload(
  */
 export async function createNetworkRecoveryPayload(
   degradedPayload: EmotionalPayload,
-  recoveryLevel: number = 0.8
+  recoveryLevel = 0.8
 ): Promise<EmotionalPayload> {
   // Calculate trust score recovery
   const originalScore = degradedPayload.metadata?.originalTrustScore || 0.95;

@@ -18,20 +18,25 @@ export interface EmotionalContext {
 }
 
 export interface TrustDelta {
-  value: number;
-  source: string;
+  value?: number;
+  source?: string;
   timestamp: Date;
-  context: string;
+  context?: string;
+  component?: string;
+  previousScore?: number;
+  newScore?: number;
+  reason?: string;
 }
 
 export interface SparkConcept {
   name: string;
   description: string;
-  resonanceScore: number;
+  resonanceScore?: number;
   personalizedName?: string;
-  emotionalTriggers: string[];
-  industryRelevance: number;
-  languageStyle: string;
+  emotionalTriggers?: string[];
+  industryRelevance?: number;
+  languageStyle?: string;
+  emotionalResonance?: number;
 }
 
 export interface EmotionalIntelligenceMetrics {
@@ -41,6 +46,28 @@ export interface EmotionalIntelligenceMetrics {
   calmScore: number;
   powerScore: number;
   overallResonance: number;
+}
+
+export interface EnrichedEmotionalContext {
+  baseContext: EmotionalContext;
+  enrichmentLevel: 'basic' | 'enhanced' | 'deep' | 'transcendent';
+  contextQuality: number;
+  emotionalInsights: any[];
+  crossSessionContinuity: any;
+  currentEmotionalState: string;
+  trustTrajectory: string;
+  userProfile?: UserEmotionalProfile;
+  lastEnrichmentTimestamp?: Date;
+  enrichmentSources?: string[];
+  trustProgression?: TrustDelta[];
+  sessionConnections?: SessionConnection[];
+  emotionalEvolution?: EmotionalEvolution[];
+  persistentPreferences?: any;
+  resonancePatterns?: any[];
+  adaptationHistory?: AdaptationRecord[];
+  continuityScore?: number;
+  trustScore?: number;
+  emotionalCompass?: EmotionalIntelligenceMetrics;
 }
 
 export interface UserEmotionalProfile {

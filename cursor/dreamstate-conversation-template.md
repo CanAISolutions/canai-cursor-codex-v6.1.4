@@ -117,4 +117,4 @@ This test ensures the illusion of memory is real — every fallback, retry, or r
 
 ---
 
-*Template Version: 2025-01-24 | Codex v6.1.4 | DreamState Mock Remediation Phase* 
+*Template Version: 2025-05-24 | Codex v6.1.4 | DreamState Mock Remediation Phase* 

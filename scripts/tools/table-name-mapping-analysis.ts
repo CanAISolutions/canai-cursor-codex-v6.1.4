@@ -53,60 +53,10 @@ function analyzeTableNameMismatch() {
   console.log("🔍 ANALYZING TABLE NAME MISMATCH")
   console.log("=" .repeat(50))
   
-  const csvDir = '../../airtable-csv-imports'
-  const csvFiles = fs.readdirSync(csvDir).filter(f => f.endsWith('.csv'))
-  
-  console.log(`\n📋 CSV FILES AVAILABLE (${csvFiles.length}):`)
-  const csvTableNames = csvFiles.map(f => f.replace('.csv', '')).sort()
-  csvTableNames.forEach(name => console.log(`   - ${name}`))
-  
-  console.log(`\n🎯 EXPECTED TABLE NAMES (${EXPECTED_TABLES.length}):`)
-  EXPECTED_TABLES.forEach(name => console.log(`   - ${name}`))
-  
-  console.log(`\n🔍 MISMATCH ANALYSIS:`)
-  
-  // Find working tables (1-20)
-  const workingTables = EXPECTED_TABLES.slice(0, 20)
-  console.log(`\n✅ WORKING TABLES (${workingTables.length}):`)
-  workingTables.forEach(table => {
-    const csvExists = csvTableNames.includes(table)
-    console.log(`   ${csvExists ? '✅' : '❌'} ${table} ${csvExists ? '(CSV available)' : '(CSV missing)'}`)
-  })
-  
-  // Find missing tables (21-36)
-  const missingTables = EXPECTED_TABLES.slice(20)
-  console.log(`\n❌ MISSING TABLES (${missingTables.length}):`)
-  missingTables.forEach(table => {
-    const csvExists = csvTableNames.includes(table)
-    console.log(`   ${csvExists ? '🔧' : '❌'} ${table} ${csvExists ? '(CSV available - needs import)' : '(CSV missing)'}`)
-  })
-  
-  // Find CSV files that don't match expected names
-  console.log(`\n🔍 CSV FILES NOT MATCHING EXPECTED NAMES:`)
-  csvTableNames.forEach(csvName => {
-    if (!EXPECTED_TABLES.includes(csvName)) {
-      // Try to find what this might map to
-      const number = csvName.split('_')[0]
-      const expectedWithSameNumber = EXPECTED_TABLES.find(t => t.startsWith(number + '_'))
-      
-      if (expectedWithSameNumber) {
-        console.log(`   🔧 ${csvName} → should be: ${expectedWithSameNumber}`)
-      } else {
-        console.log(`   ❓ ${csvName} → no matching expected table`)
-      }
-    }
-  })
-  
-  console.log(`\n💡 SOLUTION SUMMARY:`)
-  console.log(`   ✅ Tables 01-20: Already working in Airtable`)
-  console.log(`   🔧 Tables 21-36: Need to be created in Airtable using CSV imports`)
-  console.log(`   📋 Some CSV files may need renaming to match expected table names`)
-  
-  console.log(`\n🚀 NEXT STEPS:`)
-  console.log(`   1. Check if tables 21-36 exist in Airtable but with different names`)
-  console.log(`   2. Import CSV files for missing tables`)
-  console.log(`   3. Ensure table names match exactly what the test script expects`)
-  console.log(`   4. Re-run test-numbered-tables.ts to verify all 36 tables work`)
+  // Note: Legacy CSV directory removed - 18-table architecture uses direct API integration
+  console.log('⚠️  CSV analysis not applicable for 18-table architecture');
+  console.log('✅ Using direct Airtable API integration instead of CSV imports');
+  return;
 }
 
 analyzeTableNameMismatch() 

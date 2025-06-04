@@ -1,6 +1,6 @@
-// 🚀 create-all-tables.ts
-// Create all 36 CanAI tables with complete field definitions
-// Strategic approach: Set up everything now to prevent future bottlenecks
+// 🚀 create-18-optimized-tables.ts
+// Create all 18 optimized CanAI tables with complete field definitions
+// Strategic approach: Streamlined architecture with 50% reduction in complexity
 
 import Airtable from "airtable"
 import * as dotenv from "dotenv"
@@ -18,256 +18,363 @@ if (!AIRTABLE_API_KEY || !BASE_ID) {
 
 const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(BASE_ID)
 
-// Complete table definitions for all 36 tables
-const ALL_TABLE_SCHEMAS = {
-  // Tables 21-36 (Missing ones that need to be created)
-  '21_ConversionFunnels': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'userId', type: 'singleLineText' },
-      { name: 'sessionId', type: 'singleLineText' },
-      { name: 'funnelStage', type: 'singleSelect', options: ['awareness', 'interest', 'consideration', 'intent', 'evaluation', 'purchase'] },
-      { name: 'entryTimestamp', type: 'dateTime' },
-      { name: 'exitTimestamp', type: 'dateTime' },
-      { name: 'stageDuration', type: 'number', options: { precision: 2 } },
-      { name: 'conversionProbability', type: 'number', options: { precision: 4 } },
-      { name: 'dropOffRisk', type: 'number', options: { precision: 4 } },
-      { name: 'emotionalBarriers', type: 'multipleSelects', options: ['trust_hesitation', 'complexity_fear', 'cost_concern', 'time_pressure'] },
-      { name: 'trustRequirement', type: 'number', options: { precision: 2 } }
-    ]
-  },
+// Field interface for proper typing
+interface FieldDefinition {
+  name: string;
+  type: string;
+  options?: string[] | { precision?: number };
+}
 
-  '22_GrowthMetrics': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'metricName', type: 'singleLineText' },
-      { name: 'metricValue', type: 'number', options: { precision: 4 } },
-      { name: 'measurementDate', type: 'dateTime' },
-      { name: 'growthRate', type: 'number', options: { precision: 4 } },
-      { name: 'trendDirection', type: 'singleSelect', options: ['up', 'down', 'stable'] },
-      { name: 'targetValue', type: 'number', options: { precision: 4 } },
-      { name: 'achievementProbability', type: 'number', options: { precision: 4 } },
-      { name: 'contributingFactors', type: 'multipleSelects', options: ['trust_improvement', 'emotional_resonance', 'user_experience', 'feature_adoption'] }
-    ]
-  },
+interface TableSchema {
+  fields: FieldDefinition[];
+}
 
-  '23_EmotionalIntelligence': {
+// Complete table definitions for all 18 optimized tables
+// Based on FIELD-SPECIFICATIONS-REFERENCE.md and Interface Catalog v1.1
+const OPTIMIZED_18_TABLE_SCHEMAS: Record<string, TableSchema> = {
+  // TIER 1: CORE TABLES (3 TABLES)
+  'PromptLogs': {
     fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'sessionId', type: 'singleLineText' },
-      { name: 'userId', type: 'singleLineText' },
-      { name: 'emotionalState', type: 'singleSelect', options: ['curious', 'engaged', 'trusting', 'empowered', 'frustrated', 'confused'] },
-      { name: 'emotionalIntensity', type: 'number', options: { precision: 2 } },
-      { name: 'emotionalStability', type: 'number', options: { precision: 2 } },
-      { name: 'empathyScore', type: 'number', options: { precision: 2 } },
-      { name: 'emotionalGrowth', type: 'number', options: { precision: 2 } },
-      { name: 'resonanceQuality', type: 'singleSelect', options: ['surface', 'moderate', 'deep', 'transcendent'] }
-    ]
-  },
-
-  '24_EmotionalJourney': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'userId', type: 'singleLineText' },
-      { name: 'journeyStage', type: 'singleSelect', options: ['discovery', 'exploration', 'trust_building', 'empowerment', 'mastery'] },
-      { name: 'emotionalMilestone', type: 'singleLineText' },
-      { name: 'milestoneTimestamp', type: 'dateTime' },
-      { name: 'emotionalProgression', type: 'number', options: { precision: 2 } },
-      { name: 'journeySatisfaction', type: 'number', options: { precision: 2 } },
-      { name: 'emotionalChallenges', type: 'multipleSelects', options: ['trust_barriers', 'complexity_overwhelm', 'expectation_mismatch'] },
-      { name: 'nextMilestonePrediction', type: 'singleLineText' }
-    ]
-  },
-
-  '25_SentimentAnalysis': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'contentId', type: 'singleLineText' },
-      { name: 'contentType', type: 'singleSelect', options: ['prompt', 'response', 'feedback', 'interaction'] },
-      { name: 'sentimentScore', type: 'number', options: { precision: 4 } },
-      { name: 'sentimentCategory', type: 'singleSelect', options: ['positive', 'neutral', 'negative'] },
-      { name: 'confidenceLevel', type: 'number', options: { precision: 4 } },
-      { name: 'emotionalNuances', type: 'multipleSelects', options: ['excitement', 'trust', 'curiosity', 'concern', 'frustration', 'delight'] },
-      { name: 'predictiveSentiment', type: 'number', options: { precision: 4 } },
-      { name: 'sentimentStability', type: 'number', options: { precision: 4 } }
-    ]
-  },
-
-  '26_BehavioralPatterns': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'userId', type: 'singleLineText' },
-      { name: 'patternType', type: 'singleSelect', options: ['interaction', 'navigation', 'decision_making', 'trust_building'] },
-      { name: 'patternDescription', type: 'longText' },
-      { name: 'patternFrequency', type: 'number', options: { precision: 2 } },
-      { name: 'patternStrength', type: 'number', options: { precision: 4 } },
-      { name: 'behavioralTriggers', type: 'multipleSelects', options: ['trust_signal', 'emotional_resonance', 'clarity_moment', 'empowerment_feeling'] },
-      { name: 'predictiveBehavior', type: 'longText' }
-    ]
-  },
-
-  '27_SystemEvolution': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'evolutionId', type: 'singleLineText' },
-      { name: 'systemComponent', type: 'singleLineText' },
-      { name: 'evolutionType', type: 'singleSelect', options: ['performance', 'emotional_intelligence', 'trust_building', 'user_experience'] },
-      { name: 'improvementDescription', type: 'longText' },
-      { name: 'impactScore', type: 'number', options: { precision: 2 } },
-      { name: 'learningExtraction', type: 'longText' },
-      { name: 'evolutionConfidence', type: 'number', options: { precision: 4 } },
-      { name: 'systemIntelligenceGain', type: 'number', options: { precision: 4 } }
-    ]
-  },
-
-  '28_MetaIntelligence': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'intelligenceId', type: 'singleLineText' },
-      { name: 'intelligenceType', type: 'singleSelect', options: ['pattern_recognition', 'predictive_modeling', 'emotional_mapping', 'trust_optimization'] },
-      { name: 'intelligenceValue', type: 'longText' },
-      { name: 'metaLevel', type: 'number' },
-      { name: 'intelligenceConfidence', type: 'number', options: { precision: 4 } },
-      { name: 'learningDepth', type: 'number', options: { precision: 2 } },
-      { name: 'applicationPotential', type: 'multipleSelects', options: ['user_experience', 'trust_building', 'emotional_resonance', 'predictive_insights'] }
-    ]
-  },
-
-  '29_InnovationMetrics': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'innovationId', type: 'singleLineText' },
-      { name: 'innovationType', type: 'singleSelect', options: ['emotional_intelligence', 'trust_transparency', 'user_experience', 'predictive_capability'] },
-      { name: 'innovationValue', type: 'number', options: { precision: 2 } },
-      { name: 'creativityScore', type: 'number', options: { precision: 2 } },
-      { name: 'implementationFeasibility', type: 'number', options: { precision: 2 } },
-      { name: 'businessImpactPotential', type: 'number', options: { precision: 2 } },
-      { name: 'successProbability', type: 'number', options: { precision: 4 } }
-    ]
-  },
-
-  '30_FutureInsights': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'insightId', type: 'singleLineText' },
-      { name: 'insightCategory', type: 'singleSelect', options: ['user_behavior', 'market_trends', 'technology_evolution', 'emotional_patterns'] },
-      { name: 'insightDescription', type: 'longText' },
-      { name: 'timeHorizon', type: 'singleSelect', options: ['1_week', '1_month', '3_months', '6_months', '1_year'] },
-      { name: 'confidenceLevel', type: 'number', options: { precision: 4 } },
-      { name: 'impactAssessment', type: 'longText' },
-      { name: 'strategicImplications', type: 'longText' }
-    ]
-  },
-
-  '31_TrustEvolution': {
-    fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'userId', type: 'singleLineText' },
+      { name: 'id', type: 'singleLineText' },
       { name: 'timestamp', type: 'dateTime' },
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'userId', type: 'singleLineText' },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'inputFields', type: 'longText' }, // JSON storage
+      { name: 'output', type: 'longText' },
+      { name: 'tokensUsed', type: 'number' },
+      { name: 'costUSD', type: 'number', options: { precision: 4 } },
       { name: 'trustScore', type: 'number', options: { precision: 2 } },
-      { name: 'trustEvent', type: 'singleLineText' },
-      { name: 'eventImpact', type: 'number', options: { precision: 4 } },
-      { name: 'cumulativeTrust', type: 'number', options: { precision: 2 } },
-      { name: 'trustMilestone', type: 'singleLineText' },
-      { name: 'predictionAccuracy', type: 'number', options: { precision: 4 } },
-      { name: 'nextMilestonePrediction', type: 'singleLineText' }
+      { name: 'resonanceScore', type: 'number', options: { precision: 2 } },
+      { name: 'smartPromptScore', type: 'number', options: { precision: 2 } },
+      { name: 'emotionalDepth', type: 'number', options: { precision: 2 } },
+      { name: 'aweScore', type: 'number', options: { precision: 2 } },
+      { name: 'ownershipScore', type: 'number', options: { precision: 2 } },
+      { name: 'wonderScore', type: 'number', options: { precision: 2 } },
+      { name: 'calmScore', type: 'number', options: { precision: 2 } },
+      { name: 'powerScore', type: 'number', options: { precision: 2 } },
+      { name: 'fallbackTriggered', type: 'checkbox' },
+      { name: 'fallbackFields', type: 'longText' }, // JSON array
+      { name: 'analyticsMeta', type: 'longText' }, // JSON storage
+      { name: 'consentGiven', type: 'checkbox' },
+      { name: 'deletionRequested', type: 'checkbox' },
+      { name: 'createdAt', type: 'dateTime' },
+      { name: 'updatedAt', type: 'dateTime' }
     ]
   },
 
-  '32_LearningExtraction': {
+  'SessionAnalytics': {
     fields: [
-      { name: 'recordId', type: 'singleLineText' },
+      { name: 'id', type: 'singleLineText' },
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'userId', type: 'singleLineText' },
+      { name: 'startTime', type: 'dateTime' },
+      { name: 'endTime', type: 'dateTime' },
+      { name: 'duration', type: 'number' },
+      { name: 'promptCount', type: 'number' },
+      { name: 'productsUsed', type: 'multipleSelects', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'primaryProduct', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'trustScoreBefore', type: 'number', options: { precision: 2 } },
+      { name: 'trustScoreAfter', type: 'number', options: { precision: 2 } },
+      { name: 'trustDelta', type: 'number', options: { precision: 2 } },
+      { name: 'emotionalDepth', type: 'number', options: { precision: 2 } },
+      { name: 'overrideCount', type: 'number' },
+      { name: 'timeToConfirmation', type: 'number' },
+      { name: 'dropOffSignal', type: 'checkbox' },
+      { name: 'cohort', type: 'singleLineText' },
+      { name: 'status', type: 'singleSelect', options: ['active', 'completed', 'abandoned', 'error'] },
       { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'extractionId', type: 'singleLineText' },
-      { name: 'sourceType', type: 'singleSelect', options: ['user_interaction', 'system_performance', 'emotional_response', 'trust_building'] },
-      { name: 'learningContent', type: 'longText' },
-      { name: 'learningConfidence', type: 'number', options: { precision: 4 } },
-      { name: 'applicabilityScore', type: 'number', options: { precision: 2 } },
-      { name: 'learningCategory', type: 'singleSelect', options: ['pattern', 'insight', 'optimization', 'prediction'] },
-      { name: 'implementationPotential', type: 'number', options: { precision: 2 } }
+      { name: 'updatedAt', type: 'dateTime' }
     ]
   },
 
-  '33_CompoundIntelligence': {
+  'SparkSplitAnalytics': {
     fields: [
-      { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'compoundId', type: 'singleLineText' },
-      { name: 'intelligenceComponents', type: 'multipleSelects', options: ['emotional', 'predictive', 'behavioral', 'trust_based'] },
-      { name: 'compoundValue', type: 'number', options: { precision: 4 } },
-      { name: 'synergyScore', type: 'number', options: { precision: 4 } },
-      { name: 'emergentCapabilities', type: 'longText' },
-      { name: 'compoundConfidence', type: 'number', options: { precision: 4 } },
-      { name: 'evolutionPotential', type: 'number', options: { precision: 2 } }
+      { name: 'id', type: 'singleLineText' },
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'timestamp', type: 'number' },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'comparisonId', type: 'singleLineText' },
+      { name: 'trustDelta', type: 'number', options: { precision: 2 } },
+      { name: 'userSelection', type: 'singleSelect', options: ['sterile', 'canai', 'both', 'neither', 'skip'] },
+      { name: 'timeToSelection', type: 'number' },
+      { name: 'aweScore', type: 'number', options: { precision: 2 } },
+      { name: 'ownershipScore', type: 'number', options: { precision: 2 } },
+      { name: 'wonderScore', type: 'number', options: { precision: 2 } },
+      { name: 'calmScore', type: 'number', options: { precision: 2 } },
+      { name: 'powerScore', type: 'number', options: { precision: 2 } },
+      { name: 'competitiveAdvantage', type: 'number', options: { precision: 2 } },
+      { name: 'trustTransparencyScore', type: 'number', options: { precision: 2 } },
+      { name: 'emotionalEducationScore', type: 'number', options: { precision: 2 } },
+      { name: 'wouldRefer', type: 'checkbox' },
+      { name: 'sharedOutput', type: 'checkbox' },
+      { name: 'circuitBreakerTriggered', type: 'checkbox' },
+      { name: 'testId', type: 'singleLineText' },
+      { name: 'variantType', type: 'singleSelect', options: ['sterile', 'enhanced'] },
+      { name: 'conversionLift', type: 'number', options: { precision: 2 } },
+      { name: 'statisticalSignificance', type: 'number', options: { precision: 2 } },
+      { name: 'marketingReady', type: 'checkbox' },
+      { name: 'sterileOutput', type: 'longText' },
+      { name: 'enhancedOutput', type: 'longText' },
+      { name: 'educationalMoment', type: 'checkbox' },
+      { name: 'transparencyTrust', type: 'number', options: { precision: 2 } },
+      { name: 'viralPotential', type: 'number', options: { precision: 2 } },
+      { name: 'createdAt', type: 'dateTime' }
     ]
   },
 
-  '34_PredictiveModeling': {
+  // TIER 2: INTELLIGENCE TABLES (5 TABLES)
+  'GoldmineOutput': {
     fields: [
       { name: 'recordId', type: 'singleLineText' },
-      { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'modelId', type: 'singleLineText' },
-      { name: 'modelType', type: 'singleSelect', options: ['trust_prediction', 'behavior_forecast', 'emotional_trajectory', 'conversion_likelihood'] },
-      { name: 'predictionTarget', type: 'singleLineText' },
-      { name: 'predictionValue', type: 'number', options: { precision: 4 } },
-      { name: 'confidenceInterval', type: 'number', options: { precision: 4 } },
-      { name: 'modelAccuracy', type: 'number', options: { precision: 4 } },
-      { name: 'predictionHorizon', type: 'singleSelect', options: ['real_time', '1_hour', '1_day', '1_week', '1_month'] }
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'userId', type: 'singleLineText' },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'outputContent', type: 'longText' },
+      { name: 'outputHash', type: 'singleLineText' },
+      { name: 'resonanceScore', type: 'number', options: { precision: 2 } },
+      { name: 'trustScore', type: 'number', options: { precision: 2 } },
+      { name: 'industryCluster', type: 'singleLineText' },
+      { name: 'intentSummary', type: 'longText' },
+      { name: 'sparkConcept', type: 'singleLineText' },
+      { name: 'reuseCategory', type: 'singleLineText' },
+      { name: 'reusePotential', type: 'number', options: { precision: 2 } },
+      { name: 'compoundValue', type: 'number', options: { precision: 2 } },
+      { name: 'emotionalTone', type: 'singleLineText' },
+      { name: 'emotionalEnergy', type: 'singleLineText' },
+      { name: 'emotionalStyle', type: 'singleLineText' },
+      { name: 'emotionalVocabulary', type: 'singleLineText' },
+      { name: 'createdAt', type: 'dateTime' }
     ]
   },
 
-  '35_EvolutionTracking': {
+  'UserContext': {
     fields: [
-      { name: 'recordId', type: 'singleLineText' },
+      { name: 'id', type: 'singleLineText' },
+      { name: 'userId', type: 'singleLineText' },
+      { name: 'email', type: 'email' },
+      { name: 'timezone', type: 'singleLineText' },
+      { name: 'totalSessions', type: 'number' },
+      { name: 'preferredProducts', type: 'multipleSelects', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'preferredTone', type: 'singleLineText' },
+      { name: 'industryFocus', type: 'multipleSelects', options: ['technology', 'healthcare', 'finance', 'retail', 'education', 'manufacturing', 'services', 'nonprofit', 'government', 'other'] },
+      { name: 'businessGoals', type: 'multipleSelects', options: ['growth', 'efficiency', 'innovation', 'customer_satisfaction', 'cost_reduction', 'market_expansion', 'brand_building', 'digital_transformation'] },
+      { name: 'personalizationScore', type: 'number', options: { precision: 2 } },
+      { name: 'emotionalBaseline', type: 'singleLineText' },
+      { name: 'trustScore', type: 'number', options: { precision: 2 } },
+      { name: 'lifetimeValue', type: 'number', options: { precision: 2 } },
+      { name: 'churnRisk', type: 'number', options: { precision: 2 } },
+      { name: 'engagementTrend', type: 'singleSelect', options: ['increasing', 'stable', 'decreasing', 'new'] },
+      { name: 'preferences', type: 'longText' }, // JSON
+      { name: 'emotionalProfile', type: 'longText' }, // JSON
+      { name: 'sparkResonance', type: 'longText' }, // JSON
       { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'evolutionId', type: 'singleLineText' },
-      { name: 'evolutionStage', type: 'singleSelect', options: ['initial', 'developing', 'maturing', 'optimized', 'transcendent'] },
-      { name: 'evolutionMetrics', type: 'longText' },
-      { name: 'evolutionVelocity', type: 'number', options: { precision: 4 } },
-      { name: 'adaptationCapability', type: 'number', options: { precision: 2 } },
-      { name: 'evolutionDirection', type: 'singleSelect', options: ['emotional_depth', 'trust_building', 'predictive_accuracy', 'user_empowerment'] },
-      { name: 'nextEvolutionPrediction', type: 'longText' }
+      { name: 'updatedAt', type: 'dateTime' }
     ]
   },
 
-  '36_IntelligenceCompound': {
+  'EmotionalIntelligence': {
     fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'userId', type: 'singleLineText' },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'emotionalState', type: 'singleLineText' },
+      { name: 'aweScore', type: 'number', options: { precision: 2 } },
+      { name: 'ownershipScore', type: 'number', options: { precision: 2 } },
+      { name: 'wonderScore', type: 'number', options: { precision: 2 } },
+      { name: 'calmScore', type: 'number', options: { precision: 2 } },
+      { name: 'powerScore', type: 'number', options: { precision: 2 } },
+      { name: 'overallResonance', type: 'number', options: { precision: 2 } },
+      { name: 'trustScore', type: 'number', options: { precision: 2 } },
+      { name: 'confidenceScore', type: 'number', options: { precision: 2 } },
+      { name: 'timestamp', type: 'dateTime' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  'TrustMetrics': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'userId', type: 'singleLineText' },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'trustScore', type: 'number', options: { precision: 2 } },
+      { name: 'previousScore', type: 'number', options: { precision: 2 } },
+      { name: 'trustDelta', type: 'number', options: { precision: 2 } },
+      { name: 'source', type: 'singleLineText' },
+      { name: 'component', type: 'singleLineText' },
+      { name: 'reason', type: 'longText' },
+      { name: 'confidenceScore', type: 'number', options: { precision: 2 } },
+      { name: 'timestamp', type: 'dateTime' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  'PerformanceMetrics': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'apiCallId', type: 'singleLineText' },
+      { name: 'timestamp', type: 'dateTime' },
+      { name: 'responseTime', type: 'number' },
+      { name: 'tokensUsed', type: 'number' },
+      { name: 'cost', type: 'number', options: { precision: 4 } },
+      { name: 'modelUsed', type: 'singleLineText' },
+      { name: 'success', type: 'checkbox' },
+      { name: 'errorMessage', type: 'longText' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  // TIER 3: INTEGRATION INFRASTRUCTURE (5 TABLES)
+  'WebhookLogs': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'webhookType', type: 'singleLineText' },
+      { name: 'payload', type: 'longText' }, // JSON
+      { name: 'deliveryStatus', type: 'singleSelect', options: ['success', 'failed', 'pending', 'retry'] },
+      { name: 'responseCode', type: 'number' },
+      { name: 'responseTime', type: 'number' },
+      { name: 'retryCount', type: 'number' },
+      { name: 'timestamp', type: 'dateTime' },
+      { name: 'errorMessage', type: 'longText' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  'AirtableSync': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'sourceTable', type: 'singleLineText' },
       { name: 'recordId', type: 'singleLineText' },
+      { name: 'syncStatus', type: 'singleSelect', options: ['pending', 'success', 'failed', 'retry'] },
+      { name: 'lastSyncAttempt', type: 'dateTime' },
+      { name: 'syncDuration', type: 'number' },
+      { name: 'errorMessage', type: 'longText' },
+      { name: 'retryCount', type: 'number' },
       { name: 'createdAt', type: 'dateTime' },
-      { name: 'updatedAt', type: 'dateTime' },
-      { name: 'compoundId', type: 'singleLineText' },
-      { name: 'intelligenceTypes', type: 'multipleSelects', options: ['emotional', 'analytical', 'predictive', 'creative', 'empathetic'] },
-      { name: 'compoundScore', type: 'number', options: { precision: 4 } },
-      { name: 'emergentProperties', type: 'longText' },
-      { name: 'compoundEvolution', type: 'longText' },
-      { name: 'transcendenceIndicators', type: 'multipleSelects', options: ['breakthrough_moments', 'trust_transcendence', 'emotional_sovereignty', 'predictive_mastery'] },
-      { name: 'futureCapabilityPrediction', type: 'longText' }
+      { name: 'updatedAt', type: 'dateTime' }
+    ]
+  },
+
+  'ErrorLogs': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'errorType', type: 'singleLineText' },
+      { name: 'errorMessage', type: 'longText' },
+      { name: 'stackTrace', type: 'longText' },
+      { name: 'severity', type: 'singleSelect', options: ['low', 'medium', 'high', 'critical'] },
+      { name: 'resolved', type: 'checkbox' },
+      { name: 'timestamp', type: 'dateTime' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  'ProcessingResults': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'sessionId', type: 'singleLineText' },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'processingStage', type: 'singleLineText' },
+      { name: 'status', type: 'singleSelect', options: ['pending', 'processing', 'completed', 'failed'] },
+      { name: 'startTime', type: 'dateTime' },
+      { name: 'endTime', type: 'dateTime' },
+      { name: 'duration', type: 'number' },
+      { name: 'resultData', type: 'longText' }, // JSON
+      { name: 'errorMessage', type: 'longText' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  'SystemHealth': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'component', type: 'singleLineText' },
+      { name: 'healthStatus', type: 'singleSelect', options: ['healthy', 'warning', 'critical', 'down'] },
+      { name: 'responseTime', type: 'number' },
+      { name: 'errorRate', type: 'number', options: { precision: 4 } },
+      { name: 'throughput', type: 'number' },
+      { name: 'lastCheck', type: 'dateTime' },
+      { name: 'alertTriggered', type: 'checkbox' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  // TIER 4: REFERENCE TABLES (5 TABLES)
+  'PromptTypes': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'promptType', type: 'singleLineText' },
+      { name: 'displayName', type: 'singleLineText' },
+      { name: 'description', type: 'longText' },
+      { name: 'category', type: 'singleLineText' },
+      { name: 'isActive', type: 'checkbox' },
+      { name: 'defaultTone', type: 'singleLineText' },
+      { name: 'estimatedTokens', type: 'number' },
+      { name: 'complexity', type: 'singleSelect', options: ['simple', 'medium', 'complex'] },
+      { name: 'fieldCount', type: 'number' },
+      { name: 'hasNestedObjects', type: 'checkbox' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  'EmotionalStates': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'stateName', type: 'singleLineText' },
+      { name: 'category', type: 'singleSelect', options: ['positive', 'negative', 'neutral'] },
+      { name: 'intensity', type: 'singleSelect', options: ['low', 'medium', 'high'] },
+      { name: 'description', type: 'longText' },
+      { name: 'recommendedTone', type: 'singleLineText' },
+      { name: 'isActive', type: 'checkbox' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  'TrustFactors': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'factorName', type: 'singleLineText' },
+      { name: 'category', type: 'singleSelect', options: ['transparency', 'competence', 'reliability'] },
+      { name: 'impact', type: 'singleSelect', options: ['low', 'medium', 'high'] },
+      { name: 'description', type: 'longText' },
+      { name: 'applicableProducts', type: 'multipleSelects', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'isActive', type: 'checkbox' },
+      { name: 'createdAt', type: 'dateTime' }
+    ]
+  },
+
+  'SystemConfigs': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'configKey', type: 'singleLineText' },
+      { name: 'configValue', type: 'longText' },
+      { name: 'category', type: 'singleLineText' },
+      { name: 'description', type: 'longText' },
+      { name: 'isActive', type: 'checkbox' },
+      { name: 'lastUpdated', type: 'dateTime' },
+      { name: 'updatedBy', type: 'singleLineText' }
+    ]
+  },
+
+  'AnalyticsAggregates': {
+    fields: [
+      { name: 'id', type: 'singleLineText' },
+      { name: 'aggregateType', type: 'singleSelect', options: ['daily', 'weekly', 'monthly'] },
+      { name: 'promptType', type: 'singleSelect', options: ['ad_amplify', 'blogblitz', 'profile_makeover', 'business_plan', 'email_campaign', 'site_audit', 'social_content', 'reverse_strategy', 'ai_blueprint', 'ai_brand_identity', 'spark_split'] },
+      { name: 'dateRange', type: 'singleLineText' },
+      { name: 'totalSessions', type: 'number' },
+      { name: 'averageTrustScore', type: 'number', options: { precision: 2 } },
+      { name: 'averageResonanceScore', type: 'number', options: { precision: 2 } },
+      { name: 'totalTokensUsed', type: 'number' },
+      { name: 'totalCostUSD', type: 'number', options: { precision: 4 } },
+      { name: 'computedAt', type: 'dateTime' }
     ]
   }
 }
@@ -280,7 +387,7 @@ async function createMissingTables() {
   let skippedCount = 0
   let errorCount = 0
   
-  for (const [tableName, schema] of Object.entries(ALL_TABLE_SCHEMAS)) {
+  for (const [tableName, schema] of Object.entries(OPTIMIZED_18_TABLE_SCHEMAS)) {
     try {
       console.log(`🔧 Creating table: ${tableName}`)
       
@@ -308,9 +415,8 @@ async function createMissingTables() {
   
   console.log(`\n🎯 NEXT STEPS FOR COMPLETE SETUP:`)
   console.log(`1. 📋 Use prepared schemas to create tables manually in Airtable`)
-  console.log(`2. 📁 Import CSV templates from: airtable-csv-imports/`)
-  console.log(`3. 🔧 Run validation script to confirm all 36 tables`)
-  console.log(`4. 🚀 Launch complete data collection infrastructure`)
+  console.log(`2. 🔧 Use direct API integration for 18-table architecture`)
+  console.log(`3. 🔧 Run validation script to confirm all 18 tables`)
   
   return { createdCount, errorCount }
 }
@@ -319,7 +425,7 @@ async function createMissingTables() {
 async function generateCSVTemplates() {
   console.log("\n📁 Generating CSV import templates...")
   
-  for (const [tableName, schema] of Object.entries(ALL_TABLE_SCHEMAS)) {
+  for (const [tableName, schema] of Object.entries(OPTIMIZED_18_TABLE_SCHEMAS)) {
     const headers = schema.fields.map(field => field.name).join(',')
     const sampleRow = schema.fields.map(field => {
       switch (field.type) {
@@ -349,9 +455,9 @@ async function runCompleteSetup() {
   await generateCSVTemplates()
   
   console.log(`\n🌟 STRATEGIC SETUP COMPLETE!`)
-  console.log(`✅ All 16 missing table schemas prepared`)
+  console.log(`✅ All 18 missing table schemas prepared`)
   console.log(`✅ CSV import templates generated`)
-  console.log(`✅ Complete 36-table infrastructure ready`)
+  console.log(`✅ Complete 18-table infrastructure ready`)
   console.log(`✅ Zero future integration bottlenecks`)
   
   console.log(`\n🚀 COMPETITIVE ADVANTAGES UNLOCKED:`)

@@ -54,7 +54,7 @@ const TABLE_DEFINITIONS = [
       { name: "updatedAt", type: "dateTime" },
       { name: "sessionId", type: "singleLineText" },
       { name: "userId", type: "singleLineText" },
-      { name: "promptType", type: "singleSelect", options: ["ai_blueprint", "business_plan", "email_campaign", "site_audit", "social_content", "reverse_strategy", "ai_brand_identity", "profile_makeover", "blogblitz", "ad_amplify"] },
+      { name: "promptType", type: "singleSelect", options: ["ai_blueprint", "business_plan", "email_campaign", "site_audit", "social_content", "reverse_strategy", "ai_brand_identity", "profile_makeover", "blogblitz", "ad_amplify", "sparksplit"] },
       { name: "intent", type: "singleLineText" },
       { name: "inputs", type: "longText" },
       { name: "outputs", type: "longText" },

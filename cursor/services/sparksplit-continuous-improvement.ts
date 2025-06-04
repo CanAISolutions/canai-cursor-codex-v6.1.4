@@ -5,6 +5,7 @@
  */
 
 import { SparkSplitABTestingEngine, ABTestVariant, BenchmarkResult } from './sparksplit-ab-testing-engine';
+import { ABTestResult } from './spark-split-ab-testing-engine';
 import { SparkSplitEngine, SparkSplitInput } from './spark-split-engine';
 import { SacredMomentsOrchestrator } from './sacred-moments-orchestrator';
 
@@ -317,8 +318,25 @@ export class SparkSplitContinuousImprovement {
   }
 
   private getVariantUsedForSession(sessionId: string): string {
-    // Implementation to track which variant was used for a session
-    return 'baseline'; // Placeholder
+    // Check active experiments for this session
+    const experiment = this.activeExperiments.get(sessionId);
+    if (experiment) {
+      // Return the variant that was actually used in the experiment
+      const winningVariant = experiment.canaiVariants.find(v => v.variant.active);
+      return winningVariant?.variant.name || 'enhanced';
+    }
+    
+    // Check if session used A/B testing engine
+    const abTestResult = this.abTestingEngine['testHistory']?.find((test: any) => 
+      test.sessionId === sessionId
+    );
+    
+    if (abTestResult) {
+      return abTestResult.winningVariant.type;
+    }
+    
+    // Default to enhanced variant for CanAI sessions
+    return 'enhanced';
   }
 
   private async generateImprovementInsights(
@@ -477,13 +495,30 @@ export class SparkSplitContinuousImprovement {
   }
 
   private async shouldTestToday(): Promise<boolean> {
-    // Check if we've already tested today
-    return true; // Placeholder
+    // Check if we've already tested today based on evolution history
+    const today = new Date().toISOString().split('T')[0];
+    const todayTests = this.evolutionHistory.filter(report => 
+      report.period.includes(today)
+    );
+    
+    // Allow testing if we haven't reached daily limit
+    const dailyTestLimit = 5;
+    return todayTests.length < dailyTestLimit;
   }
 
   private async shouldTestThisWeek(): Promise<boolean> {
-    // Check if we've already tested this week
-    return true; // Placeholder
+    // Check if we've already tested this week based on evolution history
+    const now = new Date();
+    const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+    const weekStartStr = weekStart.toISOString().split('T')[0];
+    
+    const weekTests = this.evolutionHistory.filter(report => 
+      new Date(report.period) >= weekStart
+    );
+    
+    // Allow testing if we haven't reached weekly limit
+    const weeklyTestLimit = 20;
+    return weekTests.length < weeklyTestLimit;
   }
 
   private amplifyEmotionalContext(context: any, multiplier: number): any {
@@ -494,5 +529,68 @@ export class SparkSplitContinuousImprovement {
   private enhancePersonalization(context: any, level: number): any {
     // Apply personalization enhancement
     return context;
+  }
+
+  /**
+   * Determines the optimal variant based on test results and performance metrics
+   */
+  private determineOptimalVariant(testResults: ABTestResult[]): string {
+    if (testResults.length === 0) {
+      return 'enhanced'; // Default to enhanced variant
+    }
+
+    // Calculate win rates for each variant type
+    const enhancedWins = testResults.filter(r => r.winningVariant.type === 'enhanced').length;
+    const sterileWins = testResults.filter(r => r.winningVariant.type === 'sterile').length;
+    
+    const enhancedWinRate = enhancedWins / testResults.length;
+    const sterileWinRate = sterileWins / testResults.length;
+    
+    // Calculate average performance metrics
+    const enhancedAvgTrust = testResults
+      .filter(r => r.winningVariant.type === 'enhanced')
+      .reduce((sum, r) => sum + r.trustScoreDelta, 0) / (enhancedWins || 1);
+      
+    const sterileAvgTrust = testResults
+      .filter(r => r.winningVariant.type === 'sterile')
+      .reduce((sum, r) => sum + r.trustScoreDelta, 0) / (sterileWins || 1);
+
+    // Enhanced variant wins if it has >60% win rate OR significantly higher trust scores
+    if (enhancedWinRate > 0.6 || (enhancedWinRate >= 0.5 && enhancedAvgTrust > sterileAvgTrust + 0.3)) {
+      return 'enhanced';
+    }
+    
+    // Otherwise use sterile as baseline
+    return 'sterile';
+  }
+
+  /**
+   * Determines if a variant should be updated based on performance improvement
+   */
+  private shouldUpdateVariant(currentPerformance: number, newPerformance: number): boolean {
+    // Require at least 5% improvement to justify update
+    const improvementThreshold = 0.05;
+    const improvementRatio = (newPerformance - currentPerformance) / currentPerformance;
+    
+    return improvementRatio > improvementThreshold;
+  }
+
+  /**
+   * Determines if enough data exists to make optimization decisions
+   */
+  private hasEnoughDataForOptimization(testResults: ABTestResult[]): boolean {
+    // Require minimum number of tests and statistical significance
+    const minimumTests = 10;
+    const minimumConfidence = 0.85;
+    
+    if (testResults.length < minimumTests) {
+      return false;
+    }
+    
+    // Check if we have statistically significant results
+    const significantResults = testResults.filter(r => r.statisticalSignificance).length;
+    const significanceRatio = significantResults / testResults.length;
+    
+    return significanceRatio >= minimumConfidence;
   }
 } 

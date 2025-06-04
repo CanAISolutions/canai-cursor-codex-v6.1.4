@@ -47,12 +47,14 @@ export class PerformanceMonitor {
   private activeMetrics: Map<string, PerformanceMetric>;
   private completedMetrics: PerformanceMetric[];
   private benchmarks: Map<string, PerformanceBenchmark>;
+  private currentSession: { name: string; startTime: number; endTime?: number } | null;
 
   private constructor() {
     this.eventBus = EventBus.getInstance();
     this.activeMetrics = new Map();
     this.completedMetrics = [];
     this.benchmarks = new Map();
+    this.currentSession = null;
     this.initializeBenchmarks();
     this.initializeEventListeners();
   }
@@ -374,6 +376,60 @@ export class PerformanceMonitor {
    */
   public setBenchmark(operation: string, benchmark: PerformanceBenchmark): void {
     this.benchmarks.set(operation, benchmark);
+  }
+
+  /**
+   * Starts a performance session for testing
+   */
+  public startSession(sessionName: string): void {
+    this.currentSession = {
+      name: sessionName,
+      startTime: performance.now()
+    };
+  }
+
+  /**
+   * Ends the current session and returns duration
+   */
+  public endSession(): number | null {
+    if (!this.currentSession) {
+      // Return the last session duration if available
+      return this.getLastSessionDuration();
+    }
+    
+    this.currentSession.endTime = performance.now();
+    const duration = this.currentSession.endTime - this.currentSession.startTime;
+    
+    // Store the completed session for potential retrieval
+    const completedSession = { ...this.currentSession };
+    this.currentSession = null;
+    
+    // Store last session for retrieval
+    (this as any).lastCompletedSession = completedSession;
+    
+    return duration;
+  }
+
+  /**
+   * Gets the duration of the last completed session
+   */
+  public getLastSessionDuration(): number {
+    // Check for stored completed session first
+    const lastSession = (this as any).lastCompletedSession;
+    if (lastSession && lastSession.endTime) {
+      return lastSession.endTime - lastSession.startTime;
+    }
+    
+    if (this.currentSession && this.currentSession.endTime) {
+      return this.currentSession.endTime - this.currentSession.startTime;
+    }
+    
+    // If session is still active, return current duration
+    if (this.currentSession) {
+      return performance.now() - this.currentSession.startTime;
+    }
+    
+    return 0;
   }
 
   private calculateThroughput(metrics: PerformanceMetric[]): number {

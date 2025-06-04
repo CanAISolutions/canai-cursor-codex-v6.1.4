@@ -1,6 +1,6 @@
 # Legacy Pre-Codex Test Archive
 
-**Archive Date**: 2025-01-27  
+**Archive Date**: 2025-05-27  
 **Archived By**: DreamState Enhancement Focus Initiative  
 **Reason**: Focusing exclusively on DreamState Test Suite and identified enhancements
 

@@ -74,7 +74,8 @@ const TABLE_DEFINITIONS = [
             { name: "ai_brand_identity" },
             { name: "profile_makeover" },
             { name: "blogblitz" },
-            { name: "ad_amplify" }
+            { name: "ad_amplify" },
+            { name: "sparksplit" }
           ]
         }
       },

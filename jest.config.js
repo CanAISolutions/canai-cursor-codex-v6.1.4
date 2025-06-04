@@ -4,6 +4,7 @@
  * @purpose Configure Jest for DreamState-only testing with legacy test exclusion and enhanced emotional sovereignty validation
  */
 
+/* eslint-env node */
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: 'ts-jest',
@@ -17,6 +18,9 @@ module.exports = {
     // DreamState tests - our revolutionary emotional sovereignty test suite
     '**/tests/dreamstate/**/*.test.ts',
     '**/tests/dreamstate/**/*.test.js',
+    
+    // MCP remediation tests - for prompt issues resolution
+    '**/tests/prompts/**/*.test.ts',
     
     // Supporting infrastructure tests
     '**/src/**/*.test.ts',
@@ -90,11 +94,7 @@ module.exports = {
   verbose: false,
   
   // 🎯 DREAMSTATE-SPECIFIC CONFIGURATION
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json'
-    }
-  },
+  // ts-jest configuration now handled in transform section above
   
   // 🔍 SNAPSHOT CONFIGURATION
   snapshotSerializers: [],

@@ -84,7 +84,7 @@ class SnapshotApprovalGate {
     private eventBus: EventBus
   ) {}
 
-  async validate(outputPayload: OutputPayload, requestedTone: string = 'professional'): Promise<SnapshotApprovalResult> {
+  async validate(outputPayload: OutputPayload, requestedTone = 'professional'): Promise<SnapshotApprovalResult> {
     const traceId = outputPayload.traceId;
     const rejectionReasons: string[] = [];
 
@@ -297,7 +297,7 @@ class OutputStructureValidator {
 
 // Real SnapshotMetadataAnnotator implementation
 class SnapshotMetadataAnnotator {
-  annotateSnapshot(payload: OutputPayload, approvalResult: SnapshotApprovalResult, requestedTone: string = 'professional'): SnapshotMetadata {
+  annotateSnapshot(payload: OutputPayload, approvalResult: SnapshotApprovalResult, requestedTone = 'professional'): SnapshotMetadata {
     const driftAnalysis = this.analyzeEmotionalDrift(requestedTone, approvalResult.emotionalTone, approvalResult.metadata.toneScore, payload.content);
     
     return {
@@ -537,7 +537,8 @@ describe('DreamState: snapshot-approval-gate', () => {
     expect(result.metadata.agentLineage).toContain('strategy-agent');
     expect(result.metadata.fallbackChain).toContain('emotional_continuity_preserved');
 
-    // Validate event logging
+    // Validate event logging - USE GLOBAL EVENT LOG
+    const eventLog = global.eventLog || [];
     expect(eventLog).toHaveLength(1);
     expect(eventLog[0].data.isApproved).toBe(true);
     expect(eventLog[0].data.trustScore).toBe(0.92);
@@ -579,7 +580,8 @@ describe('DreamState: snapshot-approval-gate', () => {
     expect(result.fallbackMessage).not.toContain('error');
     expect(result.fallbackMessage).not.toContain('failed');
 
-    // Validate event logging
+    // Validate event logging - USE GLOBAL EVENT LOG
+    const eventLog = global.eventLog || [];
     expect(eventLog).toHaveLength(1);
     expect(eventLog[0].data.isApproved).toBe(false);
     expect(eventLog[0].data.rejectionReasons).toContain('Trust score below threshold: 0.65 < 0.75');
@@ -946,6 +948,7 @@ describe('DreamState: snapshot-approval-gate', () => {
     expect(result.fallbackMessage).not.toContain('error');
 
     // Validate comprehensive event logging
+    const eventLog = global.eventLog || [];
     expect(eventLog).toHaveLength(1);
     expect(eventLog[0].data.isApproved).toBe(false);
     expect(eventLog[0].data.rejectionReasons).toHaveLength(4);

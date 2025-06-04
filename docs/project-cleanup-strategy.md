@@ -204,7 +204,7 @@ interface FileClassifier {
     "path/to/file.ts": {
       "tags": ["PROD-CORE", "DEV-TEST", "TEMPORAL-EVOLVED"],
       "confidence": 0.95,
-      "lastUsed": "2025-01-27",
+      "lastUsed": "2025-05-27",
       "createdDate": "2024-12-15",
       "lastModified": "2025-06-10",
       "agentEraRelevance": "HIGH",

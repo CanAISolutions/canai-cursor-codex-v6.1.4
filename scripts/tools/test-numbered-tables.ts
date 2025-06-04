@@ -22,21 +22,13 @@ if (!AIRTABLE_API_KEY || !BASE_ID) {
 
 const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(BASE_ID)
 
-// Complete list of 36 tables as they should appear in the Airtable interface
+// Complete list of 18 tables as they should appear in the Airtable interface
 const ALL_CANAI_TABLES = [
-  // Core Analytics & Intelligence Tables (1-12)
-  '01_PromptLogs',
-  '02_SparkSplitAnalytics', 
-  '03_SessionAnalytics',
-  '04_UserContext',
-  '05_OutputGoldmine',
-  '06_FeedbackLogs',
-  '07_DeliveryCostLogs',
-  '08_ReferralTriggers',
-  '09_AIMiningAgents',
-  '10_FieldGlossary',
-  '11_SchemaEvents',
-  '12_EmotionalCompass',
+  // 18-Table Optimized Architecture
+  '01_PromptLogs', '02_SessionAnalytics', '03_SparkSplitAnalytics', '04_GoldmineOutput', '05_UserContext',
+  '06_EmotionalIntelligence', '07_TrustMetrics', '08_PerformanceMetrics', '09_WebhookLogs', '10_AirtableSync',
+  '11_ErrorLogs', '12_ProcessingResults', '13_SystemHealth', '14_PromptTypes', '15_EmotionalStates',
+  '16_TrustFactors', '17_SystemConfigs', '18_AnalyticsAggregates',
   
   // Advanced Intelligence Tables (13-24)
   '13_TrustMetrics',
@@ -68,7 +60,7 @@ const ALL_CANAI_TABLES = [
 ]
 
 async function testAllCanAITables() {
-  console.log("\n🔍 Testing all 36 CanAI tables from Airtable interface...")
+  console.log("\n🔍 Testing all 18 CanAI tables from Airtable interface...")
   console.log(`📋 Base ID: ${BASE_ID}`)
   console.log(`🎯 Expected tables: ${ALL_CANAI_TABLES.length}`)
   
@@ -109,7 +101,7 @@ async function testAllCanAITables() {
     
     console.log(`\n💡 NEXT STEPS FOR MISSING TABLES:`)
     console.log(`   1. Create missing tables manually in Airtable interface`)
-    console.log(`   2. Use CSV import files from: airtable-csv-imports/`)
+    console.log(`   2. Use direct API integration for 18-table architecture`)
     console.log(`   3. Follow setup guide: scripts/tools/airtable-complete-setup-guide.md`)
   }
   
@@ -120,7 +112,7 @@ async function testAllCanAITables() {
     console.log(`✅ SparkSplit trust transparency engine operational`)
     
     if (accessibleTables.length === ALL_CANAI_TABLES.length) {
-      console.log(`\n🌟 PERFECT! ALL 36 TABLES OPERATIONAL!`)
+      console.log(`\n🌟 PERFECT! ALL 18 TABLES OPERATIONAL!`)
       console.log(`🚀 Complete CanAI emotional sovereignty platform ready!`)
     }
     

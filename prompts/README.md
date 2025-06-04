@@ -80,10 +80,10 @@ export const [ProductName]Contract = {
 
 ## 🔗 Integration Points
 
-### **Airtable Infrastructure**
-- **Field Mapping**: Direct correspondence with `/infra/airtable/fields/prompt-logs-fields.json`
-- **Data Types**: Aligned with Airtable field types
-- **Validation Rules**: Consistent with Airtable constraints
+### **18-Table Integration**
+- **Field Mapping**: Direct correspondence with 18-table optimized architecture
+- **Data Types**: Aligned with new field specifications
+- **Validation Rules**: Consistent with interface catalog constraints
 - **Storage Logic**: Proper PII and sensitivity handling
 
 ### **Template System**

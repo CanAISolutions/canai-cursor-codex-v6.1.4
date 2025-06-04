@@ -18,13 +18,13 @@ import * as os from 'os';
 
 // FileSystemWrapper for chaos testing without overriding built-ins
 class FileSystemWrapper {
-  private simulateFailure: boolean = false;
+  private simulateFailure = false;
   private failureType: 'write_error' | 'corruption' | null = null;
-  private traceId: string = '';
+  private traceId = '';
 
   constructor() {}
 
-  setFailureMode(enabled: boolean, type: 'write_error' | 'corruption' | null = null, traceId: string = '') {
+  setFailureMode(enabled: boolean, type: 'write_error' | 'corruption' | null = null, traceId = '') {
     this.simulateFailure = enabled;
     this.failureType = type;
     this.traceId = traceId;
@@ -264,6 +264,16 @@ describe('DreamState: chaos-disk-failure', () => {
     } catch (error) {
       // Expected error path - this triggers fallback mechanisms
       fallbackTriggered = true;
+      
+      // ADD MISSING: Emit system:io:failure event for chaos test capture
+      await eventBus.emit('system:io:failure', {
+        type: 'system:io:failure',
+        timestamp: new Date().toISOString(),
+        error: (error as Error).message,
+        severity: 'high',
+        traceId: initialPayload.traceId,
+        failureType: failureType
+      });
     }
     
     // Wait for recovery to complete

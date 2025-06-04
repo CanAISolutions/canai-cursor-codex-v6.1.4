@@ -632,7 +632,8 @@ describe('DreamState: system-resilience-core', () => {
   let traceManager: TraceManager;
   let snapshotManager: SnapshotManager;
   let eventBus: EventBus;
-  let eventLog: any[];
+  // Helper function to access global event log
+  const getEventLog = () => global.eventLog || [];
 
   beforeAll(() => {
     eventBus = EventBus.getInstance();
@@ -655,7 +656,8 @@ describe('DreamState: system-resilience-core', () => {
       eventBus
     );
 
-    eventLog = [];
+    // Initialize global event log
+    global.eventLog = [];
 
     // Track all system events for validation
     const eventTypes = [
@@ -667,7 +669,8 @@ describe('DreamState: system-resilience-core', () => {
 
     eventTypes.forEach(eventType => {
       eventBus.on(eventType, async (data) => {
-        eventLog.push({
+        if (!global.eventLog) global.eventLog = [];
+        global.eventLog.push({
           type: eventType,
           data,
           timestamp: new Date().toISOString()
@@ -677,7 +680,7 @@ describe('DreamState: system-resilience-core', () => {
   });
 
   beforeEach(() => {
-    eventLog = [];
+    global.eventLog = [];
     snapshotManager.clear();
   });
 
@@ -714,8 +717,8 @@ describe('DreamState: system-resilience-core', () => {
     expect(metrics.fallbackDepth).toBeGreaterThan(0);
 
     // Validate graceful termination
-    const fallbackEvents = eventLog.filter(e => e.type === 'fallback:activated');
-    const recoveryEvents = eventLog.filter(e => e.type === 'fallback:recovered');
+    const fallbackEvents = getEventLog().filter(e => e.type === 'fallback:activated');
+    const recoveryEvents = getEventLog().filter(e => e.type === 'fallback:recovered');
     expect(fallbackEvents.length).toBeGreaterThan(0);
     expect(recoveryEvents.length).toBeGreaterThan(0);
 
@@ -755,11 +758,11 @@ describe('DreamState: system-resilience-core', () => {
     const metrics = await systemOrchestrator.executeCompoundFailureScenario(scenario);
 
     // Validate input sanitization occurred
-    const sanitizationEvents = eventLog.filter(e => e.type === 'inputSanitizationCorrection');
+    const sanitizationEvents = getEventLog().filter(e => e.type === 'inputSanitizationCorrection');
     expect(sanitizationEvents.length).toBeGreaterThan(0);
 
     // Validate warm UX messaging
-    const uxEvents = eventLog.filter(e => e.type === 'emotional-ux-rendered');
+    const uxEvents = getEventLog().filter(e => e.type === 'emotional-ux-rendered');
     expect(uxEvents.length).toBeGreaterThan(0);
 
     // Validate trust score maintained
@@ -810,14 +813,14 @@ describe('DreamState: system-resilience-core', () => {
     const metrics = await systemOrchestrator.executeCompoundFailureScenario(scenario);
 
     // Validate fallback and recovery occurred
-    const fallbackEvents = eventLog.filter(e => e.type === 'fallback:activated');
-    const recoveryEvents = eventLog.filter(e => e.type === 'fallback:recovered');
+    const fallbackEvents = getEventLog().filter(e => e.type === 'fallback:activated');
+    const recoveryEvents = getEventLog().filter(e => e.type === 'fallback:recovered');
     expect(fallbackEvents.length).toBeGreaterThan(0);
     expect(recoveryEvents.length).toBeGreaterThan(0);
 
     // Validate replay events
-    const snapshotEvents = eventLog.filter(e => e.type === 'snapshot-approved');
-    const replayEvents = eventLog.filter(e => e.type === 'snapshot-replayed');
+    const snapshotEvents = getEventLog().filter(e => e.type === 'snapshot-approved');
+    const replayEvents = getEventLog().filter(e => e.type === 'snapshot-replayed');
     expect(snapshotEvents.length).toBeGreaterThan(0);
     expect(replayEvents.length).toBeGreaterThan(0);
 
@@ -911,14 +914,14 @@ describe('DreamState: system-resilience-core', () => {
     const metrics = await systemOrchestrator.executeCompoundFailureScenario(scenario);
 
     // Validate tone correction fallback
-    const fallbackEvents = eventLog.filter(e => e.type === 'fallback:activated');
+    const fallbackEvents = getEventLog().filter(e => e.type === 'fallback:activated');
     const toneCorrectionEvents = fallbackEvents.filter(e => 
       e.data.state?.reason === 'tone-mismatch-correction'
     );
     expect(toneCorrectionEvents.length).toBeGreaterThan(0);
 
     // Validate trust score adjustment
-    const trustEvents = eventLog.filter(e => e.type === 'trust-score:updated');
+    const trustEvents = getEventLog().filter(e => e.type === 'trust-score:updated');
     const toneCorrectionTrustEvents = trustEvents.filter(e => 
       e.data.eventType === 'tone-correction'
     );
@@ -988,7 +991,7 @@ describe('DreamState: system-resilience-core', () => {
     expect(metrics.emotionalDrift).toBeLessThan(0.3);
 
     // Validate all event types logged
-    const eventTypes = new Set(eventLog.map(e => e.type));
+    const eventTypes = new Set(getEventLog().map(e => e.type));
     expect(eventTypes.has('inputSanitizationCorrection')).toBe(true);
     expect(eventTypes.has('fallback:activated')).toBe(true);
     expect(eventTypes.has('snapshot-approved')).toBe(true);
@@ -1031,11 +1034,11 @@ describe('DreamState: system-resilience-core', () => {
     const metrics = await systemOrchestrator.executeCompoundFailureScenario(scenario);
 
     // Validate injection was detected and sanitized
-    const sanitizationEvents = eventLog.filter(e => e.type === 'inputSanitizationCorrection');
+    const sanitizationEvents = getEventLog().filter(e => e.type === 'inputSanitizationCorrection');
     expect(sanitizationEvents.length).toBeGreaterThan(0);
 
     // Validate security UX rendering
-    const uxEvents = eventLog.filter(e => e.type === 'emotional-ux-rendered');
+    const uxEvents = getEventLog().filter(e => e.type === 'emotional-ux-rendered');
     expect(uxEvents.length).toBeGreaterThan(0);
 
     // Validate trust preserved despite security incident
@@ -1082,12 +1085,12 @@ describe('DreamState: system-resilience-core', () => {
     const metrics = await systemOrchestrator.executeCompoundFailureScenario(scenario);
 
     // Validate key rotation event occurred
-    const keyRotationEvents = eventLog.filter(e => e.type === 'snapshot-key-rotation');
+    const keyRotationEvents = getEventLog().filter(e => e.type === 'snapshot-key-rotation');
     expect(keyRotationEvents.length).toBeGreaterThan(0);
 
     // Validate fallback and recovery
-    const fallbackEvents = eventLog.filter(e => e.type === 'fallback:activated');
-    const recoveryEvents = eventLog.filter(e => e.type === 'fallback:recovered');
+    const fallbackEvents = getEventLog().filter(e => e.type === 'fallback:activated');
+    const recoveryEvents = getEventLog().filter(e => e.type === 'fallback:recovered');
     expect(fallbackEvents.length).toBeGreaterThan(0);
     expect(recoveryEvents.length).toBeGreaterThan(0);
 
@@ -1127,8 +1130,8 @@ describe('DreamState: system-resilience-core', () => {
     const metrics = await systemOrchestrator.executeCompoundFailureScenario(scenario);
 
     // Validate trace loss and recovery events
-    const lossEvents = eventLog.filter(e => e.type === 'trace-span-lost');
-    const recoveryEvents = eventLog.filter(e => e.type === 'trace-span-recovered');
+    const lossEvents = getEventLog().filter(e => e.type === 'trace-span-lost');
+    const recoveryEvents = getEventLog().filter(e => e.type === 'trace-span-recovered');
     expect(lossEvents.length).toBeGreaterThan(0);
     expect(recoveryEvents.length).toBeGreaterThan(0);
 

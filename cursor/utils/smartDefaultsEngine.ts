@@ -69,6 +69,7 @@ export class SmartDefaultsEngine {
   recordSuccessfulDefaults(defaults: Omit<SmartDefaults, 'confidence' | 'source'>, context: string): void {
     // Record in session engine
     this.sessionEngine.recordSpark({
+      id: `defaults-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       sparkName: 'defaults',
       promptType: 'discovery_funnel',
       trustScore: this.TRUST_THRESHOLD,
@@ -247,13 +248,13 @@ export class SmartDefaultsEngine {
     this.eventBus.on('DEFAULTS_REJECTED', this.handleDefaultsRejected.bind(this));
   }
 
-  private handleDefaultsApplied(event: any): void {
+  private async handleDefaultsApplied(event: any): Promise<void> {
     if (event.defaults && event.context) {
       this.recordSuccessfulDefaults(event.defaults, event.context);
     }
   }
 
-  private handleDefaultsRejected(event: any): void {
+  private async handleDefaultsRejected(event: any): Promise<void> {
     this.airtableLogger.logDefaultRejection({
       defaults: event.defaults,
       context: event.context,

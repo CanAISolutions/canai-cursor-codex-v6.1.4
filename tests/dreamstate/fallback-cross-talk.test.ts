@@ -78,7 +78,7 @@ interface UXRenderResult {
 
 // Emotional UX Renderer for cross-talk testing
 class EmotionalUXRenderer {
-  renderPayload(payload: any, renderContext: string = 'standard', agentId: string = 'default'): UXRenderResult {
+  renderPayload(payload: any, renderContext = 'standard', agentId = 'default'): UXRenderResult {
     // If renderContext indicates fallback, use fallback UI
     if (renderContext.includes('fallback') || 
         renderContext === 'GPT delay' || 
@@ -154,7 +154,7 @@ class EmotionalUXRenderer {
     };
   }
   
-  renderFallbackUI(payload: any, renderContext: string = 'standard', forcedScenario?: string, agentId: string = 'default'): UXRenderResult {
+  renderFallbackUI(payload: any, renderContext = 'standard', forcedScenario?: string, agentId = 'default'): UXRenderResult {
     const scenario = forcedScenario || renderContext;
     
     let helperText = 'Something went wrong. Let\'s try again.';
@@ -313,7 +313,7 @@ class AgentContainer {
   }
   
   // Render payload in this agent context
-  renderPayload(payload: any, renderContext: string = 'standard'): UXRenderResult {
+  renderPayload(payload: any, renderContext = 'standard'): UXRenderResult {
     return this.renderer.renderPayload(payload, renderContext, this.agentId);
   }
   
@@ -481,11 +481,13 @@ describe('DreamState: fallback-cross-talk', () => {
     // Verify no cross-talk in event bus logs
     const events = eventBus.getEventLog();
     
-    // Filter fallback events
-    const fallbackEvents = events.filter(e => 
-      e.event.startsWith('fallback:') || 
-      e.event.includes('fallback')
-    );
+    // Filter fallback events - handle different event structure formats
+    const fallbackEvents = events.filter(e => {
+      const eventType = e.event || e.type || '';
+      return eventType.startsWith('fallback:') || 
+             eventType.includes('fallback') ||
+             eventType === 'agent-fallback-triggered';
+    });
     
     // Each fallback event should be linked to the specific agent that triggered it
     for (const event of fallbackEvents) {

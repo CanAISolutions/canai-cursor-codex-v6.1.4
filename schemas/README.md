@@ -8,12 +8,12 @@ Central repository for all schema definitions, validation rules, and data struct
 ### Current Status: LOCKED 🔒
 - **Version**: v3
 - **Status**: Codex-Validated
-- **Lock Date**: 2025-01-27
+- **Lock Date**: 2025-05-27
 - **Template Coverage**: 100%
 - **Trust Level**: Locked
 
-### Schema Lock File: `airtable-v3.lock.json`
-The canonical schema definition that prevents drift and ensures consistency across all prompt types and Airtable infrastructure.
+### Schema Lock File: `FIELD-SPECIFICATIONS-REFERENCE.md`
+The canonical 18-table schema definition that prevents drift and ensures consistency across all prompt types and optimized Airtable infrastructure.
 
 #### Core Fields
 ```json
@@ -76,7 +76,7 @@ Comprehensive validation including:
 ```
 schemas/
 ├── README.md                    # This file
-├── airtable-v3.lock.json       # Schema lock (CANONICAL)
+├── 18-table-schema-reference.md   # Schema reference (18-table optimized)
 ├── validation.test.ts           # Schema validation tests
 └── accelerators/                # Accelerator-specific schemas
     ├── smart-prompt-score.schema.ts
@@ -120,7 +120,7 @@ const enhanced = applyMCPEnhancers(input);
 ```
 
 ### Adding New Fields
-1. Update `airtable-v3.lock.json` with new field
+1. Update `airtable-rewrite-workspace/FIELD-SPECIFICATIONS-REFERENCE.md` with new field
 2. Add to appropriate validation rules section
 3. Update MCP enhancer logic if needed
 4. Run schema integrity tests to verify

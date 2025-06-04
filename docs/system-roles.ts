@@ -3,17 +3,17 @@
 // Enforced by: Codex Checkpoint Directive — Phase Delta
 
 export type PromptType =
-  | 'business_plan'
-  | 'social_content'
-  | 'email_campaign'
   | 'ai_blueprint'
+  | 'business_plan'
+  | 'email_campaign'
   | 'site_audit'
+  | 'social_content'
   | 'reverse_strategy'
   | 'ai_brand_identity'
-  | 'sparksplit'
   | 'profile_makeover'
   | 'blogblitz'
-  | 'ad_amplify';
+  | 'ad_amplify'
+  | 'sparksplit';
 
 export type AgentRole =
   | 'defaults-engine'
@@ -39,7 +39,7 @@ export const SystemAgents: AgentMetadata[] = [
   {
     id: 'smart-defaults',
     file: 'cursor/agents/smart-defaults-engine.ts',
-    promptTypesUsed: ['business_plan', 'email_campaign', 'profile_makeover', 'blogblitz', 'ad_amplify'],
+    promptTypesUsed: ['business_plan', 'email_campaign', 'profile_makeover', 'blogblitz', 'ad_amplify', 'sparksplit'],
     role: 'defaults-engine',
     test: true,
     status: 'active',
@@ -47,7 +47,7 @@ export const SystemAgents: AgentMetadata[] = [
   {
     id: 'emotional-checker',
     file: 'cursor/agents/emotion-validator.ts',
-    promptTypesUsed: ['social_content', 'ai_brand_identity', 'profile_makeover', 'blogblitz', 'ad_amplify'],
+    promptTypesUsed: ['social_content', 'ai_brand_identity', 'profile_makeover', 'blogblitz', 'ad_amplify', 'sparksplit'],
     role: 'emotion-validator',
     test: true,
     status: 'active',
@@ -87,7 +87,7 @@ export const SystemAgents: AgentMetadata[] = [
   {
     id: 'session-memory',
     file: 'cursor/agents/session-reuse-engine.ts',
-    promptTypesUsed: ['business_plan', 'site_audit', 'profile_makeover', 'blogblitz', 'ad_amplify'],
+    promptTypesUsed: ['business_plan', 'site_audit', 'profile_makeover', 'blogblitz', 'ad_amplify', 'sparksplit'],
     role: 'session-reuse',
     test: true,
     status: 'active',

@@ -5,16 +5,17 @@
 import { composePrompt } from "./composePrompt"
 
 const validPromptTypes = [
+  "ai_blueprint",
   "business_plan",
   "email_campaign",
+  "site_audit",
   "social_content",
   "reverse_strategy",
   "ai_brand_identity",
-  "site_audit",
-  "ai_blueprint",
   "profile_makeover",
   "blogblitz",
-  "ad_amplify"
+  "ad_amplify",
+  "sparksplit"
 ]
 
 type RouteResult = {

@@ -236,7 +236,7 @@ Central hub for system intelligence, monitoring, and operational insights across
 ## Core Components
 
 ### Schema Drift Protection (v3 Lock Active)
-- **Schema Lock**: `/schemas/airtable-v3.lock.json` - Canonical field definitions locked
+- **Schema Lock**: `/airtable-rewrite-workspace/FIELD-SPECIFICATIONS-REFERENCE.md` - Canonical field definitions for 18-table architecture
 - **Enforcement**: All table definitions have `codexEnforcement: true`
 - **MCP Enhancement**: Real-time field inference active in BusinessPlan and SiteAudit MCPs
 - **Integrity Tests**: `/tests/dreamstate/schema-integrity.test.ts` prevents drift

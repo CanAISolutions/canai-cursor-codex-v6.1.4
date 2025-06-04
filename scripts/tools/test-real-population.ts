@@ -1,5 +1,5 @@
 // 🧪 test-real-population.ts
-// PROOF TEST: Populate all 36 tables with REAL field names
+// PROOF TEST: Populate all 18 tables with REAL field names
 
 import Airtable from "airtable"
 import * as dotenv from "dotenv"
@@ -17,16 +17,12 @@ if (!AIRTABLE_API_KEY || !BASE_ID) {
 
 const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(BASE_ID)
 
-const ALL_TABLES = [
-  '01_PromptLogs', '02_SparkSplitAnalytics', '03_SessionAnalytics', '04_UserContext',
-  '05_OutputGoldmine', '06_FeedbackLogs', '07_DeliveryCostLogs', '08_ReferralTriggers',
-  '09_AIMiningAgents', '10_FieldGlossary', '11_SchemaEvents', '12_EmotionalCompass',
-  '13_TrustMetrics', '14_PersonaCluster', '15_ContentOptimization', '16_PredictiveInsights',
-  '17_CompetitiveIntel', '18_RevenueAttribution', '19_CustomerJourney', '20_BrandResonance',
-  '21_BehavioralPatterns', '22_EmotionalJourney', '23_TrustEvolution', '24_SystemPerformance',
-  '25_QualityMetrics', '26_UsageAnalytics', '27_GrowthMetrics', '28_RetentionAnalysis',
-  '29_ConversionFunnels', '30_EmotionalIntelligence', '31_SentimentAnalysis', '32_PersonalizationEngine',
-  '33_InnovationMetrics', '34_FutureInsights', '35_MetaIntelligence', '36_SystemEvolution'
+const ALL_CANAI_TABLES = [
+  // 18-Table Optimized Architecture
+  '01_PromptLogs', '02_SessionAnalytics', '03_SparkSplitAnalytics', '04_GoldmineOutput', '05_UserContext',
+  '06_EmotionalIntelligence', '07_TrustMetrics', '08_PerformanceMetrics', '09_WebhookLogs', '10_AirtableSync',
+  '11_ErrorLogs', '12_ProcessingResults', '13_SystemHealth', '14_PromptTypes', '15_EmotionalStates',
+  '16_TrustFactors', '17_SystemConfigs', '18_AnalyticsAggregates'
 ]
 
 function generateValidTestData(tableName: string) {
@@ -124,7 +120,7 @@ async function testRealPopulation() {
   // Test a few key tables first
   const testTables = ['01_PromptLogs', '02_SparkSplitAnalytics', '21_BehavioralPatterns']
   
-  for (const tableName of testTables) {
+  for (const tableName of ALL_CANAI_TABLES) {
     try {
       console.log(`\n🔍 Testing ${tableName}...`)
       
@@ -156,8 +152,8 @@ async function testRealPopulation() {
   
   // Summary
   console.log(`\n📊 REAL POPULATION TEST RESULTS:`)
-  console.log(`✅ Successfully populated: ${results.successful.length}/${testTables.length} test tables`)
-  console.log(`❌ Failed to populate: ${results.failed.length}/${testTables.length} test tables`)
+  console.log(`✅ Successfully populated: ${results.successful.length}/${ALL_CANAI_TABLES.length} test tables`)
+  console.log(`❌ Failed to populate: ${results.failed.length}/${ALL_CANAI_TABLES.length} test tables`)
   console.log(`📝 Total records created: ${results.createdRecords.length}`)
   
   if (results.successful.length > 0) {
@@ -176,10 +172,10 @@ async function testRealPopulation() {
   )
   
   // Final verdict
-  if (results.successful.length === testTables.length) {
+  if (results.successful.length === ALL_CANAI_TABLES.length) {
     console.log(`\n🎉 PROOF COMPLETE: TABLES CAN BE POPULATED WITH REAL DATA!`)
     console.log(`✅ Infrastructure validated with actual field schemas`)
-    console.log(`✅ Ready to test all 36 tables with proper field mapping`)
+    console.log(`✅ Ready to test all 18 tables with proper field mapping`)
     return true
   } else {
     console.log(`\n⚠️  ISSUES FOUND: ${results.failed.length} tables failed`)

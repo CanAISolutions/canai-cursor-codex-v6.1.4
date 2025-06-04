@@ -1,13 +1,12 @@
 /**
- * Airtable API Service for CanAI Emotional Intelligence Platform
+ * Airtable Service Layer for CanAI Emotional Intelligence Platform
  * 
- * Comprehensive service layer providing type-safe operations for all 36 tables
- * in the revolutionary emotional intelligence infrastructure. Includes bulletproof
- * error handling, rate limiting, retry logic, and performance optimization.
+ * Comprehensive service layer providing type-safe operations for all 18 optimized tables
+ * in the revolutionary emotional intelligence infrastructure.
  * 
- * @version 1.0.0
+ * @version 2.0.0 - 18-Table Optimized Architecture
  * @author CanAI Codex v6.1.4
- * @trust_score 4.8
+ * @trust_score 4.7
  */
 
 import {
@@ -25,7 +24,7 @@ import {
   RateLimitError,
   ValidationError,
   
-  // Type imports for all 36 tables
+  // Type imports for all 18 optimized tables
   SparkSplitAnalytics,
   TrustMetrics,
   TrustEvolution,
@@ -412,7 +411,7 @@ export class AirtableService {
       timestamp: new Date()
     } as AirtableCompatible<TrustEvolution>;
 
-    return this.createRecord(AIRTABLE_TABLES.TRUST_EVOLUTION, fields);
+    return this.createRecord(AIRTABLE_TABLES.TRUST_METRICS, fields);
   }
 
   /**
@@ -459,7 +458,7 @@ export class AirtableService {
    * Captures compound intelligence in the output goldmine
    */
   async captureOutputGoldmine(goldmineData: OutputGoldmine): Promise<AirtableRecord<AirtableCompatible<OutputGoldmine>>> {
-    return this.createRecord(AIRTABLE_TABLES.OUTPUT_GOLDMINE, goldmineData as AirtableCompatible<OutputGoldmine>);
+    return this.createRecord(AIRTABLE_TABLES.GOLDMINE_OUTPUT, goldmineData as AirtableCompatible<OutputGoldmine>);
   }
 
   // ===== ANALYTICS AND INSIGHTS METHODS =====
@@ -485,7 +484,7 @@ export class AirtableService {
     }
 
     const evolutionResponse = await this.getRecords<AirtableCompatible<TrustEvolution>>(
-      AIRTABLE_TABLES.TRUST_EVOLUTION,
+      AIRTABLE_TABLES.TRUST_METRICS,
       { 
         filterByFormula: evolutionFilter,
         sort: [{ field: 'timestamp', direction: 'desc' }]

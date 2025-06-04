@@ -24,7 +24,17 @@ This folder contains the launch-time logic that brings CanAI online in a safe, C
 
 | File | Purpose |
 |------|---------|
+| `00_mdc_rules_activation.ts` | Automatically loads and applies MDC rules on startup |
 | `01_dreamstate_alignment.ts` | Verifies emotional, modular, and Codex integrity on startup |
+| `02_system_integrity_audit.ts` | Validates system structural integrity |
+| `03_emotional_consistency_check.ts` | Ensures emotional tone standards are maintained |
+| `04_modularity_snapshot.ts` | Captures current modular structure state |
+| `05_codex_upgrade_detector.ts` | Checks for Codex version changes |
+| `06_cursor_selfcheck_trigger.ts` | Monitors system health signals |
+| `07_strategic_recommendation_emitter.ts` | Generates system optimization recommendations |
+| `08_generate_action_plan_issues.ts` | Identifies issues requiring action |
+| `09_generate_action_plan_opportunities.ts` | Identifies improvement opportunities |
+| `10_execute_action_plan.ts` | Executes prioritized action plan |
 | `02_alignment_injector.ts` *(future)* | Syncs current Codex directives into runtime context |
 | `03_agent_bootstrap.ts` *(future)* | Launches core agents (`modularityEnforcer`, `emotionalIntegrityAgent`, etc.) |
 | `99_boot_finalizer.ts` *(future)* | Logs boot integrity status and hands off to system-intel audit layer |

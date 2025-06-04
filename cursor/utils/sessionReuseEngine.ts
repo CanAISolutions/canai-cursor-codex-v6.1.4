@@ -110,7 +110,8 @@ export class SessionReuseEngine {
   }
 
   private getCurrentSessionId(): string {
-    return window.location.pathname;
+    // Generate a session ID that works in both browser and Node.js environments
+    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   private emitAnalyticsEvent(type: string, data: any): void {
@@ -124,7 +125,7 @@ export class SessionReuseEngine {
   }
 
   private initializeEventListeners(): void {
-    this.eventBus.on('SPARK_REUSED', (event: any) => {
+    this.eventBus.on('SPARK_REUSED', async (event: any) => {
       if (event.sparkId) {
         const sessionId = this.getCurrentSessionId();
         const sessionSparks = this.sparks.get(sessionId) || [];

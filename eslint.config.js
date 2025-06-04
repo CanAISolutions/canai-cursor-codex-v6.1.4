@@ -62,6 +62,28 @@ export default [
     }
   },
 
+  // ✅ Override for config files (Node.js globals)
+  {
+    files: ['*.config.js', 'jest.config.js', 'eslint.config.js'],
+    languageOptions: {
+      ecmaVersion: 2021,
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly'
+      }
+    },
+    rules: {
+      'no-console': 'off'
+    }
+  },
+
   // ✅ Override for test files (Jest + Node + no-console off)
   {
     files: ['./tests/**/*.ts', './tests/**/*.tsx'],

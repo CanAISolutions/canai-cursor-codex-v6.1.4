@@ -5,8 +5,8 @@
  */
 
 import { EmotionalContext } from '../types/emotional-sovereignty';
-import { EmotionalMemoryBank } from '../ai-memories/emotional-memory-bank';
-import { EventBus } from '../event-bus/event-bus';
+import { EmotionalMemoryBank } from '../utils/emotionalMemoryBank';
+import { EventBus } from '../event-bus/eventBus';
 
 export type SacredMomentType = 
   | 'first_breath'           // Discovery recognition

@@ -1,0 +1,258 @@
+-- CanAI JSONB Optimization Deployment Script
+-- Phase 1: Supabase Foundation Enhancement
+-- Date: 2025-01-21
+-- Purpose: Deploy additional JSONB optimizations for production readiness
+
+-- ============================================================================
+-- ENHANCED JSONB INDEXES FOR PERFORMANCE
+-- ============================================================================
+
+-- Add GIN indexes for JSONB fields that weren't covered in base schema
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_prompt_logs_input_fields_gin 
+ON prompt_logs USING GIN(input_fields);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_prompt_logs_output_gin 
+ON prompt_logs USING GIN(output);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_prompt_logs_analytics_meta_gin 
+ON prompt_logs USING GIN(analytics_meta);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_context_emotional_profile_gin 
+ON user_context USING GIN(emotional_profile);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_context_spark_resonance_gin 
+ON user_context USING GIN(spark_resonance);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_goldmine_emotional_fingerprint_gin 
+ON goldmine_output USING GIN(emotional_fingerprint);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_webhook_logs_response_gin 
+ON webhook_logs USING GIN(response_data);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_system_configs_config_value_gin 
+ON system_configs USING GIN(config_value);
+
+-- ============================================================================
+-- TASK METRICS FLATTENING FUNCTIONS
+-- ============================================================================
+
+-- Flatten task metrics for specific task IDs (as mentioned in milestone)
+CREATE OR REPLACE FUNCTION flatten_task_metrics(task_id_param VARCHAR(20))
+RETURNS TABLE(
+    task_id VARCHAR(20),
+    session_count INTEGER,
+    avg_trust_score DECIMAL(3,2),
+    avg_duration INTEGER,
+    total_prompts INTEGER,
+    success_rate DECIMAL(5,2),
+    emotional_resonance DECIMAL(3,2),
+    user_satisfaction DECIMAL(3,2)
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        task_id_param as task_id,
+        COUNT(DISTINCT sa.session_id)::INTEGER as session_count,
+        AVG(pl.trust_score)::DECIMAL(3,2) as avg_trust_score,
+        AVG(sa.duration)::INTEGER as avg_duration,
+        COUNT(pl.id)::INTEGER as total_prompts,
+        (COUNT(CASE WHEN pl.trust_score >= 4.0 THEN 1 END)::DECIMAL / COUNT(pl.id) * 100)::DECIMAL(5,2) as success_rate,
+        AVG(pl.resonance_score)::DECIMAL(3,2) as emotional_resonance,
+        AVG((pl.awe_score + pl.ownership_score + pl.wonder_score + pl.calm_score + pl.power_score) / 5)::DECIMAL(3,2) as user_satisfaction
+    FROM session_analytics sa
+    JOIN prompt_logs pl ON sa.session_id = pl.session_id
+    WHERE sa.session_id LIKE task_id_param || '%'
+    OR pl.analytics_meta->>'task_id' = task_id_param;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Flatten session context for Make.com integration
+CREATE OR REPLACE FUNCTION flatten_session_context(session_id_param VARCHAR(255))
+RETURNS TABLE(
+    session_id VARCHAR(255),
+    user_id VARCHAR(255),
+    primary_product VARCHAR(255),
+    trust_delta DECIMAL(3,2),
+    emotional_state JSONB,
+    key_insights TEXT[],
+    next_actions TEXT[],
+    flattened_data JSONB
+) AS $$
+DECLARE
+    session_data RECORD;
+    flattened JSONB := '{}';
+BEGIN
+    -- Get session analytics data
+    SELECT sa.*, uc.emotional_profile
+    INTO session_data
+    FROM session_analytics sa
+    LEFT JOIN user_context uc ON sa.user_id = uc.user_id
+    WHERE sa.session_id = session_id_param;
+    
+    -- Flatten the data for Make.com consumption
+    flattened := jsonb_build_object(
+        'session_id', session_data.session_id,
+        'user_id', session_data.user_id,
+        'primary_product', session_data.primary_product,
+        'trust_score_before', session_data.trust_score_before,
+        'trust_score_after', session_data.trust_score_after,
+        'trust_delta', session_data.trust_delta,
+        'emotional_depth', session_data.emotional_depth,
+        'awe_score', session_data.awe_score,
+        'ownership_score', session_data.ownership_score,
+        'wonder_score', session_data.wonder_score,
+        'calm_score', session_data.calm_score,
+        'power_score', session_data.power_score,
+        'duration_minutes', ROUND(session_data.duration / 60000.0, 2),
+        'prompt_count', session_data.prompt_count,
+        'products_used_count', array_length(session_data.products_used, 1),
+        'emotional_profile', session_data.emotional_profile
+    );
+    
+    RETURN QUERY
+    SELECT 
+        session_data.session_id,
+        session_data.user_id,
+        session_data.primary_product,
+        session_data.trust_delta,
+        session_data.emotional_profile as emotional_state,
+        ARRAY['Trust building', 'Emotional resonance', 'User empowerment'] as key_insights,
+        ARRAY['Continue engagement', 'Optimize experience', 'Build loyalty'] as next_actions,
+        flattened as flattened_data;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================================
+-- PERFORMANCE OPTIMIZATION FUNCTIONS
+-- ============================================================================
+
+-- Optimize JSONB queries with path-based extraction
+CREATE OR REPLACE FUNCTION extract_jsonb_metrics(
+    table_name TEXT,
+    jsonb_column TEXT,
+    metric_path TEXT
+)
+RETURNS TABLE(
+    record_id UUID,
+    metric_value TEXT,
+    extracted_at TIMESTAMP
+) AS $$
+DECLARE
+    query_sql TEXT;
+BEGIN
+    query_sql := format(
+        'SELECT id, %I->>%L as metric_value, NOW() as extracted_at FROM %I WHERE %I IS NOT NULL',
+        jsonb_column, metric_path, table_name, jsonb_column
+    );
+    
+    RETURN QUERY EXECUTE query_sql;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Batch JSONB updates for performance
+CREATE OR REPLACE FUNCTION batch_update_jsonb_field(
+    table_name TEXT,
+    jsonb_column TEXT,
+    update_data JSONB,
+    where_clause TEXT DEFAULT 'TRUE'
+)
+RETURNS INTEGER AS $$
+DECLARE
+    update_sql TEXT;
+    affected_rows INTEGER;
+BEGIN
+    update_sql := format(
+        'UPDATE %I SET %I = %I || %L, updated_at = NOW() WHERE %s',
+        table_name, jsonb_column, jsonb_column, update_data, where_clause
+    );
+    
+    EXECUTE update_sql;
+    GET DIAGNOSTICS affected_rows = ROW_COUNT;
+    
+    RETURN affected_rows;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================================
+-- VALIDATION FUNCTIONS
+-- ============================================================================
+
+-- Validate JSONB optimization deployment
+CREATE OR REPLACE FUNCTION validate_jsonb_optimization()
+RETURNS TABLE(
+    optimization_name TEXT,
+    status BOOLEAN,
+    details TEXT
+) AS $$
+BEGIN
+    -- Check GIN indexes
+    RETURN QUERY SELECT 
+        'gin_indexes'::TEXT,
+        (SELECT COUNT(*) FROM pg_indexes WHERE indexname LIKE '%_gin' AND schemaname = 'public') >= 8,
+        'Validates GIN indexes for JSONB fields'::TEXT;
+    
+    -- Check flattening functions
+    RETURN QUERY SELECT 
+        'flattening_functions'::TEXT,
+        (SELECT COUNT(*) FROM pg_proc WHERE proname IN ('flatten_task_metrics', 'flatten_session_context')) = 2,
+        'Validates task and session flattening functions'::TEXT;
+    
+    -- Check performance functions
+    RETURN QUERY SELECT 
+        'performance_functions'::TEXT,
+        (SELECT COUNT(*) FROM pg_proc WHERE proname IN ('extract_jsonb_metrics', 'batch_update_jsonb_field')) = 2,
+        'Validates JSONB performance optimization functions'::TEXT;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Test the optimization with sample data
+CREATE OR REPLACE FUNCTION test_jsonb_optimization()
+RETURNS TABLE(
+    test_name TEXT,
+    execution_time_ms INTEGER,
+    status TEXT
+) AS $$
+DECLARE
+    start_time TIMESTAMP;
+    end_time TIMESTAMP;
+    duration INTEGER;
+BEGIN
+    -- Test 1: Flatten task metrics
+    start_time := clock_timestamp();
+    PERFORM flatten_task_metrics('F1');
+    end_time := clock_timestamp();
+    duration := EXTRACT(MILLISECONDS FROM (end_time - start_time))::INTEGER;
+    
+    RETURN QUERY SELECT 
+        'flatten_task_metrics'::TEXT,
+        duration,
+        CASE WHEN duration < 200 THEN 'PASS' ELSE 'SLOW' END;
+    
+    -- Test 2: JSONB extraction performance
+    start_time := clock_timestamp();
+    PERFORM extract_jsonb_metrics('prompt_logs', 'input_fields', 'business_type');
+    end_time := clock_timestamp();
+    duration := EXTRACT(MILLISECONDS FROM (end_time - start_time))::INTEGER;
+    
+    RETURN QUERY SELECT 
+        'jsonb_extraction'::TEXT,
+        duration,
+        CASE WHEN duration < 100 THEN 'PASS' ELSE 'SLOW' END;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================================
+-- DEPLOYMENT COMPLETION LOG
+-- ============================================================================
+
+-- Log successful deployment
+INSERT INTO system_configs (config_key, config_value, config_type, description) VALUES
+('jsonb_optimization_deployed', '{"deployed_at": "' || NOW()::TEXT || '", "version": "v6.1.4", "phase": "1"}', 'object', 'JSONB optimization deployment timestamp')
+ON CONFLICT (config_key) DO UPDATE SET 
+    config_value = EXCLUDED.config_value,
+    updated_at = NOW();
+
+-- Success message
+SELECT 'JSONB Optimization Phase 1 Deployment Complete' as status,
+       NOW() as deployed_at,
+       'Ready for Phase 2: SQL Intelligence Functions' as next_phase; 

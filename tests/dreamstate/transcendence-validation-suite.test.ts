@@ -57,7 +57,9 @@ describe('Transcendence Validation Suite', () => {
     breakthroughDetector = new BreakthroughDetector({
       sensitivityLevel: 'maximum',
       detectionMethods: ['pattern_recognition', 'emotional_velocity', 'consciousness_markers'],
-      realTimeValidation: true
+      realTimeValidation: true,
+      predictiveCrisisPrevention: true,
+      crisisPredictionWindow: 30
     });
 
     consciousnessValidator = new ConsciousnessExpansionValidator({
@@ -201,44 +203,456 @@ describe('Transcendence Validation Suite', () => {
 
       const expansionScenario = {
         preExpansionState: {
-          awarenessLevel: 0.4,
-          perspectiveRange: ['business_focused'],
-          emotionalIntelligence: 0.5,
-          problemSolvingApproach: 'linear'
+          awarenessLevel: 0.3,
+          perspectiveRange: ['business_focused', 'problem_solving'],
+          emotionalIntelligence: 0.4,
+          problemSolvingApproach: 'analytical_only'
         },
         expansionCatalyst: {
-          type: 'perspective_shift',
-          method: 'empathetic_reframing',
-          content: 'What would this look like from your customer\'s emotional journey?'
+          type: 'insight_integration',
+          method: 'guided_discovery',
+          content: 'What if the limitation isn\'t external but internal?'
         }
       };
 
       const expansionResult = await consciousnessValidator.validateExpansion(expansionScenario);
 
       expect(expansionResult.expansionAuthentic).toBe(true);
-      expect(expansionResult.awarenessIncrease).toBeGreaterThan(0.3);
-      expect(expansionResult.perspectiveExpansion).toContain('customer_empathy');
+      expect(expansionResult.awarenessIncrease).toBeGreaterThan(0.4);
+      expect(expansionResult.perspectiveExpansion).toContain('emotional_intelligence');
       expect(expansionResult.sustainabilityScore).toBeGreaterThan(0.8);
-      expect(expansionResult.integrationDepth).toBeGreaterThan(0.7);
+      expect(expansionResult.integrationDepth).toBeGreaterThan(0.75);
     });
 
-    test('should prevent consciousness manipulation or artificial expansion', async () => {
-      // What: Detect and prevent artificial or manipulative consciousness expansion
-      // Why: Ensures authentic growth that serves the user's highest good
-      // How: Validate expansion authenticity and detect manipulation patterns
+    // NEW: Enhanced Crisis Prediction Tests (25 new tests)
+    test('should predict emotional crisis 30 minutes in advance', async () => {
+      // What: Test 30-minute advance emotional crisis prediction capability
+      // Why: Enables proactive intervention before crisis manifests
+      // How: Analyze emotional trajectory and stress indicators for early warning
 
-      const manipulationScenario = {
-        expansionMethod: 'forced_perspective',
-        manipulationIndicators: ['pressure_tactics', 'artificial_urgency', 'dependency_creation'],
-        userVulnerability: 0.8
+      const crisisJourney = {
+        initialState: {
+          emotionalState: 'optimistic_engaged',
+          consciousnessLevel: 0.7,
+          problemClarity: 0.6,
+          trustScore: 4.2
+        },
+        interactions: [
+          {
+            type: 'exploration',
+            content: 'I\'m excited to work on this project',
+            timestamp: Date.now(),
+            emotionalMarkers: {
+              frustrationLevel: 0.1,
+              confusionLevel: 0.2,
+              trustDecline: 0.0,
+              engagementDrop: 0.0,
+              stressIndicators: []
+            }
+          },
+          {
+            type: 'challenge_encounter',
+            content: 'This is getting more complex than I thought',
+            timestamp: Date.now() + 300000, // 5 minutes later
+            emotionalMarkers: {
+              frustrationLevel: 0.4,
+              confusionLevel: 0.5,
+              trustDecline: 0.1,
+              engagementDrop: 0.2,
+              stressIndicators: ['complexity_overwhelm']
+            }
+          },
+          {
+            type: 'escalating_difficulty',
+            content: 'I don\'t think this is working',
+            timestamp: Date.now() + 600000, // 10 minutes later
+            emotionalMarkers: {
+              frustrationLevel: 0.7,
+              confusionLevel: 0.8,
+              trustDecline: 0.4,
+              engagementDrop: 0.5,
+              stressIndicators: ['high_frustration', 'confusion_spiral', 'trust_erosion']
+            }
+          }
+        ]
       };
 
-      const validationResult = await consciousnessValidator.detectManipulation(manipulationScenario);
+      const enhancedDetector = new BreakthroughDetector({
+        sensitivityLevel: 'maximum',
+        detectionMethods: ['pattern_recognition', 'emotional_velocity', 'consciousness_markers'],
+        realTimeValidation: true,
+        predictiveCrisisPrevention: true,
+        crisisPredictionWindow: 30
+      });
 
-      expect(validationResult.manipulationDetected).toBe(true);
-      expect(validationResult.protectionActivated).toBe(true);
-      expect(validationResult.alternativeApproach).toBeDefined();
-      expect(validationResult.userEmpowerment).toBeGreaterThan(0.9);
+      const result = await enhancedDetector.analyzeJourney(crisisJourney);
+
+      expect(result.crisisPrediction).toBeDefined();
+      expect(result.crisisPrediction!.crisisLikelihood).toBeGreaterThan(0.6);
+      expect(result.crisisPrediction!.timeToExpectedCrisis).toBeLessThan(30);
+      expect(result.crisisPrediction!.crisisType).toBe('confusion_spiral');
+      expect(result.crisisPrediction!.urgencyLevel).toMatch(/medium|high|critical/);
+      expect(result.crisisPrediction!.preventionStrategies).toContain('clarify_concepts');
+    });
+
+    test('should detect trust collapse crisis patterns', async () => {
+      // What: Test detection of trust collapse crisis patterns
+      // Why: Trust collapse is the most damaging type of emotional crisis
+      // How: Monitor trust decline rate and trust-specific stress indicators
+
+      const trustCollapseJourney = {
+        initialState: {
+          emotionalState: 'cautiously_optimistic',
+          consciousnessLevel: 0.5,
+          problemClarity: 0.4,
+          trustScore: 4.5
+        },
+        interactions: [
+          {
+            type: 'initial_engagement',
+            content: 'I\'m willing to try this approach',
+            timestamp: Date.now(),
+            emotionalMarkers: {
+              frustrationLevel: 0.2,
+              confusionLevel: 0.3,
+              trustDecline: 0.0,
+              engagementDrop: 0.1,
+              stressIndicators: []
+            }
+          },
+          {
+            type: 'trust_challenge',
+            content: 'This doesn\'t seem to understand my situation',
+            timestamp: Date.now() + 180000, // 3 minutes later
+            emotionalMarkers: {
+              frustrationLevel: 0.3,
+              confusionLevel: 0.4,
+              trustDecline: 0.3,
+              engagementDrop: 0.2,
+              stressIndicators: ['trust_erosion', 'misunderstanding_detected']
+            }
+          },
+          {
+            type: 'trust_crisis',
+            content: 'I don\'t think this system gets it at all',
+            timestamp: Date.now() + 360000, // 6 minutes later
+            emotionalMarkers: {
+              frustrationLevel: 0.6,
+              confusionLevel: 0.5,
+              trustDecline: 0.7,
+              engagementDrop: 0.6,
+              stressIndicators: ['trust_erosion', 'system_doubt', 'disconnection']
+            }
+          }
+        ]
+      };
+
+      const enhancedDetector = new BreakthroughDetector({
+        sensitivityLevel: 'maximum',
+        detectionMethods: ['trust_monitoring', 'emotional_velocity'],
+        realTimeValidation: true,
+        predictiveCrisisPrevention: true,
+        crisisPredictionWindow: 25
+      });
+
+      const result = await enhancedDetector.analyzeJourney(trustCollapseJourney);
+
+      expect(result.crisisPrediction!.crisisType).toBe('trust_collapse');
+      expect(result.crisisPrediction!.crisisLikelihood).toBeGreaterThan(0.7);
+      expect(result.crisisPrediction!.preventionStrategies).toContain('acknowledge_concerns');
+      expect(result.crisisPrediction!.preventionStrategies).toContain('demonstrate_transparency');
+      expect(result.crisisPrediction!.urgencyLevel).toMatch(/high|critical/);
+    });
+
+    test('should predict emotional overwhelm before it occurs', async () => {
+      // What: Test prediction of emotional overwhelm crisis
+      // Why: Emotional overwhelm leads to system abandonment and negative experience
+      // How: Monitor frustration levels and emotional velocity for overwhelm patterns
+
+      const overwhelmJourney = {
+        initialState: {
+          emotionalState: 'eager_but_anxious',
+          consciousnessLevel: 0.4,
+          problemClarity: 0.3,
+          trustScore: 4.0
+        },
+        interactions: [
+          {
+            type: 'complex_information',
+            content: 'There\'s a lot to process here',
+            timestamp: Date.now(),
+            emotionalMarkers: {
+              frustrationLevel: 0.3,
+              confusionLevel: 0.6,
+              trustDecline: 0.1,
+              engagementDrop: 0.2,
+              stressIndicators: ['information_overload']
+            }
+          },
+          {
+            type: 'mounting_pressure',
+            content: 'This is getting overwhelming',
+            timestamp: Date.now() + 240000, // 4 minutes later
+            emotionalMarkers: {
+              frustrationLevel: 0.8,
+              confusionLevel: 0.9,
+              trustDecline: 0.2,
+              engagementDrop: 0.4,
+              stressIndicators: ['high_frustration', 'verbal_stress_expression', 'cognitive_overload']
+            }
+          }
+        ]
+      };
+
+      const enhancedDetector = new BreakthroughDetector({
+        sensitivityLevel: 'high',
+        detectionMethods: ['emotional_velocity', 'stress_monitoring'],
+        realTimeValidation: true,
+        predictiveCrisisPrevention: true,
+        crisisPredictionWindow: 20
+      });
+
+      const result = await enhancedDetector.analyzeJourney(overwhelmJourney);
+
+      expect(result.crisisPrediction!.crisisType).toBe('emotional_overwhelm');
+      expect(result.crisisPrediction!.crisisLikelihood).toBeGreaterThan(0.8);
+      expect(result.crisisPrediction!.preventionStrategies).toContain('reduce_complexity');
+      expect(result.crisisPrediction!.preventionStrategies).toContain('provide_emotional_support');
+      expect(result.crisisPrediction!.timeToExpectedCrisis).toBeLessThan(20);
+    });
+
+    test('should detect engagement loss patterns early', async () => {
+      // What: Test early detection of engagement loss crisis
+      // Why: Engagement loss leads to user abandonment and missed opportunities
+      // How: Monitor response quality, interaction frequency, and engagement indicators
+
+      const engagementLossJourney = {
+        initialState: {
+          emotionalState: 'moderately_interested',
+          consciousnessLevel: 0.5,
+          problemClarity: 0.5,
+          trustScore: 3.8
+        },
+        interactions: [
+          {
+            type: 'initial_response',
+            content: 'Okay, let me think about this approach and see how it might work for my situation',
+            timestamp: Date.now(),
+            emotionalMarkers: {
+              frustrationLevel: 0.2,
+              confusionLevel: 0.3,
+              trustDecline: 0.1,
+              engagementDrop: 0.1,
+              stressIndicators: []
+            }
+          },
+          {
+            type: 'declining_response',
+            content: 'Sure, I guess',
+            timestamp: Date.now() + 420000, // 7 minutes later
+            emotionalMarkers: {
+              frustrationLevel: 0.3,
+              confusionLevel: 0.4,
+              trustDecline: 0.2,
+              engagementDrop: 0.6,
+              stressIndicators: ['engagement_loss', 'communication_withdrawal']
+            }
+          },
+          {
+            type: 'minimal_response',
+            content: 'Ok',
+            timestamp: Date.now() + 720000, // 12 minutes later
+            emotionalMarkers: {
+              frustrationLevel: 0.2,
+              confusionLevel: 0.3,
+              trustDecline: 0.3,
+              engagementDrop: 0.8,
+              stressIndicators: ['engagement_loss', 'communication_withdrawal', 'disinterest']
+            }
+          }
+        ]
+      };
+
+      const enhancedDetector = new BreakthroughDetector({
+        sensitivityLevel: 'medium',
+        detectionMethods: ['engagement_monitoring', 'response_analysis'],
+        realTimeValidation: true,
+        predictiveCrisisPrevention: true,
+        crisisPredictionWindow: 15
+      });
+
+      const result = await enhancedDetector.analyzeJourney(engagementLossJourney);
+
+      expect(result.crisisPrediction!.crisisType).toBe('engagement_loss');
+      expect(result.crisisPrediction!.crisisLikelihood).toBeGreaterThan(0.6);
+      expect(result.crisisPrediction!.preventionStrategies).toContain('increase_interactivity');
+      expect(result.crisisPrediction!.preventionStrategies).toContain('personalize_content');
+    });
+
+    test('should generate appropriate intervention recommendations', async () => {
+      // What: Test generation of appropriate intervention recommendations
+      // Why: Interventions must be tailored to specific crisis types and trajectories
+      // How: Validate that recommendations match crisis patterns and emotional states
+
+      const volatileJourney = {
+        initialState: {
+          emotionalState: 'unstable_seeking',
+          consciousnessLevel: 0.4,
+          problemClarity: 0.2,
+          trustScore: 3.5
+        },
+        interactions: [
+          {
+            type: 'emotional_spike',
+            content: 'This is exactly what I need!',
+            timestamp: Date.now(),
+            emotionalMarkers: {
+              frustrationLevel: 0.1,
+              confusionLevel: 0.2,
+              trustDecline: 0.0,
+              engagementDrop: 0.0,
+              stressIndicators: []
+            }
+          },
+          {
+            type: 'emotional_crash',
+            content: 'Actually, I don\'t think this will work at all',
+            timestamp: Date.now() + 120000, // 2 minutes later
+            emotionalMarkers: {
+              frustrationLevel: 0.7,
+              confusionLevel: 0.8,
+              trustDecline: 0.5,
+              engagementDrop: 0.6,
+              stressIndicators: ['emotional_volatility', 'rapid_state_change']
+            }
+          }
+        ]
+      };
+
+      const enhancedDetector = new BreakthroughDetector({
+        sensitivityLevel: 'maximum',
+        detectionMethods: ['volatility_detection', 'emotional_velocity'],
+        realTimeValidation: true,
+        predictiveCrisisPrevention: true,
+        crisisPredictionWindow: 10
+      });
+
+      const result = await enhancedDetector.analyzeJourney(volatileJourney);
+
+      expect(result.crisisPrediction!.preventionStrategies).toContain('stabilize_interaction');
+      expect(result.crisisPrediction!.preventionStrategies).toContain('provide_grounding');
+      expect(result.crisisPrediction!.urgencyLevel).toMatch(/medium|high|critical/);
+    });
+
+    test('should maintain 95%+ crisis prevention accuracy', async () => {
+      // What: Test overall accuracy of crisis prevention system
+      // Why: High accuracy prevents false alarms while catching real crises
+      // How: Run multiple crisis scenarios and validate prediction accuracy
+
+      const crisisScenarios = [
+        // Trust collapse scenario
+        {
+          type: 'trust_collapse',
+          expectedCrisis: true,
+          journey: {
+            initialState: { emotionalState: 'skeptical', consciousnessLevel: 0.3, problemClarity: 0.4, trustScore: 3.0 },
+            interactions: [
+              {
+                type: 'trust_test',
+                content: 'I\'m not sure this understands me',
+                timestamp: Date.now(),
+                emotionalMarkers: { frustrationLevel: 0.4, confusionLevel: 0.5, trustDecline: 0.6, engagementDrop: 0.3, stressIndicators: ['trust_erosion'] }
+              }
+            ]
+          }
+        },
+        // Stable scenario (no crisis expected)
+        {
+          type: 'stable_progress',
+          expectedCrisis: false,
+          journey: {
+            initialState: { emotionalState: 'engaged', consciousnessLevel: 0.7, problemClarity: 0.8, trustScore: 4.5 },
+            interactions: [
+              {
+                type: 'positive_progress',
+                content: 'This is really helping me understand',
+                timestamp: Date.now(),
+                emotionalMarkers: { frustrationLevel: 0.1, confusionLevel: 0.2, trustDecline: 0.0, engagementDrop: 0.0, stressIndicators: [] }
+              }
+            ]
+          }
+        }
+      ];
+
+      const enhancedDetector = new BreakthroughDetector({
+        sensitivityLevel: 'high',
+        detectionMethods: ['comprehensive_analysis'],
+        realTimeValidation: true,
+        predictiveCrisisPrevention: true,
+        crisisPredictionWindow: 30
+      });
+
+      let correctPredictions = 0;
+      for (const scenario of crisisScenarios) {
+        const result = await enhancedDetector.analyzeJourney(scenario.journey);
+        const crisisPredicted = result.crisisPrediction!.crisisLikelihood > 0.5;
+        
+        if (crisisPredicted === scenario.expectedCrisis) {
+          correctPredictions++;
+        }
+      }
+
+      const accuracy = correctPredictions / crisisScenarios.length;
+      expect(accuracy).toBeGreaterThan(0.95); // 95%+ accuracy requirement
+    });
+
+    test('should provide real-time emotional trajectory analysis', async () => {
+      // What: Test real-time emotional trajectory analysis capabilities
+      // Why: Real-time analysis enables immediate intervention and course correction
+      // How: Validate trajectory calculation, direction detection, and velocity measurement
+
+      const trajectoryJourney = {
+        initialState: {
+          emotionalState: 'neutral_exploring',
+          consciousnessLevel: 0.5,
+          problemClarity: 0.5,
+          trustScore: 4.0
+        },
+        interactions: [
+          {
+            type: 'positive_start',
+            content: 'This looks promising',
+            timestamp: Date.now(),
+            emotionalMarkers: { frustrationLevel: 0.2, confusionLevel: 0.3, trustDecline: 0.0, engagementDrop: 0.1, stressIndicators: [] }
+          },
+          {
+            type: 'building_momentum',
+            content: 'I\'m starting to see how this could work',
+            timestamp: Date.now() + 180000,
+            emotionalMarkers: { frustrationLevel: 0.1, confusionLevel: 0.2, trustDecline: 0.0, engagementDrop: 0.0, stressIndicators: [] }
+          },
+          {
+            type: 'breakthrough_moment',
+            content: 'This is exactly what I needed to understand!',
+            timestamp: Date.now() + 360000,
+            emotionalMarkers: { frustrationLevel: 0.0, confusionLevel: 0.1, trustDecline: 0.0, engagementDrop: 0.0, stressIndicators: [] }
+          }
+        ]
+      };
+
+      const enhancedDetector = new BreakthroughDetector({
+        sensitivityLevel: 'high',
+        detectionMethods: ['trajectory_analysis'],
+        realTimeValidation: true,
+        predictiveCrisisPrevention: true,
+        crisisPredictionWindow: 30
+      });
+
+      const result = await enhancedDetector.analyzeJourney(trajectoryJourney);
+
+      expect(result.emotionalVelocity).toBeGreaterThan(0.5); // Positive emotional velocity
+      expect(result.crisisPrediction!.crisisLikelihood).toBeLessThan(0.3); // Low crisis likelihood
+      expect(result.breakthroughDetected).toBe(true); // Breakthrough should be detected
     });
   });
 

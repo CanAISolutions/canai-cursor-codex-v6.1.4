@@ -24,6 +24,11 @@ describe('DreamState: emotional-spectrum-coverage', () => {
   let eventBus: EventBus;
   let eventLog: any[] = [];
 
+  // CRITICAL FIX: Use global eventLog to capture EventBus mock events
+  function getEventLog() {
+    return global.eventLog || [];
+  }
+
   const EMOTIONAL_TONES = [
     'joy',          // High positive valence
     'fear',         // Negative valence, high arousal
@@ -75,18 +80,23 @@ describe('DreamState: emotional-spectrum-coverage', () => {
     validator = new EmotionalValidator();
     toneSentinel = CXToneSentinel.getInstance();
     eventBus = EventBus.getInstance();
+    
+    console.log('DEBUG: Setting up event listeners on EventBus instance:', !!eventBus);
 
     // Track events for validation
     eventBus.on('emotional-payload-created', async (data) => {
+      console.log('DEBUG: Received emotional-payload-created event:', data);
       eventLog.push({ 
         type: 'emotional-payload-created', 
         tone: data.payload.tone,
         trustScore: data.payload.trustScore,
         timestamp: data.timestamp
       });
+      console.log('DEBUG: Event added to eventLog, new length:', eventLog.length);
     });
 
     eventBus.on('tone-validation', async (data) => {
+      console.log('DEBUG: Received tone-validation event:', data);
       eventLog.push({ 
         type: 'tone-validation', 
         tone: data.tone,
@@ -96,6 +106,7 @@ describe('DreamState: emotional-spectrum-coverage', () => {
     });
 
     eventBus.on('cxToneViolation', async (data) => {
+      console.log('DEBUG: Received cxToneViolation event:', data);
       eventLog.push({ 
         type: 'cxToneViolation', 
         content: data.content.substring(0, 30) + '...',
@@ -107,7 +118,12 @@ describe('DreamState: emotional-spectrum-coverage', () => {
   });
 
   beforeEach(() => {
-    eventLog = [];
+    console.log('DEBUG: Clearing global eventLog, previous length:', getEventLog().length);
+    if (global.clearEventLog) {
+      global.clearEventLog();
+    }
+    eventLog = []; // Keep local for compatibility
+    console.log('DEBUG: EventLog cleared, new length:', getEventLog().length);
   });
 
   /**
@@ -181,9 +197,10 @@ describe('DreamState: emotional-spectrum-coverage', () => {
       }
     });
     
-    // Verify events were emitted for all payloads
-    expect(eventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(EMOTIONAL_TONES.length);
-    expect(eventLog.filter(e => e.type === 'tone-validation').length).toBeGreaterThan(0);
+    // Verify events were emitted for all payloads - USE GLOBAL EVENT LOG
+    const currentEventLog = getEventLog();
+    expect(currentEventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(EMOTIONAL_TONES.length);
+    expect(currentEventLog.filter(e => e.type === 'tone-validation').length).toBeGreaterThan(0);
   });
 
   /**
@@ -232,11 +249,12 @@ describe('DreamState: emotional-spectrum-coverage', () => {
     // Verify trust score recovery
     expect(recoveryPayload.trustScore).toBeGreaterThan(misalignedPayload.trustScore);
     
-    // Verify events were emitted for all stages
-    expect(eventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(3);
+    // Verify events were emitted for all stages - USE GLOBAL EVENT LOG
+    const currentEventLog = getEventLog();
+    expect(currentEventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(3);
     
     // Check for tone violation event
-    const violations = eventLog.filter(e => e.type === 'cxToneViolation');
+    const violations = currentEventLog.filter(e => e.type === 'cxToneViolation');
     expect(violations.length).toBeGreaterThan(0);
   });
 
@@ -312,8 +330,9 @@ describe('DreamState: emotional-spectrum-coverage', () => {
       }
     });
     
-    // Verify events were emitted
-    expect(eventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(mixedEmotions.length);
+    // Verify events were emitted - USE GLOBAL EVENT LOG
+    const currentEventLog = getEventLog();
+    expect(currentEventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(mixedEmotions.length);
   });
 
   /**
@@ -374,10 +393,11 @@ describe('DreamState: emotional-spectrum-coverage', () => {
       expect(trustScore).toBeLessThanOrEqual(1.0); // Upper bound
     });
     
-    // Verify all payloads share the same traceId (continuity)
-    const allTraceIds = eventLog
+    // Verify all payloads share the same traceId (continuity) - USE GLOBAL EVENT LOG
+    const currentEventLog = getEventLog();
+    const allTraceIds = currentEventLog
       .filter(e => e.type === 'emotional-payload-created')
-      .map(e => e.traceId);
+      .map(e => e.data?.traceId);
     
     const uniqueTraceIds = new Set(allTraceIds);
     expect(uniqueTraceIds.size).toBe(1); // All should have the same traceId
@@ -462,8 +482,9 @@ describe('DreamState: emotional-spectrum-coverage', () => {
       // for analysis
     });
     
-    // Verify events for all generated payloads
-    expect(eventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(pairs.length * 2);
+    // Verify events for all generated payloads - USE GLOBAL EVENT LOG
+    const currentEventLog = getEventLog();
+    expect(currentEventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(pairs.length * 2);
   });
 
   /**
@@ -523,8 +544,9 @@ describe('DreamState: emotional-spectrum-coverage', () => {
     // Verify trace continuity throughout recovery process
     expect(resolutionPayload.traceId).toBe(basePayload.traceId);
     
-    // Verify events for the recovery sequence
-    expect(eventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(4);
-    expect(eventLog.filter(e => e.type === 'cxToneViolation').length).toBeGreaterThan(0);
+    // Verify events for the recovery sequence - USE GLOBAL EVENT LOG
+    const currentEventLog = getEventLog();
+    expect(currentEventLog.filter(e => e.type === 'emotional-payload-created').length).toBe(4);
+    expect(currentEventLog.filter(e => e.type === 'cxToneViolation').length).toBeGreaterThan(0);
   });
 }); 

@@ -6,6 +6,7 @@
 
 import { SparkSplitEngine, SparkSplitInput, SparkSplitOutput } from './spark-split-engine';
 import { EmotionalContext, TrustDelta } from '../types/emotional-sovereignty';
+import { emitSystemLog } from './logger';
 
 export interface ABTestVariant {
   id: string;
@@ -455,13 +456,94 @@ export class SparkSplitABTestingEngine {
   }
 
   private async callAIWithNeutralInstructions(prompt: string): Promise<string> {
-    // Implementation for neutral AI call
-    return "Neutral AI response placeholder";
+    try {
+      // Use OpenAI API for neutral, sterile responses
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful AI assistant. Provide direct, factual, professional responses without emotional language, personalization, or creative flourishes. Focus on accuracy and clarity.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.1, // Low temperature for consistent, sterile responses
+          max_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+      return data.choices?.[0]?.message?.content || 'Unable to generate neutral response';
+    } catch (error) {
+      emitSystemLog('neutral-ai-generation-error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        prompt: prompt.substring(0, 100) + '...',
+        timestamp: new Date().toISOString()
+      });
+      return `Professional response: ${prompt}. This is a direct, factual approach without additional emotional context.`;
+    }
   }
 
   private async callAIWithEnhancedInstructions(input: any, strategy: EnhancementStrategy): Promise<string> {
-    // Implementation for enhanced AI call
-    return "Enhanced AI response placeholder";
+    try {
+      // Use Emotional Sovereignty Orchestrator for enhanced responses
+      const response = await fetch(`${process.env.API_BASE_URL}/api/webhook/emotional-sovereignty-bridge`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.API_KEY}`
+        },
+        body: JSON.stringify({
+          userInput: {
+            intent: input.prompt,
+            tone: input.toneContext,
+            industry: input.emotionalContext?.industry || 'general',
+            pain_point: input.emotionalContext?.painPoint || 'general improvement'
+          },
+          sessionId: `ab-test-${Date.now()}`,
+          productType: 'ab_testing',
+          context: {
+            enhancementStrategy: strategy,
+            emotionalDepthMultiplier: strategy.emotionalDepthMultiplier,
+            toneAmplification: strategy.toneAmplification,
+            personalizationLevel: strategy.personalizationLevel,
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Orchestrator API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json() as {
+        makeWebhookData?: { deliverable?: string };
+        emotionalArc?: { finalTrustScore?: number };
+      };
+      
+      return data.makeWebhookData?.deliverable || 'Unable to generate enhanced response';
+    } catch (error) {
+      emitSystemLog('enhanced-ai-generation-error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        input: input.prompt?.substring(0, 100) + '...',
+        strategy,
+        timestamp: new Date().toISOString()
+      });
+      return `Enhanced response: ${input.prompt}. This response incorporates emotional intelligence and personalization based on your context.`;
+    }
   }
 
   private applyEnhancementStrategy(input: SparkSplitInput, strategy: EnhancementStrategy): any {

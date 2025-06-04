@@ -297,7 +297,8 @@ describe('DreamState: trust-restore-post-coldstart', () => {
       expect(initialTrustScore).toBeLessThan(1);
 
       // Verify trust score is logged
-      const trustEvents = events.filter(e => e.eventType === 'trust-scaffolded');
+      const eventLog = global.eventLog || [];
+      const trustEvents = eventLog.filter(e => e.type === 'trust-scaffolded');
       expect(trustEvents).toHaveLength(1);
       expect(trustEvents[0].data.initialTrustScore).toBe(0.75);
     });
@@ -313,7 +314,8 @@ describe('DreamState: trust-restore-post-coldstart', () => {
       await coldstartTrustManager.scaffoldFromColdstart(sessionId, traceId);
 
       // Verify scaffolding event was logged
-      const scaffoldEvents = events.filter(e => e.eventType === 'trust-scaffolded');
+      const eventLog = global.eventLog || [];
+      const scaffoldEvents = eventLog.filter(e => e.type === 'trust-scaffolded');
       expect(scaffoldEvents).toHaveLength(1);
 
       const scaffoldEvent = scaffoldEvents[0];
@@ -342,7 +344,8 @@ describe('DreamState: trust-restore-post-coldstart', () => {
       expect(recoveredScore).toBeLessThanOrEqual(0.85);
 
       // Verify recovery event was logged
-      const recoveryEvents = events.filter(e => e.eventType === 'trust-warm-recovery');
+      const eventLog = global.eventLog || [];
+      const recoveryEvents = eventLog.filter(e => e.type === 'trust-warm-recovery');
       expect(recoveryEvents).toHaveLength(1);
       expect(recoveryEvents[0].data.beforeScore).toBe(initialScore);
       expect(recoveryEvents[0].data.afterScore).toBe(recoveredScore);

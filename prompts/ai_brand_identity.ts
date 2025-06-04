@@ -1,6 +1,23 @@
+/**
+ * ai_brand_identity.ts
+ * 
+ * Purpose:
+ * Simple TypeScript interface for AI Brand Identity prompt type.
+ * Provides type safety and validation for prompt inputs.
+ */
+
+export interface AIBrandIdentityPrompt {
+  companyName: string;
+  industry: string;
+  targetAudience: string;
+  values: string[];
+  tone: string;
+  enhancers?: Record<string, boolean>;
+}
+
 // 🧠 ai_brand_identity.ts
-// Generates the final prompt string for the AI Brand Identity Blueprint product.
-// Returns structured metadata including cost, fallback fields, and output score.
+// Generates the final prompt string for the AI Brand Identity Builder product.
+// Returns full structured metadata including version, cost, quality score, and fallback tracking.
 
 import { composePrompt } from "../lib/composePrompt"
 import { estimateTokens } from "../lib/estimateTokens"

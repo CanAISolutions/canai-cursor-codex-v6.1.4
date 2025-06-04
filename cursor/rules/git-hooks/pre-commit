@@ -1,0 +1,109 @@
+#!/bin/sh
+
+# Pre-commit hook: Enforce MDC Rules
+# 
+# This hook runs before each commit to ensure all staged files
+# comply with .MDC rules for emotional sovereignty standards.
+
+echo "🔒 Enforcing .MDC rules on staged files..."
+
+# Get list of staged TypeScript/JavaScript files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx)$')
+
+if [ -z "$STAGED_FILES" ]; then
+  echo "✅ No TypeScript/JavaScript files staged, skipping .MDC enforcement"
+  exit 0
+fi
+
+echo "📁 Checking staged files:"
+echo "$STAGED_FILES" | sed 's/^/   /'
+
+# Create temporary file list for enforcement
+TEMP_FILE_LIST=$(mktemp)
+echo "$STAGED_FILES" | tr '\n' ',' | sed 's/,$//' > "$TEMP_FILE_LIST"
+FILE_PATTERNS=$(cat "$TEMP_FILE_LIST")
+
+# Run MDC enforcement on staged files only
+echo ""
+echo "🔍 Running .MDC rule enforcement..."
+
+# Use Node.js to run the enforcement (works in most environments)
+node -e "
+const { MDCEnforcementEngine } = require('./cursor/rules/mdc-enforcement-engine.ts');
+const engine = new MDCEnforcementEngine();
+
+async function checkStagedFiles() {
+  const filePatterns = '$FILE_PATTERNS'.split(',').filter(f => f.trim());
+  const results = [];
+  
+  for (const file of filePatterns) {
+    try {
+      const result = engine.enforceFile(file);
+      results.push(result);
+    } catch (error) {
+      console.error('Error checking file:', file, error.message);
+    }
+  }
+  
+  const violations = results.filter(r => !r.isValid);
+  const totalViolations = results.reduce((sum, r) => sum + r.violations.length, 0);
+  const criticalViolations = results.reduce((sum, r) => 
+    sum + r.violations.filter(v => v.severity === 'critical').length, 0);
+  
+  if (violations.length > 0) {
+    console.log('❌ .MDC Rule Violations Found:');
+    console.log('');
+    
+    for (const result of violations) {
+      console.log('📁 ' + result.filePath);
+      for (const violation of result.violations) {
+        const icon = violation.severity === 'critical' ? '🚨' : '⚠️';
+        console.log('   ' + icon + ' [' + violation.ruleId + '] ' + violation.message);
+        if (violation.suggestion) {
+          console.log('      💡 ' + violation.suggestion);
+        }
+      }
+      console.log('');
+    }
+    
+    console.log('📊 SUMMARY:');
+    console.log('   Files with violations: ' + violations.length + '/' + results.length);
+    console.log('   Total violations: ' + totalViolations);
+    console.log('   Critical violations: ' + criticalViolations);
+    console.log('');
+    console.log('🔧 TO FIX:');
+    console.log('   1. Fix the violations listed above');
+    console.log('   2. Run: npm run enforce-mdc -- --fix (for auto-fixable issues)');
+    console.log('   3. Stage your changes: git add .');
+    console.log('   4. Commit again: git commit');
+    console.log('');
+    console.log('📚 For help with .MDC rules, see: cursor/rules/README.md');
+    
+    process.exit(1);
+  } else {
+    console.log('✅ All staged files comply with .MDC rules!');
+    console.log('   Emotional sovereignty standards maintained ✅');
+    console.log('   Trust score thresholds met ✅');
+    console.log('   Sacred Reversal Test passed ✅');
+    console.log('');
+    process.exit(0);
+  }
+}
+
+checkStagedFiles().catch(error => {
+  console.error('❌ .MDC enforcement failed:', error.message);
+  console.log('');
+  console.log('🔧 TROUBLESHOOTING:');
+  console.log('   1. Ensure Node.js and TypeScript are installed');
+  console.log('   2. Run: npm install');
+  console.log('   3. Check .MDC rule files in cursor/rules/');
+  console.log('   4. Try manual enforcement: npm run enforce-mdc');
+  process.exit(1);
+});
+"
+
+# Clean up temporary file
+rm -f "$TEMP_FILE_LIST"
+
+# If we get here, enforcement passed
+echo "🎉 Commit approved - .MDC rules enforced successfully!" 

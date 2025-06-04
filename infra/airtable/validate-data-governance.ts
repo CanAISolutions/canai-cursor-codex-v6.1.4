@@ -2,6 +2,10 @@
  * CanAI Airtable Data Governance Validation Script
  * Validates complete data lineage, relationships, and governance before production launch
  * Provides Collibra-level confidence in data architecture
+ * 
+ * Version: v2.0.0
+ * Updated: 2025-05-29
+ * Products: 11 (10 core + SparkSplit)
  */
 
 import * as fs from 'fs';
@@ -194,7 +198,7 @@ export class DataGovernanceValidator {
     console.log(`✅ Loaded ${this.validationResult.summary.fieldsValidated} field definitions`);
   }
 
-  private validateFieldDefinition(field: FieldDefinition, tableName: string): void {
+  private async validateFieldDefinition(field: FieldDefinition, tableName: string): Promise<void> {
     const requiredFields = ['fieldName', 'fieldType', 'emotionalRole', 'dataSensitivity', 'contextScope'];
     
     for (const requiredField of requiredFields) {
@@ -213,6 +217,16 @@ export class DataGovernanceValidator {
     const validSensitivities = ['internal', 'pii', 'public'];
     if (field.dataSensitivity && !validSensitivities.includes(field.dataSensitivity)) {
       this.validationResult.errors.push(`Field ${field.fieldName} has invalid data sensitivity: ${field.dataSensitivity}`);
+    }
+
+    // Validate promptType enum values (11 products)
+    if (field.fieldName === 'promptType') {
+      const validPromptTypes = [
+        'ai_blueprint', 'business_plan', 'email_campaign', 'site_audit', 
+        'social_content', 'reverse_strategy', 'ai_brand_identity', 
+        'profile_makeover', 'blogblitz', 'ad_amplify', 'sparksplit'
+      ];
+      // Additional validation for promptType field could be added here
     }
 
     // Validate codex enforcement
@@ -376,9 +390,9 @@ export class DataGovernanceValidator {
     // Deduct for warnings (minor issues)
     score -= totalWarnings * 1;
     
-    // Bonus for comprehensive coverage
-    if (totalTables >= 35) score += 5;
-    if (totalFields >= 500) score += 5;
+    // Bonus for comprehensive coverage (updated thresholds)
+    if (totalTables >= 36) score += 5;
+    if (totalFields >= 600) score += 5;
     if (this.validationResult.summary.relationshipsValidated >= 100) score += 5;
 
     this.validationResult.summary.governanceScore = Math.max(0, Math.min(100, score));

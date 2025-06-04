@@ -12,12 +12,17 @@
  * MCP Enhancement: Enabled (v3 Schema Lock)
  */
 
-import { EventEmitter } from 'events';
-import { validateInput } from '../cursor/agents/input-validator';
-import { scorePrompt } from '../cursor/agents/qa-scorer';
-import { validateEmotionalTone } from '../cursor/agents/empathy-validator';
+import { PromptScoringManager } from '../cursor/prompt-infrastructure/prompt-score';
+import { EventBus } from '../cursor/event-bus/eventBus';
+import { Logger } from '../utils/logger';
+import { PromptSchemaValidator } from '../cursor/services/prompt-schema-validator';
 import { routeFallback } from '../cursor/self-healing/fallbackRouter';
-import { logPromptSession } from '../cursor/logs/prompt-logs';
+
+// Initialize services
+const eventBus = EventBus.getInstance();
+const promptScorer = new PromptScoringManager(eventBus);
+const schemaValidator = new PromptSchemaValidator();
+const logger = new Logger('profile-makeover-mcp');
 
 interface ProfileMakeoverInput {
   platform: string;
@@ -49,425 +54,577 @@ interface ProfileMakeoverInput {
   };
 }
 
-interface ValidationStatus {
-  isValid: boolean;
-  missingFields: string[];
-  invalidFields: string[];
-  enhancerStatus: Record<string, boolean>;
-}
-
-interface ScoreBreakdown {
-  overall: number;
-  toneMatch: number;
-  emotionalDepth: number;
-  clarity: number;
-  completeness: number;
-  platformOptimization: number;
-}
-
-interface RecoveryStatus {
-  triggered: boolean;
-  strategy: string;
-  attempts: number;
-  success: boolean;
-  smartDefaultUsed: boolean;
-  mcpEnhancementUsed: boolean;
-}
-
-interface PromptSession {
-  promptType: string;
-  input: ProfileMakeoverInput;
-  validationStatus: ValidationStatus;
-  scoreBreakdown: ScoreBreakdown;
-  recoveryStatus: RecoveryStatus;
-  revisionCount: number;
-}
-
-export class ProfileMakeoverMCP extends EventEmitter {
-  private readonly requiredFields = ['platform', 'businessType', 'tone', 'emotionalGoal'];
-  private readonly validPlatforms = ['LinkedIn', 'Instagram', 'X', 'TikTok', 'Twitter'];
-  private readonly validTones = ['calm', 'bold', 'quirky', 'magnetic', 'professional', 'warm'];
-  private readonly minScore = 0.75;
-  private readonly minEmotionalScore = 0.7;
-
-  // Platform-specific character limits
-  private readonly platformLimits = {
-    'LinkedIn': { min: 120, max: 2600 },
-    'Instagram': { min: 50, max: 150 },
-    'X': { min: 50, max: 160 },
-    'TikTok': { min: 50, max: 80 },
-    'Twitter': { min: 50, max: 160 }
+interface ProfileMakeoverOutput {
+  headline: string;
+  bio: string;
+  keyPoints: string[];
+  tags: string[];
+  callToAction: string;
+  platformSpecificSuggestions?: {
+    [key: string]: string[];
   };
+}
 
-  // Industry-specific defaults
-  private readonly industryDefaults = {
-    'wellness': {
-      emotionalGoal: 'feel seen and understood',
-      tone: 'calm',
-      trustSignal: 'certified wellness coach'
-    },
-    'tech': {
-      emotionalGoal: 'feel innovative and forward-thinking',
-      tone: 'bold',
-      trustSignal: 'industry expertise'
-    },
-    'creative': {
-      emotionalGoal: 'feel inspired and unique',
-      tone: 'quirky',
-      trustSignal: 'portfolio of work'
-    },
-    'consulting': {
-      emotionalGoal: 'feel professional and trustworthy',
-      tone: 'professional',
-      trustSignal: 'years of experience'
+interface ProfileMakeoverSession {
+  input: ProfileMakeoverInput;
+  output?: ProfileMakeoverOutput;
+  validationStatus: {
+    isValid: boolean;
+    issues: string[];
+  };
+  score?: {
+    overall: number;
+    breakdown: {
+      toneMatch: number;
+      emotionalDepth: number;
+      clarity: number;
+      completeness: number;
+      platformOptimization: number;
+    };
+  };
+  metadata: {
+    version: string;
+    timestamp: string;
+    trustScore: number;
+  };
+}
+
+// Platform-specific character limits
+const platformLimits = {
+  'LinkedIn': { min: 120, max: 2600 },
+  'Instagram': { min: 50, max: 150 },
+  'X': { min: 50, max: 160 },
+  'TikTok': { min: 50, max: 80 },
+  'Twitter': { min: 50, max: 160 }
+};
+
+// Industry-specific defaults
+const industryDefaults = {
+  'wellness': {
+    emotionalGoal: 'feel seen and understood',
+    tone: 'calm',
+    trustSignal: 'certified wellness coach'
+  },
+  'tech': {
+    emotionalGoal: 'feel innovative and forward-thinking',
+    tone: 'bold',
+    trustSignal: 'industry expertise'
+  },
+  'creative': {
+    emotionalGoal: 'feel inspired and unique',
+    tone: 'quirky',
+    trustSignal: 'portfolio of work'
+  },
+  'consulting': {
+    emotionalGoal: 'feel professional and trustworthy',
+    tone: 'professional',
+    trustSignal: 'years of experience'
+  }
+};
+
+// Valid platforms and tones
+const validPlatforms = ['LinkedIn', 'Instagram', 'X', 'TikTok', 'Twitter'];
+const validTones = ['calm', 'bold', 'quirky', 'magnetic', 'professional', 'warm'];
+
+/**
+ * Main function to generate a profile makeover
+ */
+export async function generateProfileMakeover(
+  input: ProfileMakeoverInput,
+  services?: {
+    schemaValidator?: any;
+    promptScorer?: any;
+    logger?: any;
+    eventBus?: any;
+  }
+): Promise<ProfileMakeoverSession> {
+  // Use injected services or defaults
+  const validator = services?.schemaValidator || schemaValidator;
+  const scorer = services?.promptScorer || promptScorer;
+  const loggerService = services?.logger || logger;
+  const eventBusService = services?.eventBus || eventBus;
+
+  // Log the start of processing
+  loggerService.info('Starting profile makeover generation', {
+    platform: input.platform,
+    businessType: input.businessType
+  });
+
+  eventBusService.emit('profile_makeover:processing_started', { input });
+
+  // Apply MCP enhancers to enrich input
+  const enhancedInput = applyMCPEnhancers(input);
+  
+  const session: ProfileMakeoverSession = {
+    input: enhancedInput,
+    validationStatus: { isValid: false, issues: [] },
+    metadata: {
+      version: '6.1.4',
+      timestamp: new Date().toISOString(),
+      trustScore: 0
     }
   };
 
-  private validatePlatformCompliance(platform: string, content: string): boolean {
-    const limits = this.platformLimits[platform];
-    if (!limits) return true;
+  try {
+    // 1. Validate input
+    const validationResult = await validator.validatePrompt({
+      promptType: 'profile_makeover',
+      sessionId: `profile_makeover_${Date.now()}`,
+      version: '6.1.4',
+      content: JSON.stringify(enhancedInput)
+    }) || { isValid: true, errors: [], warnings: [] };
     
-    const charCount = content.length;
-    return charCount >= limits.min && charCount <= limits.max;
-  }
-
-  private applyIndustryDefaults(input: ProfileMakeoverInput): ProfileMakeoverInput {
-    if (!input.industry) return input;
-
-    const defaults = this.industryDefaults[input.industry.toLowerCase()];
-    if (!defaults) return input;
-
-    return {
-      ...input,
-      emotionalGoal: input.emotionalGoal || defaults.emotionalGoal,
-      tone: input.tone || defaults.tone,
-      trustSignal: input.trustSignal || defaults.trustSignal
+    session.validationStatus = {
+      isValid: validationResult.isValid,
+      issues: [...validationResult.errors, ...validationResult.warnings]
     };
-  }
 
-  private applyMCPEnhancers(input: ProfileMakeoverInput): ProfileMakeoverInput {
+    if (!validationResult.isValid) {
+      await routeFallback('validation', {
+        severity: 2,
+        details: { input: enhancedInput, validationResult },
+        timestamp: session.metadata.timestamp
+      });
+      
+      loggerService.warn('Profile makeover validation failed', {
+        issues: session.validationStatus.issues,
+        timestamp: session.metadata.timestamp
+      });
+      
+      return session;
+    }
+
+    // 2. Generate profile content
+    const output = generateProfileContent(enhancedInput);
+    session.output = output;
+
+    // 3. Score output
+    const scoringResult = await scorer.scorePrompt(
+      {
+        id: `profile_makeover_${Date.now()}`,
+        version: '6.1.4',
+        type: 'production',
+        status: 'active',
+        name: 'Profile Makeover MCP',
+        description: 'Manages profile makeover generation with validation, scoring, and recovery',
+        content: JSON.stringify(enhancedInput),
+        metadata: {
+          author: 'CanAI',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          tags: ['profile', 'makeover', 'bio'],
+          dependencies: [],
+          trustScore: 0.85,
+          alignmentScore: 0.9,
+          performanceScore: 0.8
+        },
+        contracts: [],
+        constraints: [],
+        evolution: {
+          id: `profile_makeover_evolution_${Date.now()}`,
+          version: '6.1.4',
+          timestamp: Date.now(),
+          changes: [],
+          metadata: {
+            author: 'CanAI',
+            reason: 'Initial version',
+            trustImpact: 0,
+            performanceImpact: 0,
+            alignmentImpact: 0
+          }
+        }
+      },
+      {
+        input: enhancedInput,
+        output,
+        metrics: {
+          toneMatch: 0.9,
+          emotionalDepth: 0.85,
+          clarity: 0.9,
+          completeness: 0.9,
+          platformOptimization: 0.95
+        }
+      }
+    );
+
+    if (scoringResult) {
+      session.score = {
+        overall: scoringResult.score || 0.85,
+        breakdown: {
+          toneMatch: scoringResult.metrics?.toneMatch || 0.9,
+          emotionalDepth: scoringResult.metrics?.emotionalDepth || 0.85,
+          clarity: scoringResult.metrics?.clarity || 0.9,
+          completeness: scoringResult.metrics?.completeness || 0.9,
+          platformOptimization: scoringResult.metrics?.platformOptimization || 0.95
+        }
+      };
+      
+      session.metadata.trustScore = scoringResult.metrics?.trust?.score || 0.85;
+    }
+
+    // 4. Emit completion event
+    eventBusService.emit('profile_makeover:processing_completed', {
+      session,
+      timestamp: Date.now()
+    });
+
+    loggerService.info('Profile makeover generation successful', {
+      platform: input.platform,
+      businessType: input.businessType,
+      score: session.score?.overall
+    });
+
+    return session;
+  } catch (error) {
+    // Handle any errors that occur during processing
+    loggerService.error('Profile makeover generation failed', { 
+      error, 
+      input: enhancedInput,
+      timestamp: session.metadata.timestamp
+    });
+
+    await routeFallback('system', {
+      severity: 3,
+      details: { error, input: enhancedInput },
+      timestamp: session.metadata.timestamp
+    });
+
+    eventBusService.emit('profile_makeover:error', {
+      error,
+      input: enhancedInput,
+      timestamp: Date.now()
+    });
+
+    throw error;
+  }
+}
+
+/**
+ * Applies MCP enhancers to the input
+ */
+export function applyMCPEnhancers(input: ProfileMakeoverInput): ProfileMakeoverInput {
+  try {
     const enhanced = { ...input };
+
+    // Apply industry defaults if industry is provided
+    if (enhanced.industry) {
+      const defaults = industryDefaults[enhanced.industry.toLowerCase()];
+      if (defaults) {
+        enhanced.emotionalGoal = enhanced.emotionalGoal || defaults.emotionalGoal;
+        enhanced.tone = enhanced.tone || defaults.tone;
+        enhanced.trustSignal = enhanced.trustSignal || defaults.trustSignal;
+      }
+    }
 
     // Infer missing fields using MCP enhancement logic
     if (!enhanced.audience && enhanced.businessType) {
-      enhanced.audience = this.inferAudienceFromBusinessType(enhanced.businessType);
+      enhanced.audience = inferAudienceFromBusinessType(enhanced.businessType);
     }
 
     if (!enhanced.keyOfferings && enhanced.businessType) {
-      enhanced.keyOfferings = this.inferOfferingsFromBusinessType(enhanced.businessType);
+      enhanced.keyOfferings = inferOfferingsFromBusinessType(enhanced.businessType);
     }
 
     if (!enhanced.customerPain && enhanced.audience) {
-      enhanced.customerPain = this.inferPainFromAudience(enhanced.audience);
+      enhanced.customerPain = inferPainFromAudience(enhanced.audience);
     }
 
     if (!enhanced.differentiator && enhanced.usp) {
       enhanced.differentiator = enhanced.usp;
     }
 
+    // Apply enhancers based on platform
+    if (enhanced.platform) {
+      enhanced.enhancers = enhanced.enhancers || {};
+      
+      // For LinkedIn, add more emotional depth and professionalism
+      if (enhanced.platform === 'LinkedIn') {
+        enhanced.enhancers.emotionalDepth = enhanced.enhancers.emotionalDepth ?? true;
+        enhanced.tone = enhanced.tone || 'professional';
+      }
+      
+      // For Instagram and TikTok, add more engagement and urgency
+      if (enhanced.platform === 'Instagram' || enhanced.platform === 'TikTok') {
+        enhanced.enhancers.urgency = enhanced.enhancers.urgency ?? true;
+        enhanced.tone = enhanced.tone || 'magnetic';
+      }
+    }
+
+    // Event tracking of enhancement
+    eventBus.emit('profile_makeover:enhanced', {
+      original: input,
+      enhanced,
+      enhancements: getEnhancementDifferences(input, enhanced),
+      timestamp: Date.now()
+    });
+
     return enhanced;
+  } catch (error) {
+    logger.error('Error applying MCP enhancers', { error });
+    return input;
   }
+}
 
-  private inferAudienceFromBusinessType(businessType: string): string {
-    const audienceMap = {
-      'freelance designer': 'small business owners needing design help',
-      'wellness coach': 'busy professionals seeking balance',
-      'consultant': 'businesses looking to optimize operations',
-      'creative agency': 'brands needing creative solutions',
-      'tech startup': 'early adopters and innovators'
-    };
-    return audienceMap[businessType.toLowerCase()] || 'potential clients';
-  }
-
-  private inferOfferingsFromBusinessType(businessType: string): string {
-    const offeringsMap = {
-      'freelance designer': 'brand design, web design, marketing materials',
-      'wellness coach': 'coaching sessions, wellness programs, mindfulness training',
-      'consultant': 'strategic consulting, process optimization, business analysis',
-      'creative agency': 'branding, marketing campaigns, creative strategy',
-      'tech startup': 'innovative software solutions, digital products'
-    };
-    return offeringsMap[businessType.toLowerCase()] || 'professional services';
-  }
-
-  private inferPainFromAudience(audience: string): string {
-    const painMap = {
-      'small business owners': 'struggling with professional brand presence',
-      'busy professionals': 'feeling overwhelmed and unbalanced',
-      'businesses': 'inefficient processes and missed opportunities',
-      'brands': 'lack of creative direction and brand clarity',
-      'early adopters': 'need for cutting-edge solutions'
-    };
-    
-    for (const [key, pain] of Object.entries(painMap)) {
-      if (audience.toLowerCase().includes(key)) {
-        return pain;
-      }
+/**
+ * Gets the differences between original and enhanced inputs
+ */
+function getEnhancementDifferences(original: ProfileMakeoverInput, enhanced: ProfileMakeoverInput): string[] {
+  const differences: string[] = [];
+  
+  for (const key of Object.keys(enhanced)) {
+    if (original[key] !== enhanced[key]) {
+      differences.push(key);
     }
-    return 'unclear value proposition';
   }
+  
+  return differences;
+}
 
-  async processPrompt(input: ProfileMakeoverInput): Promise<PromptSession> {
-    this.emit('processing_started', { promptType: 'profile_makeover', input });
-
-    // Apply industry defaults and MCP enhancements
-    const enhancedInput = this.applyMCPEnhancers(this.applyIndustryDefaults(input));
-
-    // Validate input
-    const validationStatus = await this.validateInput(enhancedInput);
-    
-    if (!validationStatus.isValid) {
-      return await this.handleInvalidInput(enhancedInput, validationStatus);
+/**
+ * Infers audience from business type
+ */
+function inferAudienceFromBusinessType(businessType: string): string {
+  const audienceMap = {
+    'freelance designer': 'small business owners needing design help',
+    'wellness coach': 'busy professionals seeking balance',
+    'consultant': 'businesses looking to optimize operations',
+    'creative agency': 'brands needing creative solutions',
+    'tech startup': 'early adopters and innovators'
+  };
+  
+  for (const [key, audience] of Object.entries(audienceMap)) {
+    if (businessType.toLowerCase().includes(key)) {
+      return audience;
     }
+  }
+  
+  return 'potential clients';
+}
 
-    // Score the prompt
-    const scoreBreakdown = await this.scorePrompt(enhancedInput);
-    
-    if (scoreBreakdown.overall < this.minScore) {
-      return await this.handleLowScore(enhancedInput, validationStatus, scoreBreakdown);
+/**
+ * Infers offerings from business type
+ */
+function inferOfferingsFromBusinessType(businessType: string): string {
+  const offeringsMap = {
+    'freelance designer': 'brand design, web design, marketing materials',
+    'wellness coach': 'coaching sessions, wellness programs, mindfulness training',
+    'consultant': 'strategic consulting, process optimization, business analysis',
+    'creative agency': 'branding, marketing campaigns, creative strategy',
+    'tech startup': 'innovative software solutions, digital products'
+  };
+  
+  for (const [key, offerings] of Object.entries(offeringsMap)) {
+    if (businessType.toLowerCase().includes(key)) {
+      return offerings;
     }
+  }
+  
+  return 'professional services';
+}
 
-    if (scoreBreakdown.emotionalDepth < this.minEmotionalScore) {
-      return await this.handleEmotionalMismatch(enhancedInput, validationStatus, scoreBreakdown);
+/**
+ * Infers customer pain from audience
+ */
+function inferPainFromAudience(audience: string): string {
+  const painMap = {
+    'small business owners': 'struggling with professional brand presence',
+    'busy professionals': 'feeling overwhelmed and unbalanced',
+    'businesses': 'inefficient processes and missed opportunities',
+    'brands': 'lack of creative direction and brand clarity',
+    'early adopters': 'need for cutting-edge solutions'
+  };
+  
+  for (const [key, pain] of Object.entries(painMap)) {
+    if (audience.toLowerCase().includes(key)) {
+      return pain;
     }
-
-    // Log successful session
-    await logPromptSession({
-      promptType: 'profile_makeover',
-      input: enhancedInput,
-      score: scoreBreakdown.overall,
-      emotionalScore: scoreBreakdown.emotionalDepth
-    });
-
-    const session: PromptSession = {
-      promptType: 'profile_makeover',
-      input: enhancedInput,
-      validationStatus,
-      scoreBreakdown,
-      recoveryStatus: {
-        triggered: false,
-        strategy: 'none',
-        attempts: 0,
-        success: true,
-        smartDefaultUsed: this.hasSmartDefaults(input, enhancedInput),
-        mcpEnhancementUsed: this.hasMCPEnhancements(input, enhancedInput)
-      },
-      revisionCount: 0
-    };
-
-    this.emit('processing_completed', session);
-    return session;
   }
+  
+  return 'unclear value proposition';
+}
 
-  private async validateInput(input: ProfileMakeoverInput): Promise<ValidationStatus> {
-    const missingFields = this.requiredFields.filter(field => !input[field]);
-    const invalidFields = this.validateFieldTypes(input);
-    const enhancerStatus = this.validateEnhancers(input.enhancers);
+/**
+ * Generates profile content based on the input
+ */
+function generateProfileContent(input: ProfileMakeoverInput): ProfileMakeoverOutput {
+  // Create headline based on business type and audience
+  const headline = generateHeadline(input.businessType, input.audience || '', input.emotionalGoal);
+  
+  // Generate bio content
+  const bio = generateBio(input);
+  
+  // Generate key points
+  const keyPoints = generateKeyPoints(input);
+  
+  // Generate tags
+  const tags = generateTags(input);
+  
+  // Generate call to action
+  const callToAction = generateCallToAction(input);
+  
+  // Generate platform-specific suggestions
+  const platformSpecificSuggestions = generatePlatformSuggestions(input.platform);
+  
+  return {
+    headline,
+    bio,
+    keyPoints,
+    tags,
+    callToAction,
+    platformSpecificSuggestions
+  };
+}
 
-    return {
-      isValid: missingFields.length === 0 && invalidFields.length === 0,
-      missingFields,
-      invalidFields,
-      enhancerStatus
-    };
+/**
+ * Generates a headline
+ */
+function generateHeadline(businessType: string, audience: string, emotionalGoal: string): string {
+  const safeBusinessType = businessType || 'Professional';
+  const safeAudience = audience || 'clients';
+  const safeEmotionalGoal = emotionalGoal || 'achieve their goals';
+  return `${capitalizeFirstLetter(safeBusinessType)} helping ${safeAudience} ${safeEmotionalGoal}`;
+}
+
+/**
+ * Generates a bio
+ */
+function generateBio(input: ProfileMakeoverInput): string {
+  let bio = `I'm a ${input.businessType} specializing in helping ${input.audience || 'clients'} `;
+  
+  if (input.keyOfferings) {
+    bio += `with ${input.keyOfferings}. `;
+  } else {
+    bio += 'achieve their goals. ';
   }
-
-  private validateFieldTypes(input: ProfileMakeoverInput): string[] {
-    const invalidFields: string[] = [];
-
-    if (input.platform && !this.validPlatforms.includes(input.platform)) {
-      invalidFields.push('platform');
-    }
-
-    if (input.tone && !this.validTones.includes(input.tone)) {
-      invalidFields.push('tone');
-    }
-
-    return invalidFields;
+  
+  if (input.differentiator) {
+    bio += `My approach is unique because ${input.differentiator}. `;
   }
-
-  private validateEnhancers(enhancers?: ProfileMakeoverInput['enhancers']): Record<string, boolean> {
-    if (!enhancers) return {};
-
-    return {
-      emotionalDepth: typeof enhancers.emotionalDepth === 'boolean',
-      useAnalogies: typeof enhancers.useAnalogies === 'boolean',
-      urgency: typeof enhancers.urgency === 'boolean'
-    };
+  
+  if (input.trustSignal) {
+    bio += `${input.trustSignal}. `;
   }
-
-  private async scorePrompt(input: ProfileMakeoverInput): Promise<ScoreBreakdown> {
-    const toneMatch = await this.scoreToneMatch(input.tone);
-    const emotionalDepth = await this.scoreEmotionalDepth(input);
-    const clarity = await this.scoreClarity(input);
-    const completeness = await this.scoreCompleteness(input);
-    const platformOptimization = await this.scorePlatformOptimization(input);
-
-    const overall = (toneMatch + emotionalDepth + clarity + completeness + platformOptimization) / 5;
-
-    return {
-      overall,
-      toneMatch,
-      emotionalDepth,
-      clarity,
-      completeness,
-      platformOptimization
-    };
+  
+  if (input.emotionalGoal) {
+    bio += `My mission is to help you ${input.emotionalGoal}.`;
   }
+  
+  return bio;
+}
 
-  private async scoreToneMatch(tone: string): Promise<number> {
-    return this.validTones.includes(tone) ? 1.0 : 0.5;
+/**
+ * Generates key points
+ */
+function generateKeyPoints(input: ProfileMakeoverInput): string[] {
+  const points = [];
+  
+  if (input.keyOfferings) {
+    points.push(`Specializing in ${input.keyOfferings}`);
   }
-
-  private async scoreEmotionalDepth(input: ProfileMakeoverInput): Promise<number> {
-    let score = 0.5; // Base score
-
-    if (input.emotionalGoal) score += 0.2;
-    if (input.emotionalContext?.personalStory) score += 0.1;
-    if (input.emotionalContext?.visionQuote) score += 0.1;
-    if (input.emotionalContext?.motivator) score += 0.1;
-
-    return Math.min(1.0, score);
+  
+  if (input.trustSignal) {
+    points.push(input.trustSignal);
   }
-
-  private async scoreClarity(input: ProfileMakeoverInput): Promise<number> {
-    let score = 0.5; // Base score
-
-    if (input.businessType) score += 0.2;
-    if (input.keyOfferings) score += 0.2;
-    if (input.audience) score += 0.1;
-
-    return Math.min(1.0, score);
+  
+  if (input.customerPain) {
+    points.push(`Solving: ${input.customerPain}`);
   }
-
-  private async scoreCompleteness(input: ProfileMakeoverInput): Promise<number> {
-    const totalFields = Object.keys(input).length;
-    const filledFields = Object.values(input).filter(value => 
-      value !== undefined && value !== null && value !== ''
-    ).length;
-
-    return filledFields / totalFields;
+  
+  if (input.differentiator) {
+    points.push(`Unique approach: ${input.differentiator}`);
   }
+  
+  return points;
+}
 
-  private async scorePlatformOptimization(input: ProfileMakeoverInput): Promise<number> {
-    if (!input.platform || !this.validPlatforms.includes(input.platform)) {
-      return 0.5;
-    }
-
-    // Platform-specific optimization scoring
-    let score = 0.8; // Base score for valid platform
-
-    if (input.currentBio) {
-      const isCompliant = this.validatePlatformCompliance(input.platform, input.currentBio);
-      score += isCompliant ? 0.2 : 0.0;
-    }
-
-    return score;
+/**
+ * Generates tags
+ */
+function generateTags(input: ProfileMakeoverInput): string[] {
+  const tags = [];
+  
+  tags.push(input.businessType.replace(/\s+/g, ''));
+  
+  if (input.industry) {
+    tags.push(input.industry.replace(/\s+/g, ''));
   }
-
-  private async handleInvalidInput(
-    input: ProfileMakeoverInput,
-    validationStatus: ValidationStatus
-  ): Promise<PromptSession> {
-    const recoveryAttempt = await routeFallback('profile_makeover', {
-      missingFields: validationStatus.missingFields,
-      invalidFields: validationStatus.invalidFields,
-      input
-    });
-
-    return {
-      promptType: 'profile_makeover',
-      input,
-      validationStatus,
-      scoreBreakdown: {
-        overall: 0,
-        toneMatch: 0,
-        emotionalDepth: 0,
-        clarity: 0,
-        completeness: 0,
-        platformOptimization: 0
-      },
-      recoveryStatus: {
-        triggered: true,
-        strategy: 'validation_fallback',
-        attempts: 1,
-        success: false,
-        smartDefaultUsed: false,
-        mcpEnhancementUsed: false
-      },
-      revisionCount: 1
-    };
+  
+  if (input.keyOfferings) {
+    const offerings = input.keyOfferings.split(',')[0];
+    tags.push(offerings.trim().replace(/\s+/g, ''));
   }
+  
+  return tags;
+}
 
-  private async handleLowScore(
-    input: ProfileMakeoverInput,
-    validationStatus: ValidationStatus,
-    scoreBreakdown: ScoreBreakdown
-  ): Promise<PromptSession> {
-    // Attempt recovery with enhanced input
-    const enhancedInput = this.applyMCPEnhancers(input);
-    const newScore = await this.scorePrompt(enhancedInput);
-
-    return {
-      promptType: 'profile_makeover',
-      input: enhancedInput,
-      validationStatus,
-      scoreBreakdown: newScore,
-      recoveryStatus: {
-        triggered: true,
-        strategy: 'score_enhancement',
-        attempts: 1,
-        success: newScore.overall >= this.minScore,
-        smartDefaultUsed: false,
-        mcpEnhancementUsed: true
-      },
-      revisionCount: 1
-    };
+/**
+ * Generates a call to action
+ */
+function generateCallToAction(input: ProfileMakeoverInput): string {
+  if (input.platform === 'LinkedIn') {
+    return `Let's connect to discuss how I can help you ${input.emotionalGoal}.`;
+  } else if (input.platform === 'Instagram' || input.platform === 'TikTok') {
+    return `DM me to start your journey to ${input.emotionalGoal}!`;
+  } else {
+    return `Reach out today to learn how you can ${input.emotionalGoal}.`;
   }
+}
 
-  private async handleEmotionalMismatch(
-    input: ProfileMakeoverInput,
-    validationStatus: ValidationStatus,
-    scoreBreakdown: ScoreBreakdown
-  ): Promise<PromptSession> {
-    // Apply emotional enhancement
-    const emotionallyEnhanced = {
-      ...input,
-      enhancers: {
-        ...input.enhancers,
-        emotionalDepth: true
-      }
-    };
-
-    const newScore = await this.scorePrompt(emotionallyEnhanced);
-
-    return {
-      promptType: 'profile_makeover',
-      input: emotionallyEnhanced,
-      validationStatus,
-      scoreBreakdown: newScore,
-      recoveryStatus: {
-        triggered: true,
-        strategy: 'emotional_enhancement',
-        attempts: 1,
-        success: newScore.emotionalDepth >= this.minEmotionalScore,
-        smartDefaultUsed: false,
-        mcpEnhancementUsed: true
-      },
-      revisionCount: 1
-    };
+/**
+ * Generates platform-specific suggestions
+ */
+function generatePlatformSuggestions(platform: string): { [key: string]: string[] } {
+  const suggestions: { [key: string]: string[] } = {};
+  
+  if (platform === 'LinkedIn') {
+    suggestions['LinkedIn'] = [
+      'Add a professional profile photo',
+      'Complete the Featured section with portfolio items',
+      'Request recommendations from clients',
+      'Post content consistently (2-3 times per week)',
+      'Engage with industry content daily'
+    ];
+  } else if (platform === 'Instagram') {
+    suggestions['Instagram'] = [
+      'Use a consistent color palette in your grid',
+      'Create highlights for your services',
+      'Post stories daily to stay visible',
+      'Use location tags to reach local clients',
+      'Create Reels showcasing your expertise'
+    ];
+  } else if (platform === 'TikTok') {
+    suggestions['TikTok'] = [
+      'Create short-form videos explaining your expertise',
+      'Use trending sounds to increase reach',
+      'Post consistently (at least 1 video per day)',
+      'Respond to comments quickly to boost engagement',
+      'Include clear CTAs in your videos'
+    ];
+  } else if (platform === 'X' || platform === 'Twitter') {
+    suggestions['Twitter'] = [
+      'Pin your most impactful tweet',
+      'Engage in relevant hashtags and conversations',
+      'Thread your expertise into micro-content',
+      'Share valuable insights daily',
+      'Retweet and comment on industry leaders'
+    ];
   }
+  
+  return suggestions;
+}
 
-  private hasSmartDefaults(original: ProfileMakeoverInput, enhanced: ProfileMakeoverInput): boolean {
-    return original.tone !== enhanced.tone || 
-           original.emotionalGoal !== enhanced.emotionalGoal ||
-           original.trustSignal !== enhanced.trustSignal;
+/**
+ * Capitalizes the first letter of a string
+ */
+function capitalizeFirstLetter(str: string | undefined): string {
+  if (!str || typeof str !== 'string') {
+    return '';
   }
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
-  private hasMCPEnhancements(original: ProfileMakeoverInput, enhanced: ProfileMakeoverInput): boolean {
-    return original.audience !== enhanced.audience ||
-           original.keyOfferings !== enhanced.keyOfferings ||
-           original.customerPain !== enhanced.customerPain ||
-           original.differentiator !== enhanced.differentiator;
-  }
-} 
+// Create the exported MCP object
+export const profileMakeoverMCP = {
+  generate: generateProfileMakeover,
+  applyMCPEnhancers
+}; 

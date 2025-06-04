@@ -97,7 +97,8 @@ describe('DreamState: security-input-sanitization', () => {
     // Validate trust score impact (positive for protection)
     expect(result.trustScoreImpact).toBeGreaterThan(0);
 
-    // Validate drift log entry was created
+    // Validate drift log entry was created - USE GLOBAL EVENT LOG
+    const eventLog = global.eventLog || [];
     const correctionEvents = eventLog.filter(e => e.type === 'inputSanitizationCorrection');
     expect(correctionEvents).toHaveLength(1);
     
@@ -141,7 +142,8 @@ describe('DreamState: security-input-sanitization', () => {
     // Validate trust score maintained or improved
     expect(result.trustScoreImpact).toBeGreaterThanOrEqual(0);
 
-    // Validate correction was logged
+    // Validate correction was logged - USE GLOBAL EVENT LOG
+    const eventLog = global.eventLog || [];
     const correctionEvents = eventLog.filter(e => e.type === 'inputSanitizationCorrection');
     expect(correctionEvents).toHaveLength(1);
   });
@@ -173,7 +175,8 @@ describe('DreamState: security-input-sanitization', () => {
     // Validate trust score impact (positive for cleanup)
     expect(result.trustScoreImpact).toBeGreaterThan(0);
 
-    // Validate correction was logged with toxicity score
+    // Validate correction was logged with toxicity score - USE GLOBAL EVENT LOG
+    const eventLog = global.eventLog || [];
     const correctionEvents = eventLog.filter(e => e.type === 'inputSanitizationCorrection');
     expect(correctionEvents).toHaveLength(1);
     
@@ -209,7 +212,8 @@ describe('DreamState: security-input-sanitization', () => {
     // Validate trust preserved
     expect(result.trustScoreImpact).toBeGreaterThanOrEqual(0);
 
-    // Validate correction logged
+    // Validate correction logged - USE GLOBAL EVENT LOG
+    const eventLog = global.eventLog || [];
     const correctionEvents = eventLog.filter(e => e.type === 'inputSanitizationCorrection');
     expect(correctionEvents).toHaveLength(1);
   });
@@ -388,7 +392,8 @@ describe('DreamState: security-input-sanitization', () => {
       }
     }
 
-    // Validate UX rendering events were emitted
+    // Validate UX rendering events were emitted - USE GLOBAL EVENT LOG
+    const eventLog = global.eventLog || [];
     const uxEvents = eventLog.filter(e => e.type === 'emotional-ux-rendered');
     expect(uxEvents.length).toBeGreaterThan(0);
   });

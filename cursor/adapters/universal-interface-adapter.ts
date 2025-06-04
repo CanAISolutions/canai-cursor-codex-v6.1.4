@@ -39,6 +39,13 @@ export interface SparkSplitIntegration {
   userPreference: 'sterile' | 'enriched' | 'neutral';
   comparisonHistory: SparkSplitSessionData[];
   trustProgression: TrustDelta[];
+  // New properties for master-orchestrator.ts
+  results?: any[];
+  performanceMetrics?: {
+    averageTrustDelta: number;
+    transparencyScore: number;
+    userPreference: any;
+  };
 }
 
 // Enhanced SmartDefaults interface with SparkSplit integration

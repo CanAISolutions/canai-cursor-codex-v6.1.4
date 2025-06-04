@@ -1,5 +1,5 @@
 // 🧪 test-table-population.ts
-// PROOF TEST: Actually populate all 36 tables with real data
+// PROOF TEST: Actually populate all 18 tables with real data
 
 import Airtable from "airtable"
 import * as dotenv from "dotenv"
@@ -17,17 +17,13 @@ if (!AIRTABLE_API_KEY || !BASE_ID) {
 
 const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(BASE_ID)
 
-// All 36 tables that should be operational
-const ALL_TABLES = [
-  '01_PromptLogs', '02_SparkSplitAnalytics', '03_SessionAnalytics', '04_UserContext',
-  '05_OutputGoldmine', '06_FeedbackLogs', '07_DeliveryCostLogs', '08_ReferralTriggers',
-  '09_AIMiningAgents', '10_FieldGlossary', '11_SchemaEvents', '12_EmotionalCompass',
-  '13_TrustMetrics', '14_PersonaCluster', '15_ContentOptimization', '16_PredictiveInsights',
-  '17_CompetitiveIntel', '18_RevenueAttribution', '19_CustomerJourney', '20_BrandResonance',
-  '21_BehavioralPatterns', '22_EmotionalJourney', '23_TrustEvolution', '24_SystemPerformance',
-  '25_QualityMetrics', '26_UsageAnalytics', '27_GrowthMetrics', '28_RetentionAnalysis',
-  '29_ConversionFunnels', '30_EmotionalIntelligence', '31_SentimentAnalysis', '32_PersonalizationEngine',
-  '33_InnovationMetrics', '34_FutureInsights', '35_MetaIntelligence', '36_SystemEvolution'
+// 18 tables that should be operational
+const ALL_CANAI_TABLES = [
+  // 18-Table Optimized Architecture
+  '01_PromptLogs', '02_SessionAnalytics', '03_SparkSplitAnalytics', '04_GoldmineOutput', '05_UserContext',
+  '06_EmotionalIntelligence', '07_TrustMetrics', '08_PerformanceMetrics', '09_WebhookLogs', '10_AirtableSync',
+  '11_ErrorLogs', '12_ProcessingResults', '13_SystemHealth', '14_PromptTypes', '15_EmotionalStates',
+  '16_TrustFactors', '17_SystemConfigs', '18_AnalyticsAggregates'
 ]
 
 // Generate test data for each table type
@@ -140,7 +136,7 @@ function generateTestData(tableName: string) {
 }
 
 async function testTablePopulation() {
-  console.log("🧪 PROOF TEST: Populating all 36 tables with real data")
+  console.log("🧪 PROOF TEST: Populating all 18 tables with real data")
   console.log("=" .repeat(60))
   
   const results = {
@@ -149,7 +145,7 @@ async function testTablePopulation() {
     createdRecords: [] as { table: string, recordId: string }[]
   }
   
-  for (const tableName of ALL_TABLES) {
+  for (const tableName of ALL_CANAI_TABLES) {
     try {
       console.log(`\n🔍 Testing ${tableName}...`)
       
@@ -180,8 +176,8 @@ async function testTablePopulation() {
   
   // Summary
   console.log(`\n📊 POPULATION TEST RESULTS:`)
-  console.log(`✅ Successfully populated: ${results.successful.length}/${ALL_TABLES.length} tables`)
-  console.log(`❌ Failed to populate: ${results.failed.length}/${ALL_TABLES.length} tables`)
+  console.log(`✅ Successfully populated: ${results.successful.length}/${ALL_CANAI_TABLES.length} tables`)
+  console.log(`❌ Failed to populate: ${results.failed.length}/${ALL_CANAI_TABLES.length} tables`)
   console.log(`📝 Total records created: ${results.createdRecords.length}`)
   
   if (results.successful.length > 0) {
@@ -200,13 +196,13 @@ async function testTablePopulation() {
   )
   
   // Final verdict
-  if (results.successful.length === ALL_TABLES.length) {
-    console.log(`\n🎉 PROOF COMPLETE: ALL 36 TABLES CAN BE POPULATED!`)
+  if (results.successful.length === ALL_CANAI_TABLES.length) {
+    console.log(`\n🎉 PROOF COMPLETE: ALL 18 TABLES CAN BE POPULATED!`)
     console.log(`✅ 100% infrastructure validated with real data`)
-    console.log(`✅ CanAI Emotional Sovereignty Platform fully operational`)
+    console.log(`✅ CanAI 18-Table Optimized Platform fully operational`)
     return true
   } else {
-    console.log(`\n⚠️  PARTIAL SUCCESS: ${results.successful.length}/${ALL_TABLES.length} tables working`)
+    console.log(`\n⚠️  PARTIAL SUCCESS: ${results.successful.length}/${ALL_CANAI_TABLES.length} tables working`)
     console.log(`💡 ${results.failed.length} tables need investigation`)
     return false
   }

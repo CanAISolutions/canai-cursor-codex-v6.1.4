@@ -4,6 +4,19 @@
 
 import { composePrompt } from "./composePrompt"
 
+export type PromptType = 
+  | "ai_blueprint"
+  | "business_plan"
+  | "email_campaign"
+  | "site_audit"
+  | "social_content"
+  | "reverse_strategy"
+  | "ai_brand_identity"
+  | "profile_makeover"
+  | "blogblitz"
+  | "ad_amplify"
+  | "sparksplit";
+
 const validPromptTypes = [
   "ai_blueprint",
   "ai_brand_identity",
@@ -14,7 +27,8 @@ const validPromptTypes = [
   "social_content",
   "profile_makeover",
   "blogblitz",
-  "ad_amplify"
+  "ad_amplify",
+  "sparksplit"
 ]
 
 type PromptInput = Record<string, any>

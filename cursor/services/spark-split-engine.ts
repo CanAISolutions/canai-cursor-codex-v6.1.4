@@ -7,7 +7,9 @@
 import { EmotionalContext, TrustDelta, SparkConcept } from '../types/emotional-sovereignty';
 import { ReversalTestAutomator } from '../validators/reversal-test-automator';
 import { SacredMomentsOrchestrator } from './sacred-moments-orchestrator';
-import { EmotionalMemoryBank } from '../ai-memories/emotional-memory-bank';
+import { EmotionalMemoryBank } from '../utils/emotionalMemoryBank';
+import { emitSystemLog } from '../utils/audit-utils';
+import { EventBus } from '../event-bus/eventBus';
 
 export interface SparkSplitInput {
   prompt: string;
@@ -70,6 +72,7 @@ export interface SparkSplitSessionData {
   skippedComparison?: boolean;
   fallbackTriggered: boolean;
   fallbackMessage?: string;
+  sparkReusedIncremented?: boolean;
 }
 
 export class SparkSplitEngine {
@@ -78,15 +81,18 @@ export class SparkSplitEngine {
   private emotionalMemoryBank: EmotionalMemoryBank;
   private circuitBreakerThreshold = 1.0;
   private circuitBreakerSessionCount = 50;
+  private eventBus: EventBus;
 
   constructor(
     reversalTestAutomator: ReversalTestAutomator,
     sacredMomentsOrchestrator: SacredMomentsOrchestrator,
-    emotionalMemoryBank: EmotionalMemoryBank
+    emotionalMemoryBank: EmotionalMemoryBank,
+    eventBus: EventBus = EventBus.getInstance()
   ) {
     this.reversalTestAutomator = reversalTestAutomator;
     this.sacredMomentsOrchestrator = sacredMomentsOrchestrator;
     this.emotionalMemoryBank = emotionalMemoryBank;
+    this.eventBus = eventBus;
   }
 
   /**
@@ -186,8 +192,7 @@ export class SparkSplitEngine {
 
     const sterilePrompt = `Provide a direct, factual response to: ${prompt}`;
     
-    // This would integrate with a basic AI model or use stripped-down processing
-    // For now, we'll create a template-based sterile response
+    // Generate sterile response using OpenAI API with minimal emotional enhancement
     return await this.generateBasicResponse(sterilePrompt);
   }
 
@@ -195,9 +200,58 @@ export class SparkSplitEngine {
    * Generate basic response without emotional enrichment
    */
   private async generateBasicResponse(prompt: string): Promise<string> {
-    // This would call a basic AI model or use template responses
-    // Implementation would depend on available AI services
-    return `Here's a straightforward response to your request: [Basic AI processing of: ${prompt}]`;
+    try {
+      // Use OpenAI API for sterile, factual responses
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful AI assistant. Provide direct, factual, professional responses without emotional language, personalization, or creative flourishes. Focus on accuracy and clarity.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.1, // Low temperature for consistent, sterile responses
+          max_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+      const sterileResponse = data.choices?.[0]?.message?.content || 'Unable to generate response';
+
+      // Log the sterile generation for analytics
+      this.eventBus.emit('sparksplit-sterile-generated', {
+        prompt: prompt.substring(0, 100) + '...',
+        responseLength: sterileResponse.length,
+        model: 'gpt-4',
+        temperature: 0.1,
+        timestamp: new Date().toISOString()
+      });
+
+      return sterileResponse;
+    } catch (error) {
+      // Fallback to template-based response if API fails
+      this.eventBus.emit('sparksplit-sterile-fallback', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        prompt: prompt.substring(0, 100) + '...',
+        timestamp: new Date().toISOString()
+      });
+
+      return `Here's a direct response to your request: ${prompt}. This is a factual, straightforward approach without additional emotional context or personalization.`;
+    }
   }
 
   /**
@@ -673,8 +727,7 @@ export class SparkSplitEngine {
     toneContext: string,
     feedback: string
   ): Promise<string> {
-    // This would integrate with the main generation pipeline
-    // incorporating user feedback to improve output
+    // Integrate user feedback with the main generation pipeline for improved output
     const enhancedPrompt = `${prompt}\n\nUser feedback for improvement: ${feedback}`;
     return await this.generateBasicResponse(enhancedPrompt);
   }
@@ -802,12 +855,39 @@ export class SparkSplitEngine {
    * Log SparkSplit session to database
    */
   private async logSparkSplitSession(sessionData: SparkSplitSessionData): Promise<void> {
-    // This would log to tblPromptComparisons in Airtable
-    // Implementation depends on database integration
-    console.log('SparkSplit session logged:', {
-      sessionId: sessionData.sessionId,
-      trustDelta: sessionData.trustDelta,
-      userPreference: sessionData.userPreferredOutput
-    });
+    try {
+      // Log system event with proper context
+      emitSystemLog('sparksplit-session-logged', {
+        sessionId: sessionData.sessionId,
+        userId: sessionData.userId,
+        trustDelta: sessionData.trustDelta,
+        userPreference: sessionData.userPreferredOutput,
+        sparkConcept: sessionData.sparkConcept,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Emit event for tracking and analytics
+      this.eventBus.emit('sparksplit:session-logged', {
+        sessionId: sessionData.sessionId,
+        userId: sessionData.userId,
+        trustDelta: sessionData.trustDelta,
+        userPreference: sessionData.userPreferredOutput,
+        timestamp: new Date().toISOString()
+      });
+      
+      // This would log to tblPromptComparisons in Airtable
+      // Implementation depends on database integration
+    } catch (error) {
+      // Log error but don't fail the operation
+      emitSystemLog('sparksplit-session-log-error', {
+        error: error instanceof Error ? error.message : String(error),
+        sessionId: sessionData.sessionId
+      });
+      
+      this.eventBus.emit('sparksplit:session-log-error', {
+        error,
+        sessionId: sessionData.sessionId
+      });
+    }
   }
 } 

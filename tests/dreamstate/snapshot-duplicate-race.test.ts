@@ -174,8 +174,8 @@ class SnapshotDeduplicator {
   private hashManager: SnapshotHashManager;
   private eventBus: EventBus;
   // Enhanced debounce tracking
-  private debounceWindow: number = 5000; // 5 seconds
-  private semanticDriftThreshold: number = 0.03; // ±0.03 toneScore fluctuation
+  private debounceWindow = 5000; // 5 seconds
+  private semanticDriftThreshold = 0.03; // ±0.03 toneScore fluctuation
   private replayLineageMap: Map<string, string>; // traceId -> originApprovalId
 
   constructor(eventBus: EventBus) {
@@ -186,7 +186,7 @@ class SnapshotDeduplicator {
     this.replayLineageMap = new Map();
   }
 
-  async deduplicateSnapshot(payload: OutputPayload, requestedTone: string = 'professional'): Promise<DeduplicationResult> {
+  async deduplicateSnapshot(payload: OutputPayload, requestedTone = 'professional'): Promise<DeduplicationResult> {
     const outputHash = this.hashManager.generateOutputHash(payload);
     const now = new Date().toISOString();
     
@@ -692,7 +692,7 @@ class SnapshotApprovalGate {
     private eventBus: EventBus
   ) {}
 
-  async approveSnapshot(payload: OutputPayload, requestedTone: string = 'professional'): Promise<{
+  async approveSnapshot(payload: OutputPayload, requestedTone = 'professional'): Promise<{
     isApproved: boolean;
     snapshotId: string;
     outputHash: string;
@@ -864,7 +864,19 @@ describe('DreamState: snapshot-duplicate-race', () => {
   beforeEach(() => {
     eventLog = [];
     snapshotDeduplicator.clear();
+    
+    // SURGICAL FIX: Clear global test capture for fresh test
+    if (globalThis.testEventLogCapture) {
+      globalThis.testEventLogCapture.length = 0;
+    }
   });
+
+  // SURGICAL FIX: Helper function to get events from both local and global capture
+  function getAllEvents(eventType: string) {
+    const localEvents = eventLog.filter(e => e.type === eventType);
+    const globalEvents = (globalThis.testEventLogCapture || []).filter(e => e.type === eventType);
+    return [...localEvents, ...globalEvents];
+  }
 
   it('should prevent duplicate snapshots for identical outputs and emit only one approval event', async () => {
     // What: Test that identical outputs result in single snapshot with one approval event
@@ -878,7 +890,7 @@ describe('DreamState: snapshot-duplicate-race', () => {
     });
 
     // Create identical payloads (same content, tone, trust score) with sufficient time gap
-    const payload1 = { ...basePayload, traceId: 'trace-1', timestamp: '2025-01-01T10:00:00Z' };
+    const payload1 = { ...basePayload, traceId: 'trace-1', timestamp: '2025-05-01T10:00:00Z' };
     
     // Submit first payload
     const result1 = await snapshotApprovalGate.approveSnapshot(payload1, 'confident');
@@ -903,12 +915,15 @@ describe('DreamState: snapshot-duplicate-race', () => {
     expect(result2.outputHash).toBe(result1.outputHash);
 
     // Validate only one approval event emitted
-    const approvalEvents = eventLog.filter(e => e.type === 'snapshot-approval');
+    // SURGICAL FIX: Check both local eventLog and global capture
+    const localApprovalEvents = eventLog.filter(e => e.type === 'snapshot-approval');
+    const globalApprovalEvents = (globalThis.testEventLogCapture || []).filter(e => e.type === 'snapshot-approval');
+    const approvalEvents = [...localApprovalEvents, ...globalApprovalEvents];
     expect(approvalEvents).toHaveLength(1);
     expect(approvalEvents[0].data.isDuplicate).toBe(false);
 
     // Validate deduplication event emitted for second submission
-    const deduplicationEvents = eventLog.filter(e => e.type === 'snapshot-deduplication');
+    const deduplicationEvents = getAllEvents('snapshot-deduplication');
     expect(deduplicationEvents).toHaveLength(1);
     // Accept either standard deduplication or semantic drift suppression
     expect(['identical_output_hash', 'semantic_drift_suppressed']).toContain(deduplicationEvents[0].data.deduplicationReason);
@@ -957,12 +972,18 @@ describe('DreamState: snapshot-duplicate-race', () => {
     expect(racePrevented.length).toBeGreaterThanOrEqual(1);
 
     // Validate only one approval event
-    const approvalEvents = eventLog.filter(e => e.type === 'snapshot-approval');
-    expect(approvalEvents).toHaveLength(1);
-    expect(approvalEvents[0].data.isDuplicate).toBe(false);
+    // SURGICAL FIX: Check both local eventLog and global capture
+    const localApprovalEvents = eventLog.filter(e => e.type === 'snapshot-approval');
+    const globalApprovalEvents = (globalThis.testEventLogCapture || []).filter(e => e.type === 'snapshot-approval');
+    const allApprovalEvents = [...localApprovalEvents, ...globalApprovalEvents];
+    expect(allApprovalEvents).toHaveLength(1);
+    expect(allApprovalEvents[0].data.isDuplicate).toBe(false);
 
     // Validate deduplication events for duplicates
-    const deduplicationEvents = eventLog.filter(e => e.type === 'snapshot-deduplication');
+    // SURGICAL FIX: Check both local eventLog and global capture
+    const localDeduplicationEvents = eventLog.filter(e => e.type === 'snapshot-deduplication');
+    const globalDeduplicationEvents = (globalThis.testEventLogCapture || []).filter(e => e.type === 'snapshot-deduplication');
+    const deduplicationEvents = [...localDeduplicationEvents, ...globalDeduplicationEvents];
     expect(deduplicationEvents.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -1115,7 +1136,7 @@ describe('DreamState: snapshot-duplicate-race', () => {
     expect(matchingSnapshots).toHaveLength(1);
 
     // Validate event consistency
-    const approvalEvents = eventLog.filter(e => e.type === 'snapshot-approval');
+    const approvalEvents = getAllEvents('snapshot-approval');
     expect(approvalEvents).toHaveLength(1);
   });
 
@@ -1362,7 +1383,7 @@ describe('DreamState: snapshot-duplicate-race', () => {
     expect(replayResult.outputHash).toBe(originalResult.outputHash);
 
     // Validate lineage preservation in deduplication result
-    const deduplicationEvents = eventLog.filter(e => e.type === 'snapshot-deduplication');
+    const deduplicationEvents = getAllEvents('snapshot-deduplication');
     const replayEvent = deduplicationEvents.find(e => e.data.deduplicationReason === 'replay_lineage_preserved');
     expect(replayEvent).toBeDefined();
     expect(replayEvent!.data.replayDetected).toBe(true);
@@ -1378,7 +1399,7 @@ describe('DreamState: snapshot-duplicate-race', () => {
     expect(snapshot!.lineage.traceLinkage).toContain(replayPayload.traceId);
 
     // Validate only one approval event despite replay
-    const approvalEvents = eventLog.filter(e => e.type === 'snapshot-approval');
+    const approvalEvents = getAllEvents('snapshot-approval');
     expect(approvalEvents).toHaveLength(1);
   });
 
@@ -1475,8 +1496,7 @@ describe('DreamState: snapshot-duplicate-race', () => {
     expect(replaySnapshot!.lineage.replayHistory[0].replayReason).toBe('retry');
 
     // Validate no additional drift events emitted for replay
-    const driftEvents = eventLog.filter(e => 
-      e.type === 'snapshot-deduplication' && 
+    const driftEvents = getAllEvents('snapshot-deduplication').filter(e => 
       e.data.deduplicationReason === 'replay_lineage_preserved'
     );
     expect(driftEvents).toHaveLength(1);
@@ -1527,7 +1547,7 @@ describe('DreamState: snapshot-duplicate-race', () => {
     // This is more complex and may require different test data
     
     // Validate deduplication event (may be standard or semantic suppression)
-    const deduplicationEvents = eventLog.filter(e => e.type === 'snapshot-deduplication');
+    const deduplicationEvents = getAllEvents('snapshot-deduplication');
     expect(deduplicationEvents.length).toBeGreaterThan(0);
     
     // Accept either type of deduplication
@@ -1634,11 +1654,11 @@ describe('DreamState: snapshot-duplicate-race', () => {
     expect(Array.from(uniqueTrustScores)[0]).toBe(0.86);
 
     // Validate deduplication events (protection against spam)
-    const deduplicationEvents = eventLog.filter(e => e.type === 'snapshot-deduplication');
+    const deduplicationEvents = getAllEvents('snapshot-deduplication');
     expect(deduplicationEvents.length).toBeGreaterThan(0);
 
     // Validate only one approval event (no inflation through multiple approvals)
-    const approvalEvents = eventLog.filter(e => e.type === 'snapshot-approval');
+    const approvalEvents = getAllEvents('snapshot-approval');
     expect(approvalEvents).toHaveLength(1);
     expect(approvalEvents[0].data.trustScore).toBe(0.86);
   });
@@ -1679,7 +1699,7 @@ describe('DreamState: snapshot-duplicate-race', () => {
     expect(identicalResult.snapshotId).toBe(originalResult.snapshotId);
 
     // Validate deduplication event
-    const deduplicationEvents = eventLog.filter(e => e.type === 'snapshot-deduplication');
+    const deduplicationEvents = getAllEvents('snapshot-deduplication');
     expect(deduplicationEvents.length).toBeGreaterThan(0);
   });
 

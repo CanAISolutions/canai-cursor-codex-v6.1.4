@@ -1,6 +1,23 @@
+/**
+ * social_content.ts
+ * 
+ * Purpose:
+ * Simple TypeScript interface for Social Content prompt type.
+ * Provides type safety and validation for prompt inputs.
+ */
+
+export interface SocialContentPrompt {
+  platform: string;
+  contentType: string;
+  targetAudience: string[];
+  keyMessage: string;
+  tone: string;
+  enhancers?: Record<string, boolean>;
+}
+
 // 🧠 social_content.ts
-// Generates the final prompt string for the Social Content Pack product.
-// Supports enhancer injection, token tracking, SmartPromptScore, and full metadata return.
+// Generates the final prompt string for the Social Content Builder product.
+// Returns full structured metadata including version, cost, quality score, and fallback tracking.
 
 import { composePrompt } from "../lib/composePrompt"
 import { estimateTokens } from "../lib/estimateTokens"

@@ -1,11 +1,11 @@
 /**
  * Airtable API Types for CanAI Emotional Intelligence Platform
  * 
- * Comprehensive type definitions for all 36 tables in the revolutionary
+ * Comprehensive type definitions for all 18 tables in the revolutionary
  * emotional intelligence infrastructure, including SparkSplit trust transparency,
  * predictive analytics, and meta-intelligence capabilities.
  * 
- * @version 1.0.0
+ * @version 2.0.0 - 18-Table Optimized Architecture
  * @author CanAI Codex v6.1.4
  * @trust_score 4.7
  */
@@ -404,55 +404,31 @@ export interface BulkOperationResult {
 // ===== TABLE MAPPING =====
 
 export const AIRTABLE_TABLES = {
-  // Revolutionary Trust Engine (Working)
-  SPARK_SPLIT_ANALYTICS: '02_SparkSplitAnalytics',
-  TRUST_METRICS: '13_TrustMetrics',
-  TRUST_EVOLUTION: '31_TrustEvolution',
-  EMOTIONAL_COMPASS: '12_EmotionalCompass',
+  // TIER 1: CORE TABLES (3 TABLES)
+  PROMPT_LOGS: 'PromptLogs',
+  SESSION_ANALYTICS: 'SessionAnalytics',
+  SPARK_SPLIT_ANALYTICS: 'SparkSplitAnalytics',
   
-  // Core Analytics Platform (Working)
-  PROMPT_LOGS: '01_PromptLogs',
-  SESSION_ANALYTICS: '03_SessionAnalytics',
-  USER_CONTEXT: '04_UserContext',
-  OUTPUT_GOLDMINE: '05_OutputGoldmine',
+  // TIER 2: INTELLIGENCE TABLES (5 TABLES)
+  GOLDMINE_OUTPUT: 'GoldmineOutput',
+  USER_CONTEXT: 'UserContext',
+  EMOTIONAL_INTELLIGENCE: 'EmotionalIntelligence',
+  TRUST_METRICS: 'TrustMetrics',
+  PERFORMANCE_METRICS: 'PerformanceMetrics',
   
-  // Predictive Intelligence Suite (Working)
-  PREDICTIVE_INSIGHTS: '16_PredictiveInsights',
-  REVENUE_ATTRIBUTION: '18_RevenueAttribution',
-  CONVERSION_FUNNELS: '21_ConversionFunnels',
-  GROWTH_METRICS: '22_GrowthMetrics',
-  PREDICTIVE_MODELING: '34_PredictiveModeling',
+  // TIER 3: INTEGRATION INFRASTRUCTURE (5 TABLES)
+  WEBHOOK_LOGS: 'WebhookLogs',
+  AIRTABLE_SYNC: 'AirtableSync',
+  ERROR_LOGS: 'ErrorLogs',
+  PROCESSING_RESULTS: 'ProcessingResults',
+  SYSTEM_HEALTH: 'SystemHealth',
   
-  // Emotional Intelligence Core (Working + New)
-  EMOTIONAL_INTELLIGENCE: '23_EmotionalIntelligence',
-  EMOTIONAL_JOURNEY: '24_EmotionalJourney',
-  SENTIMENT_ANALYSIS: '25_SentimentAnalysis',
-  BEHAVIORAL_PATTERNS: '26_BehavioralPatterns',
-  
-  // Advanced Intelligence (Working)
-  PERSONA_CLUSTER: '14_PersonaCluster',
-  CONTENT_OPTIMIZATION: '15_ContentOptimization',
-  COMPETITIVE_INTEL: '17_CompetitiveIntel',
-  CUSTOMER_JOURNEY: '19_CustomerJourney',
-  BRAND_RESONANCE: '20_BrandResonance',
-  
-  // Meta-Intelligence System (New)
-  SYSTEM_EVOLUTION: '27_SystemEvolution',
-  META_INTELLIGENCE: '28_MetaIntelligence',
-  INNOVATION_METRICS: '29_InnovationMetrics',
-  FUTURE_INSIGHTS: '30_FutureInsights',
-  LEARNING_EXTRACTION: '32_LearningExtraction',
-  COMPOUND_INTELLIGENCE: '33_CompoundIntelligence',
-  EVOLUTION_TRACKING: '35_EvolutionTracking',
-  INTELLIGENCE_COMPOUND: '36_IntelligenceCompound',
-  
-  // Supporting Infrastructure (Working)
-  FEEDBACK_LOGS: '06_FeedbackLogs',
-  DELIVERY_COST_LOGS: '07_DeliveryCostLogs',
-  REFERRAL_TRIGGERS: '08_ReferralTriggers',
-  AI_MINING_AGENTS: '09_AIMiningAgents',
-  FIELD_GLOSSARY: '10_FieldGlossary',
-  SCHEMA_EVENTS: '11_SchemaEvents'
+  // TIER 4: REFERENCE TABLES (5 TABLES)
+  PROMPT_TYPES: 'PromptTypes',
+  EMOTIONAL_STATES: 'EmotionalStates',
+  TRUST_FACTORS: 'TrustFactors',
+  SYSTEM_CONFIGS: 'SystemConfigs',
+  ANALYTICS_AGGREGATES: 'AnalyticsAggregates'
 } as const;
 
 export type TableName = typeof AIRTABLE_TABLES[keyof typeof AIRTABLE_TABLES];

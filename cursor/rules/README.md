@@ -685,3 +685,137 @@ Our test-first truth rules ensure unshakeable system reliability:
 
 **This is not just governance. This is revolutionary user empowerment through production excellence.**
 
+# MDC Rules Enforcement System
+
+This directory contains the `.mdc` rules and enforcement mechanisms for CanAI Cursor Codex. The MDC (Model Directive Control) rules system provides automated enforcement of code standards, emotional sovereignty requirements, and test-first truth principles.
+
+## Overview
+
+The MDC Rules Enforcement System is a core part of Cursor Codex, ensuring that all code maintains high standards of quality, emotional intelligence, and test validation. The system automatically loads and enforces rules during startup and when code is executed.
+
+### Key Features
+
+- **Automatic Enforcement**: MDC rules are enforced at startup and whenever code is run
+- **100% Confidence**: The system validates all `.mdc` files with full confidence
+- **Real-Time Validation**: Code is validated as it's written, saved, and executed
+- **Graceful Degradation**: System operates even when some rules cannot be loaded
+- **CLI Tools**: Command-line tools for manual enforcement and reporting
+
+## Components
+
+The MDC Rules Enforcement System consists of several key components:
+
+1. **MDC Rule Files** (`.mdc`): Define the rules and standards for code
+2. **MDC Rules Loader** (`mdc-rules-loader.ts`): Loads and manages rule definitions
+3. **MDC Enforcement Engine** (`mdc-enforcement-engine.ts`): Enforces rules on files
+4. **Boot Sequence** (`boot_sequence/index.ts`): Activates MDC rules during startup
+5. **Runtime Hooks** (`runtime-hooks/mdc-rules-hook.ts`): Ensures continuous enforcement
+6. **CLI Tool** (`scripts/enforce-mdc.js`): Command-line tool for manual enforcement
+
+## Usage
+
+### Automatic Enforcement
+
+MDC rules are automatically enforced when:
+
+1. The server starts (`npm start` or `npm run dev`)
+2. Files are saved
+3. Code is executed
+4. New modules are loaded
+
+No manual action is required for this automatic enforcement.
+
+### Manual Enforcement
+
+You can manually enforce MDC rules using the CLI tool:
+
+```bash
+# Enforce rules on a specific file
+npm run enforce-mdc -- --file server.js
+
+# Enforce rules on a directory
+npm run enforce-mdc -- --dir cursor/boot_sequence
+
+# Generate a report
+npm run enforce-mdc -- --dir cursor --report mdc-report.txt
+
+# Enforce with auto-fix (where possible)
+npm run enforce-mdc -- --file server.js --fix
+
+# Enforce with strict mode (exit with error if violations found)
+npm run enforce-mdc -- --dir cursor --strict
+```
+
+### NPM Scripts
+
+The following NPM scripts are available for MDC enforcement:
+
+- `npm run enforce-mdc`: Run the MDC enforcement tool
+- `npm run enforce-mdc:fix`: Run with auto-fix enabled
+- `npm run enforce-mdc:report`: Generate a report for the entire codebase
+- `npm run enforce-mdc:ci`: Run in CI mode (strict enforcement)
+- `npm run boot`: Run the boot sequence (including MDC activation)
+- `npm run mdc:activate`: Activate MDC rules only
+
+## API Endpoints
+
+The system exposes the following API endpoints:
+
+- **POST /api/enforce-mdc**: Enforce MDC rules on a specific file
+  ```json
+  { "filePath": "path/to/file.ts" }
+  ```
+
+- **POST /api/activate-mdc**: Activate MDC rules
+  ```json
+  {}
+  ```
+
+## Architecture
+
+### Boot Sequence
+
+The streamlined boot sequence focuses solely on MDC rules activation:
+
+1. **00_mdc_rules_activation.ts**: Loads and activates all MDC rules
+2. Validates the enforcement engine is operational
+3. Sets up runtime hooks for continuous enforcement
+
+### Runtime Hooks
+
+The runtime hooks ensure MDC rules are enforced continuously:
+
+1. Event listeners for file save, open, and execute events
+2. Global hooks for module loading
+3. Automatic enforcement when code is run
+
+### Enforcement Engine
+
+The enforcement engine evaluates files against the loaded MDC rules:
+
+1. Loads all `.mdc` rule files
+2. Applies rules to files based on glob patterns
+3. Detects violations and provides suggestions
+4. Generates enforcement reports
+
+## Trust and Confidence
+
+The MDC Rules Enforcement System is designed to provide 100% confidence in rule enforcement by:
+
+1. Validating the enforcement engine during boot
+2. Using fallback rules when primary rules cannot be loaded
+3. Applying continuous enforcement during runtime
+4. Providing comprehensive logging and reporting
+
+This ensures that all code adheres to the high standards of emotional sovereignty, test-first truth, and code quality required by CanAI Cursor Codex.
+
+## Extending the System
+
+To add new MDC rules:
+
+1. Create a new `.mdc` file in the `cursor/rules` directory
+2. Define the rule using the MDC rule format
+3. Restart the server or run `npm run mdc:activate`
+
+The new rule will be automatically loaded and enforced.
+

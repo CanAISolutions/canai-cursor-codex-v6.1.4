@@ -2,7 +2,7 @@
  * Test Script for Airtable Service
  * 
  * Validates the Airtable API service functionality and connection
- * to the revolutionary 36-table emotional intelligence platform.
+ * to the revolutionary 18-table optimized emotional intelligence platform.
  * 
  * @version 1.0.0
  * @author CanAI Codex v6.1.4
@@ -32,10 +32,10 @@ async function testAirtableService() {
     });
     console.log('');
 
-    // Test 2: System Evolution Table Access
-    console.log('🔍 Testing SystemEvolution Table Access...');
-    const systemEvolution = await airtableService.getRecords(AIRTABLE_TABLES.SYSTEM_EVOLUTION, { maxRecords: 3 });
-    console.log(`✅ Retrieved ${systemEvolution.records.length} SystemEvolution records`);
+    // Test 2: System Configs Table Access
+    console.log('🔍 Testing SystemConfigs Table Access...');
+    const systemEvolution = await airtableService.getRecords(AIRTABLE_TABLES.SYSTEM_CONFIGS, { maxRecords: 3 });
+    console.log(`✅ Retrieved ${systemEvolution.records.length} SystemConfigs records`);
     if (systemEvolution.records.length > 0) {
       console.log(`   Sample record ID: ${systemEvolution.records[0].id}`);
       console.log(`   Fields: ${Object.keys(systemEvolution.records[0].fields).join(', ')}`);
@@ -126,7 +126,7 @@ async function testAirtableService() {
       evolution_id: `evo_${Date.now()}`,
       system_component: 'airtable_service',
       evolution_type: 'api_integration',
-      improvement_description: 'Successfully deployed comprehensive Airtable API service with 36-table support',
+      improvement_description: 'Successfully deployed comprehensive Airtable API service with 18-table optimized support',
       impact_score: 4.8,
       learning_extraction: 'Type-safe API operations significantly improve reliability and developer experience',
       future_implications: 'Foundation for real-time emotional intelligence processing and trust transparency',

@@ -10,11 +10,16 @@
  * MCP Enhancement: Enabled (v3 Schema Lock)
  */
 
-import { validateInput } from '../cursor/agents/input-validator';
-import { scorePrompt } from '../cursor/agents/qa-scorer';
-import { validateEmpathy } from '../cursor/agents/empathy-validator';
-import { routeFailure } from '../cursor/self-healing/fallbackRouter';
-import { logValidationStatus, logScoreBreakdown, logEmpathyMetrics } from '../cursor/logs/prompt-logs';
+import { validateInputSchema } from '../cursor/prompt-infrastructure/validation/input-validator';
+import { scorePromptQuality } from '../cursor/prompt-infrastructure/prompt-score/quality-scorer';
+import { EmotionalToneValidator } from '../cursor/emotional-sovereignty/tone-validator';
+import { FallbackRouter } from '../cursor/self-healing/fallback-router';
+import { Logger } from '../utils/logger';
+import { EventBus } from '../cursor/event-bus/event-bus';
+import { PromptSchemaValidator } from '../cursor/prompt-infrastructure/validation/schema-validator';
+import { EmotionalMemoryBank } from '../cursor/memory/emotional-memory-bank';
+import { PromptScoringManager } from '../cursor/prompt-infrastructure/prompt-score/scoring-manager';
+import { TrustMetricsCollector } from '../cursor/trust/trust-metrics-collector';
 
 interface SiteAuditInput {
   siteUrl: string;
@@ -185,6 +190,13 @@ function inferFounderFromAudit(auditType: string, goals: string[]): string {
   return `Experienced web optimization specialist with expertise in ${auditType} audits. Passionate about helping businesses achieve their digital goals through data-driven improvements and user-centered design.`;
 }
 
+// Create event bus for emitting events
+const eventBus = new EventBus();
+const emit = (event: string, data: any) => {
+  Logger.info(`SiteAuditMCP: Emitting ${event} event`);
+  eventBus.emit(event, { type: 'site_audit', data });
+};
+
 export async function generateSiteAudit(input: SiteAuditInput): Promise<SiteAuditSession> {
   // Apply MCP enhancers first
   const enhancedInput = applyMCPEnhancers(input);
@@ -202,156 +214,123 @@ export async function generateSiteAudit(input: SiteAuditInput): Promise<SiteAudi
 
   try {
     // 1. Validate input
-    const validationResult = await validateInput(enhancedInput, validationSchema);
+    const validator = new PromptSchemaValidator();
+    const validationResult = await validator.validateSchema({
+      input: enhancedInput,
+      schema: validationSchema,
+      promptType: 'site_audit'
+    });
+    
     session.validationStatus = {
       isValid: validationResult.isValid,
-      issues: [
-        ...validationResult.missingFields,
-        ...validationResult.invalidFields
-      ]
+      issues: validationResult.errors || []
     };
 
-    if (!validationResult.isValid) {
-      await routeFailure({
-        type: 'validation',
-        severity: 2,
-        details: { input: enhancedInput, validationResult },
-        timestamp: session.metadata.timestamp
-      });
-      return session;
+    Logger.info('SiteAuditMCP: Input validation completed', {
+      isValid: session.validationStatus.isValid,
+      issueCount: session.validationStatus.issues.length
+    });
+
+    if (!session.validationStatus.isValid) {
+      emit('validationFailed', session.validationStatus);
+      return handleInvalidInput(enhancedInput, session);
     }
 
-    // 2. Generate site audit (placeholder)
-    const output: SiteAuditOutput = {
-      audit: {
-        overview: 'Comprehensive site analysis and recommendations',
-        findings: {
-          critical: [
-            'Security vulnerabilities',
-            'Performance bottlenecks'
-          ],
-          high: [
-            'SEO optimization needed',
-            'Mobile responsiveness issues'
-          ],
-          medium: [
-            'Content gaps',
-            'Navigation improvements'
-          ],
-          low: [
-            'Minor UI tweaks',
-            'Documentation updates'
-          ]
-        },
-        recommendations: [
-          'Implement security patches',
-          'Optimize page load times',
-          'Enhance mobile experience'
-        ],
-        metrics: [
-          'Page speed score',
-          'SEO ranking',
-          'User engagement'
-        ]
-      },
-      action: [
-        'Prioritize critical fixes',
-        'Schedule improvements',
-        'Monitor metrics'
-      ],
-      timeline: [
-        'Week 1: Critical fixes',
-        'Week 2-3: High priority',
-        'Week 4: Medium priority'
-      ],
-      resources: [
-        'Development team',
-        'Design resources',
-        'Testing tools'
-      ]
-    };
+    // 2. Generate output
+    const output = await generateAuditOutput(enhancedInput);
     session.output = output;
 
     // 3. Score output
-    const scoringResult = await scorePrompt(output, {
+    const scoringManager = new PromptScoringManager();
+    const scoringResult = await scoringManager.scorePrompt({
       promptType: 'site_audit',
-      requiredFields: ['audit', 'action', 'timeline', 'resources'],
-      validTones: validationSchema.validTones,
-      minScore: 0.75
+      input: output,
+      context: {
+        requiredFields: ['audit', 'action', 'timeline', 'resources'],
+        validTones: validationSchema.validTones
+      }
     });
 
     session.score = {
-      overall: scoringResult.score,
-      breakdown: scoringResult.scoreBreakdown
+      overall: scoringResult.overall,
+      breakdown: {
+        clarity: scoringResult.clarity,
+        structure: scoringResult.structure || 0,
+        completeness: scoringResult.completeness,
+        toneMatch: scoringResult.toneMatch,
+        emotionalDepth: scoringResult.emotionalDepth || 0
+      }
     };
 
-    if (!scoringResult.isValid) {
-      await routeFailure({
-        type: 'scoring',
-        severity: 1,
-        details: { output, scoringResult },
-        timestamp: session.metadata.timestamp
-      });
-      return session;
-    }
-
-    // 4. Validate empathy
-    const empathyResult = await validateEmpathy(output, {
-      targetTone: enhancedInput.tone,
-      emotionalDepth: 0.7
+    Logger.info('SiteAuditMCP: Output scoring completed', {
+      overallScore: session.score.overall,
+      clarityScore: session.score.breakdown.clarity
     });
 
-    session.empathyMetrics = empathyResult.metrics;
+    if (session.score.overall < 0.7) {
+      emit('lowScoreDetected', session.score);
+      return handleLowScore(enhancedInput, output, session);
+    }
 
-    if (!empathyResult.isValid) {
-      await routeFailure({
-        type: 'empathy',
-        severity: 1,
-        details: { output, empathyResult },
-        timestamp: session.metadata.timestamp
-      });
-      return session;
+    // 4. Evaluate empathy
+    const emotionalToneValidator = new EmotionalToneValidator();
+    const empathyResult = await emotionalToneValidator.validateFullEmpathy({
+      tone: enhancedInput.tone,
+      content: formatOutputForEmpathyCheck(output),
+      context: {
+        audienceType: enhancedInput.audience || 'business owner',
+        industry: enhancedInput.auditType
+      }
+    });
+
+    session.empathyMetrics = {
+      emotionalResonance: empathyResult.emotionalResonance,
+      toneAlignment: empathyResult.toneAlignment,
+      connectionStrength: empathyResult.connectionStrength,
+      authenticity: empathyResult.authenticity
+    };
+
+    Logger.info('SiteAuditMCP: Empathy validation completed', {
+      toneAlignment: session.empathyMetrics.toneAlignment,
+      resonance: session.empathyMetrics.emotionalResonance
+    });
+
+    if (empathyResult.toneAlignment < 0.7) {
+      emit('empathyMismatch', session.empathyMetrics);
+      return handleEmpathyMismatch(enhancedInput, output, session);
     }
 
     // 5. Calculate trust score
-    session.metadata.trustScore = (
-      scoringResult.score * 0.6 +
-      empathyResult.metrics.overall * 0.4
-    );
-
-    // 6. Log results
-    await logValidationStatus(session.metadata.timestamp, {
-      isValid: session.validationStatus.isValid,
-      issues: session.validationStatus.issues,
-      timestamp: session.metadata.timestamp
+    session.metadata.trustScore = calculateTrustScore(session);
+    
+    // Store session data in emotional memory bank for future reference
+    const memoryBank = new EmotionalMemoryBank();
+    await memoryBank.storeMemory({
+      type: 'site_audit',
+      data: {
+        url: enhancedInput.siteUrl,
+        auditType: enhancedInput.auditType,
+        trustScore: session.metadata.trustScore
+      }
     });
 
-    if (session.score) {
-      await logScoreBreakdown({
-        promptType: 'site_audit',
-        scoreBreakdown: session.score.breakdown,
-        feedback: scoringResult.feedback,
-        timestamp: session.metadata.timestamp
-      });
-    }
-
-    if (session.empathyMetrics) {
-      await logEmpathyMetrics({
-        metrics: session.empathyMetrics,
-        feedback: empathyResult.feedback,
-        timestamp: session.metadata.timestamp
-      });
-    }
+    emit('sessionComplete', {
+      sessionId: TrustMetricsCollector.generateSessionId(),
+      trustScore: session.metadata.trustScore
+    });
 
     return session;
   } catch (error) {
-    await routeFailure({
-      type: 'system',
-      severity: 3,
-      details: { error, input: enhancedInput },
-      timestamp: session.metadata.timestamp
+    Logger.error('SiteAuditMCP: Error generating site audit', {
+      error: error.message,
+      stack: error.stack,
+      siteUrl: input.siteUrl
     });
-    throw error;
+    
+    emit('processingError', { error: error.message });
+    
+    // Handle unexpected errors with fallback
+    return handleError(enhancedInput, error, session);
   }
 }
 
@@ -364,9 +343,220 @@ function hasMCPEnhancements(original: SiteAuditInput, enhanced: SiteAuditInput):
   );
 }
 
+// Helper function to handle invalid input
+async function handleInvalidInput(input: SiteAuditInput, session: SiteAuditSession): Promise<SiteAuditSession> {
+  const fallbackRouter = new FallbackRouter();
+  const recoveryResult = await fallbackRouter.routeFallback('validation', {
+    promptType: 'site_audit',
+    input,
+    validationStatus: session.validationStatus
+  });
+  
+  Logger.warn('SiteAuditMCP: Input validation failed, using fallback', {
+    issues: session.validationStatus.issues,
+    recoverySuccess: recoveryResult.success
+  });
+  
+  if (recoveryResult.success && recoveryResult.enhancedInput) {
+    // Retry with enhanced input from fallback
+    return generateSiteAudit(recoveryResult.enhancedInput as SiteAuditInput);
+  }
+  
+  // Return original session with failure noted
+  session.metadata.trustScore = 0.3; // Low trust score for invalid input
+  return session;
+}
+
+// Helper function to handle low score
+async function handleLowScore(input: SiteAuditInput, output: SiteAuditOutput, session: SiteAuditSession): Promise<SiteAuditSession> {
+  const fallbackRouter = new FallbackRouter();
+  const recoveryResult = await fallbackRouter.routeFallback('scoring', {
+    promptType: 'site_audit',
+    input,
+    output,
+    score: session.score
+  });
+  
+  Logger.warn('SiteAuditMCP: Low score detected, using fallback', {
+    score: session.score?.overall,
+    recoverySuccess: recoveryResult.success
+  });
+  
+  if (recoveryResult.success && recoveryResult.enhancedInput) {
+    // Retry with enhanced input from fallback
+    return generateSiteAudit(recoveryResult.enhancedInput as SiteAuditInput);
+  }
+  
+  // Return original session with failure noted
+  session.metadata.trustScore = 0.5; // Mediocre trust score for low quality
+  return session;
+}
+
+// Helper function to handle empathy mismatch
+async function handleEmpathyMismatch(input: SiteAuditInput, output: SiteAuditOutput, session: SiteAuditSession): Promise<SiteAuditSession> {
+  const fallbackRouter = new FallbackRouter();
+  const recoveryResult = await fallbackRouter.routeFallback('empathy', {
+    promptType: 'site_audit',
+    input,
+    output,
+    empathyMetrics: session.empathyMetrics
+  });
+  
+  Logger.warn('SiteAuditMCP: Empathy mismatch detected, using fallback', {
+    toneAlignment: session.empathyMetrics?.toneAlignment,
+    recoverySuccess: recoveryResult.success
+  });
+  
+  if (recoveryResult.success && recoveryResult.enhancedInput) {
+    // Retry with enhanced input from fallback
+    return generateSiteAudit(recoveryResult.enhancedInput as SiteAuditInput);
+  }
+  
+  // Return original session with failure noted
+  session.metadata.trustScore = 0.6; // Reduced trust score for empathy issues
+  return session;
+}
+
+// Helper function to handle errors
+async function handleError(input: SiteAuditInput, error: Error, session: SiteAuditSession): Promise<SiteAuditSession> {
+  const fallbackRouter = new FallbackRouter();
+  const recoveryResult = await fallbackRouter.routeFallback('system', {
+    promptType: 'site_audit',
+    input,
+    error: error.message
+  });
+  
+  Logger.error('SiteAuditMCP: Error during processing, using fallback', {
+    error: error.message,
+    recoverySuccess: recoveryResult.success
+  });
+  
+  if (recoveryResult.success && recoveryResult.enhancedInput) {
+    // Retry with enhanced input from fallback
+    return generateSiteAudit(recoveryResult.enhancedInput as SiteAuditInput);
+  }
+  
+  // Return session with error noted
+  session.metadata.trustScore = 0.2; // Very low trust score for errors
+  return session;
+}
+
+// Helper function to format output for empathy check
+function formatOutputForEmpathyCheck(output: SiteAuditOutput): string {
+  return `
+    Overview: ${output.audit.overview}
+    
+    Critical Findings:
+    ${output.audit.findings.critical.join('\n')}
+    
+    High Priority Findings:
+    ${output.audit.findings.high.join('\n')}
+    
+    Recommendations:
+    ${output.audit.recommendations.join('\n')}
+    
+    Action Steps:
+    ${output.action.join('\n')}
+  `;
+}
+
+// Helper function to calculate trust score
+function calculateTrustScore(session: SiteAuditSession): number {
+  if (!session.score || !session.empathyMetrics) {
+    return 0.4; // Default low score if missing data
+  }
+  
+  // Calculate weighted score based on quality and empathy
+  const scoreWeight = 0.6;
+  const empathyWeight = 0.4;
+  
+  const qualityScore = session.score.overall;
+  const empathyScore = (
+    session.empathyMetrics.emotionalResonance * 0.3 +
+    session.empathyMetrics.toneAlignment * 0.3 +
+    session.empathyMetrics.connectionStrength * 0.2 +
+    session.empathyMetrics.authenticity * 0.2
+  );
+  
+  const trustScore = (qualityScore * scoreWeight) + (empathyScore * empathyWeight);
+  
+  // Round to 2 decimal places
+  return Math.round(trustScore * 100) / 100;
+}
+
+// Helper function to generate actual audit output
+async function generateAuditOutput(input: SiteAuditInput): Promise<SiteAuditOutput> {
+  // In a real implementation, this would call an AI service or other logic
+  // to generate the actual audit content based on the input
+  Logger.info('SiteAuditMCP: Generating audit output', {
+    siteUrl: input.siteUrl,
+    auditType: input.auditType
+  });
+  
+  // This is a placeholder implementation that would be replaced with actual content generation
+  return {
+    audit: {
+      overview: `Comprehensive analysis of ${input.siteUrl} focusing on ${input.auditType} optimization opportunities.`,
+      findings: {
+        critical: [
+          `${input.auditType.toUpperCase()} security vulnerabilities detected`,
+          'Performance bottlenecks affecting conversion rates'
+        ],
+        high: [
+          'SEO optimization needed for better organic visibility',
+          'Mobile responsiveness issues on key landing pages'
+        ],
+        medium: [
+          'Content gaps in key product descriptions',
+          'Navigation improvements for user journey optimization'
+        ],
+        low: [
+          'Minor UI inconsistencies across pages',
+          'Documentation updates for improved clarity'
+        ]
+      },
+      recommendations: [
+        `Implement ${input.auditType} security patches within 7 days`,
+        'Optimize critical page load times to under 3 seconds',
+        'Enhance mobile experience with responsive design updates'
+      ],
+      metrics: [
+        'Page speed score improvement from 65 to 90+',
+        'SEO ranking improvement for key terms',
+        'User engagement increase by 25%'
+      ]
+    },
+    action: [
+      'Prioritize critical security and performance fixes',
+      'Schedule SEO and mobile experience improvements',
+      'Monitor key metrics with weekly reporting'
+    ],
+    timeline: [
+      'Week 1: Address all critical findings',
+      'Week 2-3: Implement high priority improvements',
+      'Week 4: Handle medium priority items and measure results'
+    ],
+    resources: [
+      'Development team allocation for security updates',
+      'Design resources for mobile responsive improvements',
+      'Testing tools for ongoing performance monitoring'
+    ]
+  };
+}
+
 // Export singleton instance
 export const siteAuditMCP = {
   generate: generateSiteAudit,
   version: '6.1.4',
-  trustScoreThreshold: 4.2
+  trustScoreThreshold: 4.2,
+  eventBus,
+  utils: {
+    applyMCPEnhancers,
+    hasMCPEnhancements,
+    calculateTrustScore,
+    inferProblemFromGoals,
+    inferContentFromSite,
+    inferDifferentiatorFromFocus,
+    inferFounderFromAudit
+  }
 }; 
