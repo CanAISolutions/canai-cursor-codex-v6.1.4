@@ -4,7 +4,7 @@
  * Purpose: Transparent, non-coercive comparison fostering trust through demonstration
  */
 
-import { EmotionalContext, TrustDelta, SparkConcept } from '../types/emotional-sovereignty';
+import { EmotionalContext, SparkConcept } from '../types/emotional-sovereignty';
 import { ReversalTestAutomator } from '../validators/reversal-test-automator';
 import { SacredMomentsOrchestrator } from './sacred-moments-orchestrator';
 import { EmotionalMemoryBank } from '../utils/emotionalMemoryBank';
@@ -273,7 +273,7 @@ export class SparkSplitEngine {
     // Determine dominant axis
     const scores = { awe, ownership, wonder, calm, power };
     const dominantAxis = Object.keys(scores).reduce((a, b) => 
-      scores[a] > scores[b] ? a : b
+      (scores as any)[a] > (scores as any)[b] ? a : b
     );
 
     // Generate color gradient based on dominant emotion
@@ -311,8 +311,8 @@ export class SparkSplitEngine {
       'strategic': { power: 1.5, ownership: 1.0 }
     };
 
-    if (toneAdjustments[toneContext] && toneAdjustments[toneContext][axis]) {
-      baseScore += toneAdjustments[toneContext][axis];
+    if ((toneAdjustments as any)[toneContext] && (toneAdjustments as any)[toneContext][axis]) {
+      baseScore += (toneAdjustments as any)[toneContext][axis];
     }
 
     // Emotional context adjustments
@@ -339,7 +339,7 @@ export class SparkSplitEngine {
       'power': 'radial-gradient(circle, rgba(244,67,54,0.1) 0%, rgba(244,67,54,0.05) 100%)' // Red
     };
 
-    return gradients[dominantAxis] || gradients['calm'];
+    return (gradients as any)[dominantAxis] || gradients['calm'];
   }
 
   /**
@@ -390,7 +390,7 @@ export class SparkSplitEngine {
     // Analyze language patterns, word choice, and emotional triggers
     // This would use NLP analysis to detect emotional resonance
     
-    const emotionalKeywords = {
+    const emotionalKeywords: Record<string, string[]> = {
       'awe': ['amazing', 'incredible', 'extraordinary', 'breathtaking', 'magnificent'],
       'ownership': ['your', 'yours', 'you', 'personal', 'unique', 'individual'],
       'wonder': ['discover', 'explore', 'imagine', 'possibility', 'potential']
@@ -412,7 +412,7 @@ export class SparkSplitEngine {
     // Analyze if output matches requested tone
     // This would use tone analysis algorithms
     
-    const toneIndicators = {
+    const toneIndicators: Record<string, string[]> = {
       'calm': ['peaceful', 'gentle', 'steady', 'balanced', 'serene'],
       'bold': ['powerful', 'strong', 'confident', 'decisive', 'impactful'],
       'playful': ['fun', 'creative', 'energetic', 'vibrant', 'dynamic'],
@@ -422,7 +422,7 @@ export class SparkSplitEngine {
     };
 
     const indicators = toneIndicators[requestedTone] || [];
-    const matches = indicators.filter(indicator => 
+    const matches = indicators.filter((indicator: string) => 
       output.toLowerCase().includes(indicator.toLowerCase())
     ).length;
 

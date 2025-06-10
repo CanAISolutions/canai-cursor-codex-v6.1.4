@@ -13,6 +13,12 @@ import { PromptSchemaValidator } from '../cursor/services/prompt-schema-validato
 import { PromptScoringManager } from '../cursor/prompt-infrastructure/prompt-score';
 import { EmotionalUXRenderer } from '../cursor/services/emotional-ux-renderer';
 import { FallbackManager } from '../cursor/services/fallback-manager';
+import { SparkSplitEngine, SparkSplitInput, SparkSplitOutput } from '../cursor/services/spark-split-engine';
+import { EmotionalContext, TrustDelta, SparkConcept } from '../cursor/types/emotional-sovereignty';
+import { ReversalTestAutomator } from '../cursor/validators/reversal-test-automator';
+import { SacredMomentsOrchestrator } from '../cursor/services/sacred-moments-orchestrator';
+import { EmotionalMemoryBank } from '../cursor/utils/emotionalMemoryBank';
+import { CulturalIntelligenceService, CulturalIntelligenceConfig, CulturalAnalysisResult, CrossCulturalAdaptationResult } from '../src/cultural-intelligence/cultural-intelligence-service';
 import { EventBus } from '../event-bus/eventBus';
 import logger from '../cursor/services/logger';
 
@@ -20,16 +26,77 @@ import logger from '../cursor/services/logger';
 const schemaValidator = new PromptSchemaValidator();
 const scoringManager = new PromptScoringManager(EventBus.getInstance());
 const emotionalUxRenderer = EmotionalUXRenderer.getInstance();
-// Use getInstance() instead of constructor for FallbackManager
 const fallbackManager = FallbackManager.getInstance();
 
-// Interfaces
+// Initialize SparkSplit services for production enhancement
+const eventBus = EventBus.getInstance();
+const reversalTestAutomator = new ReversalTestAutomator();
+const sacredMomentsOrchestrator = new SacredMomentsOrchestrator();
+const emotionalMemoryBank = new EmotionalMemoryBank();
+const sparkSplitEngine = new SparkSplitEngine(
+  reversalTestAutomator,
+  sacredMomentsOrchestrator,
+  emotionalMemoryBank,
+  eventBus
+);
+
+// Initialize Cultural Intelligence service for multi-locale support
+const culturalIntelligenceConfig: CulturalIntelligenceConfig = {
+  regionSpecificity: 'high',
+  culturalAccuracy: true,
+  expressionCalibration: 'precise',
+  adaptiveUX: true,
+  crossCulturalMemory: true
+};
+const culturalIntelligenceService = new CulturalIntelligenceService(culturalIntelligenceConfig);
+
+// Initialize cultural intelligence processing function
+async function processCulturalIntelligence(
+  input: ReverseStrategyInput, 
+  output: ReverseStrategyOutput
+): Promise<CulturalAnalysisResult> {
+  try {
+    const culturalContext: CulturalContext = {
+      primaryRegion: 'north_america', // Default, can be enhanced with user detection
+      culturalDimensions: {
+        formality: 1.0,
+        directness: 0.6,
+        expressiveness: 0.7,
+        collectivism: 0.65
+      },
+      expressionPattern: 'north_america_standard',
+      adaptiveMemory: {},
+      crossCulturalMemory: true
+    };
+
+    const analysisInput: CulturalAnalysisInput = {
+      content: output.strategy,
+      targetLocales: ['en-US', 'es-ES', 'zh-CN'],
+      culturalContext: culturalContext,
+      adaptationLevel: 'high'
+    };
+
+    return await culturalIntelligenceService.analyzeCulturalResonance(analysisInput);
+  } catch (error) {
+    logger.error('reverse_strategy.cultural_intelligence_failed', 'Cultural intelligence processing failed', { error });
+    return {
+      primaryRegion: 'north_america',
+      confidence: 0.8,
+      culturalAdaptations: [],
+      recommendedAdjustments: []
+    };
+  }
+}
+
+// Interfaces - Updated to Standardized 7-Field Structure
 interface ReverseStrategyInput {
-  targetOutcome: string;
-  currentState: string;
-  constraints: string[];
-  timeline: string;
-  tone: string;
+  businessName: string;           // NEW: Business context for strategy
+  targetAudience: string;         // NEW: Audience or users
+  primaryGoal: string;            // RENAMED: from targetOutcome - Goal/outcome to achieve
+  challenges: string[];           // MODIFIED: from constraints - Key challenges + constraint awareness
+  successMetrics: string;         // NEW: Definition of success + measurable outcomes
+  resourceConstraints: string;    // NEW: Known constraints + tools + timeline + urgency
+  strategicApproach: string;      // MODIFIED: from currentState - Methodology + execution resources
   enhancers?: Record<string, boolean>;
 }
 
@@ -69,23 +136,30 @@ interface ReverseStrategySession {
     connectionStrength: number;
     authenticity: number;
   };
+  sparkSplit?: SparkSplitOutput;  // NEW: SparkSplit trust transparency integration
+  emotionalContext?: EmotionalContext;  // NEW: Emotional sovereignty context
+  culturalAnalysis?: CulturalAnalysisResult;  // NEW: Cultural intelligence analysis
+  culturalAdaptations?: CrossCulturalAdaptationResult[];  // NEW: Multi-locale adaptations
   metadata: {
     version: string;
     timestamp: string;
     trustScore: number;
+    sparkSplitEnabled?: boolean;  // NEW: Track SparkSplit availability
   };
 }
 
 const validationSchema = {
-  requiredFields: ['targetOutcome', 'currentState', 'constraints', 'timeline', 'tone'],
+  requiredFields: ['businessName', 'targetAudience', 'primaryGoal', 'challenges', 'successMetrics', 'resourceConstraints', 'strategicApproach'],
   fieldTypes: {
-    targetOutcome: 'string',
-    currentState: 'string',
-    constraints: 'array',
-    timeline: 'string',
-    tone: 'string'
+    businessName: 'string',
+    targetAudience: 'string',
+    primaryGoal: 'string',
+    challenges: 'array',
+    successMetrics: 'string',
+    resourceConstraints: 'string',
+    strategicApproach: 'string'
   },
-  validTones: ['analytical', 'strategic', 'methodical', 'innovative', 'pragmatic']
+  validTones: ['analytical', 'strategic', 'methodical', 'innovative', 'pragmatic'] // Preserved for inference logic
 };
 
 /**
@@ -119,7 +193,7 @@ export async function generateReverseStrategy(input: ReverseStrategyInput): Prom
     if (!validationResult.isValid) {
       logger.error('reverse_strategy.validation_failed', 'Input validation failed', { 
         issues: validationResult.errors,
-        input: { targetOutcome: input.targetOutcome }
+        input: { primaryGoal: input.primaryGoal }
       });
       
       await fallbackManager.triggerFallback(
@@ -133,8 +207,8 @@ export async function generateReverseStrategy(input: ReverseStrategyInput): Prom
 
     // 2. Generate reverse strategy
     logger.info('reverse_strategy.generate', 'Generating reverse strategy', { 
-      targetOutcome: input.targetOutcome,
-      timeline: input.timeline
+      primaryGoal: input.primaryGoal,
+      resourceConstraints: input.resourceConstraints
     });
     
     const output: ReverseStrategyOutput = await generateStrategyContent(input);
@@ -286,20 +360,20 @@ async function generateStrategyContent(input: ReverseStrategyInput): Promise<Rev
   // This would be integrated with an LLM in production
   // Here we're generating structured content based on the input parameters
   
-  const targetWords = input.targetOutcome.toLowerCase().split(' ');
-  const stateWords = input.currentState.toLowerCase().split(' ');
+  const targetWords = input.primaryGoal.toLowerCase().split(' ');
+  const stateWords = input.strategicApproach.toLowerCase().split(' ');
   
   // Generate steps based on input
   const steps = [
     `Analyze current ${stateWords.includes('market') ? 'market position' : 'business state'} relative to ${targetWords.includes('revenue') ? 'revenue targets' : 'desired outcomes'}`,
     `Identify key ${targetWords.includes('efficiency') ? 'efficiency opportunities' : 'growth levers'} and prioritize by impact`,
-    `Develop ${input.tone === 'innovative' ? 'innovative' : 'strategic'} action plan with resource allocations`,
+    `Develop ${input.strategicApproach.includes('innovative') ? 'innovative' : 'strategic'} action plan with resource allocations`,
     `Implement ${targetWords.includes('digital') ? 'digital transformation' : 'strategic'} initiatives with regular feedback loops`,
     `Measure progress against ${targetWords.includes('growth') ? 'growth targets' : 'defined metrics'} and adapt strategy as needed`
   ];
   
-  // Generate milestones based on timeline
-  const timelineMonths = parseInt(input.timeline.split(' ')[0]) || 6;
+  // Generate milestones based on resource constraints timeline
+  const timelineMonths = parseInt(input.resourceConstraints?.split(' ')[0] || '6') || 6;
   const milestones = [];
   const intervalMonths = Math.max(1, Math.ceil(timelineMonths / 6));
   
@@ -336,8 +410,8 @@ async function generateStrategyContent(input: ReverseStrategyInput): Promise<Rev
     currentWeek += weekInterval;
   }
   
-  // Extract and incorporate constraints
-  const resourceConstraints = input.constraints.filter(c => 
+  // Extract and incorporate challenges
+  const resourceChallenges = input.challenges.filter((c: string) => 
     c.toLowerCase().includes('budget') || 
     c.toLowerCase().includes('resource') || 
     c.toLowerCase().includes('team')

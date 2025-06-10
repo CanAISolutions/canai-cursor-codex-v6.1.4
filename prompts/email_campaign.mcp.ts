@@ -22,12 +22,16 @@ const schemaValidator = new PromptSchemaValidator();
 const logger = new Logger('email-campaign-mcp');
 
 interface EmailCampaignInput {
-  campaignGoal: string;
-  targetAudience: string;
-  keyMessage: string;
-  callToAction: string;
-  tone: string;
-  enhancers?: Record<string, boolean>;
+  businessName: string;           // Business context
+  targetAudience: string;         // Who receives this email
+  primaryGoal: string;            // What this email should achieve (formerly campaignGoal)
+  keyMessages: string;            // Offer details + value proposition + desired action (formerly keyMessage)
+  deliveryFormat: string;         // Email type + sequence + drip structure
+  competitiveContext: string;     // How to differentiate from competitors
+  campaignType: string;           // Single/series/drip campaign structure
+  offerDetails: string;           // Specific product/service/discount being promoted (incorporates former callToAction)
+  tone?: string;                  // Tone of the email campaign (optional but commonly used)
+  enhancers?: Record<string, boolean>; // Additional enhancement options
 }
 
 interface EmailCampaignOutput {
@@ -74,15 +78,29 @@ interface EmailCampaignSession {
 }
 
 const validationSchema = {
-  requiredFields: ['campaignGoal', 'targetAudience', 'keyMessage', 'callToAction', 'tone'],
+  requiredFields: [
+    'businessName', 
+    'targetAudience', 
+    'primaryGoal', 
+    'keyMessages', 
+    'deliveryFormat', 
+    'competitiveContext',
+    'campaignType',
+    'offerDetails'
+  ],
   fieldTypes: {
-    campaignGoal: 'string',
+    businessName: 'string',
     targetAudience: 'string',
-    keyMessage: 'string',
-    callToAction: 'string',
+    primaryGoal: 'string',
+    keyMessages: 'string',
+    deliveryFormat: 'string',
+    competitiveContext: 'string',
+    campaignType: 'string',
+    offerDetails: 'string',
     tone: 'string'
   },
-  validTones: ['professional', 'conversational', 'urgent', 'friendly', 'authoritative']
+  validTones: ['professional', 'conversational', 'urgent', 'friendly', 'authoritative'],
+  validCampaignTypes: ['single', 'series', 'drip', 'nurture', 'promotional', 'onboarding', 'retention', 'reengagement']
 };
 
 export async function generateEmailCampaign(input: EmailCampaignInput): Promise<EmailCampaignSession> {
@@ -452,20 +470,20 @@ function calculateAuthenticity(content: string): number {
 function generateEmailContent(input: EmailCampaignInput): EmailCampaignOutput {
   // Generate subject line based on campaign goal and tone
   let subject = '';
-  if (input.campaignGoal.toLowerCase().includes('sale') || input.campaignGoal.toLowerCase().includes('convers')) {
+  if (input.primaryGoal.toLowerCase().includes('sale') || input.primaryGoal.toLowerCase().includes('convers')) {
     subject = input.tone === 'urgent' 
-      ? `Last chance: ${input.keyMessage}` 
-      : `Exclusive offer: ${input.keyMessage}`;
-  } else if (input.campaignGoal.toLowerCase().includes('launch') || input.campaignGoal.toLowerCase().includes('announce')) {
+      ? `Last chance: ${input.keyMessages}` 
+      : `Exclusive offer: ${input.keyMessages}`;
+  } else if (input.primaryGoal.toLowerCase().includes('launch') || input.primaryGoal.toLowerCase().includes('announce')) {
     subject = input.tone === 'professional' 
-      ? `Introducing: ${input.keyMessage}` 
-      : `Just launched: ${input.keyMessage}`;
-  } else if (input.campaignGoal.toLowerCase().includes('engage') || input.campaignGoal.toLowerCase().includes('relationship')) {
+      ? `Introducing: ${input.keyMessages}` 
+      : `Just launched: ${input.keyMessages}`;
+  } else if (input.primaryGoal.toLowerCase().includes('engage') || input.primaryGoal.toLowerCase().includes('relationship')) {
     subject = input.tone === 'friendly' 
-      ? `Let's connect about ${input.keyMessage}` 
-      : `Important update regarding ${input.keyMessage}`;
+      ? `Let's connect about ${input.keyMessages}` 
+      : `Important update regarding ${input.keyMessages}`;
   } else {
-    subject = `${input.keyMessage}`;
+    subject = `${input.keyMessages}`;
   }
   
   // Generate preview text
@@ -475,7 +493,7 @@ function generateEmailContent(input: EmailCampaignInput): EmailCampaignOutput {
   const body = generateEmailBody(input);
   
   // Generate CTA
-  const cta = input.callToAction || "Get Started Today";
+  const cta = input.offerDetails || "Get Started Today";
   
   // Generate footer
   const footer = generateEmailFooter(input);
@@ -503,7 +521,7 @@ function generateEmailContent(input: EmailCampaignInput): EmailCampaignOutput {
  * Generate preview text based on input
  */
 function generatePreviewText(input: EmailCampaignInput): string {
-  const basePreview = input.keyMessage;
+  const basePreview = input.keyMessages;
   
   if (input.tone === 'urgent') {
     return `Limited time: ${basePreview}`;
@@ -536,22 +554,22 @@ function generateEmailBody(input: EmailCampaignInput): string[] {
   }
   
   // Generate introduction paragraph with empathy keywords
-  body.push(`We're reaching out about ${input.keyMessage} designed specifically for ${input.targetAudience}.`);
+  body.push(`We're reaching out about ${input.keyMessages} designed specifically for ${input.targetAudience}.`);
   
   // Generate content based on campaign goal with tone-specific keywords
-  if (input.campaignGoal.toLowerCase().includes('sale') || input.campaignGoal.toLowerCase().includes('convers')) {
+  if (input.primaryGoal.toLowerCase().includes('sale') || input.primaryGoal.toLowerCase().includes('convers')) {
     body.push(`We're excited to offer you an exclusive opportunity to transform your business with our professional solutions.`);
     body.push('Our platform offers proven value:');
     body.push('- Automated workflows that save you time and deliver results');
     body.push('- Intelligent insights that drive growth and opportunity');
     body.push('- Seamless integration with your existing tools and expertise');
-  } else if (input.campaignGoal.toLowerCase().includes('launch') || input.campaignGoal.toLowerCase().includes('announce')) {
+  } else if (input.primaryGoal.toLowerCase().includes('launch') || input.primaryGoal.toLowerCase().includes('announce')) {
     body.push(`We're thrilled to announce our latest innovation that will revolutionize how you work with proven expertise.`);
     body.push(`Our new solution provides trusted value:`);
     body.push('- Breakthrough technology for enhanced performance and results');
     body.push('- Intuitive interface for effortless operation and opportunity');
     body.push('- Comprehensive support for your success and growth');
-  } else if (input.campaignGoal.toLowerCase().includes('engage') || input.campaignGoal.toLowerCase().includes('relationship')) {
+  } else if (input.primaryGoal.toLowerCase().includes('engage') || input.primaryGoal.toLowerCase().includes('relationship')) {
     body.push(`We value our relationship and want to ensure you're getting the most from our partnership together.`);
     body.push(`Here's what's new for you:`);
     body.push('- Enhanced features based on your feedback and expertise');
@@ -560,7 +578,7 @@ function generateEmailBody(input: EmailCampaignInput): string[] {
   }
   
   // Add call to action paragraph with connection words
-  body.push(`Ready to take the next step together? ${input.callToAction} by clicking the button below and we appreciate your partnership.`);
+  body.push(`Ready to take the next step together? ${input.offerDetails} by clicking the button below and we appreciate your partnership.`);
   
   // Add closing with authentic language
   if (input.tone === 'professional' || input.tone === 'authoritative') {
@@ -588,9 +606,9 @@ function generateEmailFooter(input: EmailCampaignInput): string {
  */
 function generateVariants(input: EmailCampaignInput): string[] {
   return [
-    'Alternative subject line: "' + input.keyMessage + ' - Exclusive for ' + input.targetAudience + '"',
+    'Alternative subject line: "' + input.keyMessages + ' - Exclusive for ' + input.targetAudience + '"',
     'Personal greeting with recipient\'s name',
-    'Alternative CTA: "' + (input.callToAction.replace('Today', 'Now')) + '"',
+    'Alternative CTA: "' + (input.offerDetails.replace('Today', 'Now')) + '"',
     'Image-focused vs. text-focused layout'
   ];
 }
@@ -625,157 +643,200 @@ function generateOptimization(input: EmailCampaignInput): string[] {
  * applyMCPEnhancers - Email Campaign Field Inference Engine
  * 
  * Purpose: Automatically infer and enhance missing email campaign fields
- * from basic inputs to create comprehensive campaign strategies.
+ * based on available input data and emotional intelligence patterns.
  * 
  * What: Intelligent field inference for email campaigns
- * Why: Enable users to create professional campaigns with minimal input
- * How: Analyze provided fields and auto-generate missing campaign elements
+ * Why: Reduces user friction while maintaining professional quality
+ * How: Pattern recognition + NLP inference + competitive differentiation
  */
 export function applyMCPEnhancers(input: Partial<EmailCampaignInput>): EmailCampaignInput {
-  // Base validation - ensure we have at least one meaningful input
-  if (!input.campaignGoal && !input.targetAudience && !input.keyMessage) {
-    throw new Error('Email Campaign MCP requires at least campaignGoal, targetAudience, or keyMessage to infer other fields');
+  // Verify minimum required information to make inferences
+  if (!input.primaryGoal && !input.targetAudience && !input.keyMessages && !input.businessName) {
+    throw new Error('Email Campaign MCP requires at least primaryGoal, targetAudience, keyMessages, or businessName to infer other fields');
   }
 
-  // Initialize enhanced input with defaults
+  // Create enhanced copy with intelligent defaults
   const enhanced: EmailCampaignInput = {
-    campaignGoal: input.campaignGoal || '',
-    targetAudience: input.targetAudience || '',
-    keyMessage: input.keyMessage || '',
-    callToAction: input.callToAction || '',
-    tone: input.tone || 'professional',
-    enhancers: input.enhancers || {}
+    businessName: '',
+    targetAudience: '',
+    primaryGoal: '',
+    keyMessages: '',
+    deliveryFormat: '',
+    competitiveContext: '',
+    campaignType: '',
+    offerDetails: '',
+    tone: 'professional',
+    ...input
   };
 
-  // 1. CAMPAIGN GOAL INFERENCE
-  if (!enhanced.campaignGoal) {
-    if (enhanced.keyMessage) {
-      // Infer goal from key message
-      const messageKeywords = enhanced.keyMessage.toLowerCase();
-      if (messageKeywords.includes('sale') || messageKeywords.includes('discount') || messageKeywords.includes('offer')) {
-        enhanced.campaignGoal = 'Drive sales and conversions through promotional messaging';
-      } else if (messageKeywords.includes('launch') || messageKeywords.includes('new') || messageKeywords.includes('announce')) {
-        enhanced.campaignGoal = 'Announce new product/service launch and generate awareness';
-      } else if (messageKeywords.includes('engage') || messageKeywords.includes('community') || messageKeywords.includes('connect')) {
-        enhanced.campaignGoal = 'Build customer engagement and strengthen community relationships';
-      } else {
-        enhanced.campaignGoal = 'Increase brand awareness and customer engagement';
-      }
-    } else if (enhanced.targetAudience) {
-      // Infer goal from audience
-      const audienceKeywords = enhanced.targetAudience.toLowerCase();
-      if (audienceKeywords.includes('existing') || audienceKeywords.includes('current') || audienceKeywords.includes('loyal')) {
-        enhanced.campaignGoal = 'Strengthen relationships with existing customers and drive repeat business';
-      } else if (audienceKeywords.includes('prospect') || audienceKeywords.includes('potential') || audienceKeywords.includes('lead')) {
-        enhanced.campaignGoal = 'Convert prospects into customers through targeted messaging';
-      } else {
-        enhanced.campaignGoal = 'Expand market reach and acquire new customers';
-      }
+  // Business Name Inference
+  if (!enhanced.businessName) {
+    if (enhanced.primaryGoal) {
+      // Extract business context from goal (e.g., "Increase sales for ABC Consulting" -> "ABC Consulting")
+      const businessMatch = enhanced.primaryGoal.match(/for\s+([A-Z][A-Za-z0-9\s&]+)/) || 
+                           enhanced.primaryGoal.match(/([A-Z][A-Za-z0-9\s&]+)'s\s+/);
+      enhanced.businessName = businessMatch ? businessMatch[1].trim() : "Your Business";
+    } else if (enhanced.keyMessages) {
+      // Look for business name in key messages
+      const nameMatch = enhanced.keyMessages.match(/([A-Z][A-Za-z0-9\s&]+)\s+(?:offers|provides|presents)/);
+      enhanced.businessName = nameMatch ? nameMatch[1].trim() : "Your Business";
     } else {
-      enhanced.campaignGoal = 'Increase brand awareness and drive customer engagement';
+      enhanced.businessName = "Your Business";
     }
   }
 
-  // 2. TARGET AUDIENCE INFERENCE
+  // Target Audience Inference
   if (!enhanced.targetAudience) {
-    if (enhanced.campaignGoal) {
-      const goalKeywords = enhanced.campaignGoal.toLowerCase();
-      if (goalKeywords.includes('existing') || goalKeywords.includes('loyal') || goalKeywords.includes('repeat')) {
-        enhanced.targetAudience = 'Existing customers and loyal brand advocates';
-      } else if (goalKeywords.includes('prospect') || goalKeywords.includes('convert') || goalKeywords.includes('acquire')) {
-        enhanced.targetAudience = 'Qualified prospects and potential customers in target market';
-      } else if (goalKeywords.includes('launch') || goalKeywords.includes('announce')) {
-        enhanced.targetAudience = 'Early adopters and industry influencers';
+    if (enhanced.primaryGoal) {
+      // Extract audience from goal (e.g., "Engage small business owners" -> "small business owners")
+      const audienceMatch = enhanced.primaryGoal.match(/(?:engage|target|reach)\s+([a-z][a-z\s]+)/) ||
+                           enhanced.primaryGoal.match(/for\s+([a-z][a-z\s]+)/);
+      enhanced.targetAudience = audienceMatch ? audienceMatch[1].trim() : "your target customers";
+    } else if (enhanced.keyMessages) {
+      // Look for audience indicators in key messages
+      const audienceWords = ["professionals", "businesses", "customers", "clients", "users"];
+      for (const word of audienceWords) {
+        if (enhanced.keyMessages.toLowerCase().includes(word)) {
+          enhanced.targetAudience = word;
+          break;
+        }
+      }
+      if (!enhanced.targetAudience) enhanced.targetAudience = "your target customers";
+    } else {
+      enhanced.targetAudience = "your target customers";
+    }
+  }
+
+  // Primary Goal Inference
+  if (!enhanced.primaryGoal) {
+    if (enhanced.keyMessages) {
+      // Infer goal from key messages (look for action words)
+      const goalVerbs = ["increase", "boost", "improve", "drive", "generate", "announce", "introduce", "launch"];
+      for (const verb of goalVerbs) {
+        const goalMatch = enhanced.keyMessages.toLowerCase().match(new RegExp(`${verb}\\s+([a-z\\s]+)`));
+        if (goalMatch) {
+          enhanced.primaryGoal = `${verb.charAt(0).toUpperCase() + verb.slice(1)} ${goalMatch[1].trim()}`;
+          break;
+        }
+      }
+      if (!enhanced.primaryGoal) enhanced.primaryGoal = "Engage customers and drive conversions";
+    } else if (enhanced.offerDetails) {
+      // Infer from offer (e.g., "20% discount" -> "Promote special discount")
+      if (enhanced.offerDetails.match(/discount|sale|offer|promotion/i)) {
+        enhanced.primaryGoal = "Promote special offer and increase sales";
       } else {
-        enhanced.targetAudience = 'Small to medium business owners seeking growth solutions';
+        enhanced.primaryGoal = "Showcase product value and drive engagement";
       }
     } else {
-      enhanced.targetAudience = 'Business professionals and decision-makers';
+      enhanced.primaryGoal = "Engage customers and drive conversions";
     }
   }
 
-  // 3. KEY MESSAGE INFERENCE
-  if (!enhanced.keyMessage) {
-    const goalKeywords = enhanced.campaignGoal.toLowerCase();
-    const audienceKeywords = enhanced.targetAudience.toLowerCase();
-    
-    if (goalKeywords.includes('sale') || goalKeywords.includes('conversion')) {
-      enhanced.keyMessage = 'Transform your business with our proven solutions - limited time offer inside';
-    } else if (goalKeywords.includes('launch') || goalKeywords.includes('announce')) {
-      enhanced.keyMessage = 'Introducing revolutionary technology that will change how you work';
-    } else if (goalKeywords.includes('engage') || goalKeywords.includes('community')) {
-      enhanced.keyMessage = 'Join thousands of successful businesses already transforming their operations';
-    } else if (audienceKeywords.includes('small business') || audienceKeywords.includes('entrepreneur')) {
-      enhanced.keyMessage = 'Unlock your business potential with AI-powered solutions designed for growth';
+  // Key Messages Inference
+  if (!enhanced.keyMessages) {
+    if (enhanced.primaryGoal) {
+      // Extract key message from goal
+      enhanced.keyMessages = `${enhanced.businessName} helps ${enhanced.targetAudience} to ${enhanced.primaryGoal.toLowerCase()}`;
+    } else if (enhanced.offerDetails) {
+      // Base key message on offer
+      enhanced.keyMessages = `${enhanced.businessName} presents: ${enhanced.offerDetails}`;
     } else {
-      enhanced.keyMessage = 'Discover how leading companies are gaining competitive advantage with our platform';
+      enhanced.keyMessages = `Value proposition for ${enhanced.targetAudience}`;
     }
   }
 
-  // 4. CALL TO ACTION INFERENCE
-  if (!enhanced.callToAction) {
-    const goalKeywords = enhanced.campaignGoal.toLowerCase();
-    const messageKeywords = enhanced.keyMessage.toLowerCase();
-    
-    if (goalKeywords.includes('sale') || messageKeywords.includes('offer') || messageKeywords.includes('discount')) {
-      enhanced.callToAction = 'Claim Your Exclusive Offer Now';
-    } else if (goalKeywords.includes('launch') || messageKeywords.includes('new') || messageKeywords.includes('introducing')) {
-      enhanced.callToAction = 'Be Among the First to Experience This';
-    } else if (goalKeywords.includes('demo') || messageKeywords.includes('discover') || messageKeywords.includes('see how')) {
-      enhanced.callToAction = 'Schedule Your Free Demo Today';
-    } else if (goalKeywords.includes('engage') || goalKeywords.includes('community')) {
-      enhanced.callToAction = 'Join Our Community of Success Stories';
+  // Delivery Format Inference
+  if (!enhanced.deliveryFormat) {
+    // Default to multi-part sequence for most scenarios
+    if (enhanced.primaryGoal?.toLowerCase().includes("welcome") || 
+        enhanced.primaryGoal?.toLowerCase().includes("onboard")) {
+      enhanced.deliveryFormat = "5-part welcome sequence";
+    } else if (enhanced.primaryGoal?.toLowerCase().includes("launch") || 
+               enhanced.primaryGoal?.toLowerCase().includes("announce")) {
+      enhanced.deliveryFormat = "3-part product launch sequence";
+    } else if (enhanced.offerDetails && 
+              (enhanced.offerDetails.toLowerCase().includes("discount") || 
+               enhanced.offerDetails.toLowerCase().includes("promotion"))) {
+      enhanced.deliveryFormat = "3-part promotional sequence";
     } else {
-      enhanced.callToAction = 'Get Started with Your Free Trial';
+      enhanced.deliveryFormat = "5-part nurture sequence";
     }
   }
 
-  // 5. TONE OPTIMIZATION
-  if (!input.tone || enhanced.tone === 'professional') {
-    const audienceKeywords = enhanced.targetAudience.toLowerCase();
-    const goalKeywords = enhanced.campaignGoal.toLowerCase();
-    
-    if (audienceKeywords.includes('entrepreneur') || audienceKeywords.includes('startup') || audienceKeywords.includes('creative')) {
-      enhanced.tone = 'conversational';
-    } else if (goalKeywords.includes('urgent') || goalKeywords.includes('limited') || enhanced.keyMessage.toLowerCase().includes('limited time')) {
-      enhanced.tone = 'urgent';
-    } else if (audienceKeywords.includes('enterprise') || audienceKeywords.includes('executive') || audienceKeywords.includes('corporate')) {
-      enhanced.tone = 'authoritative';
-    } else if (goalKeywords.includes('community') || goalKeywords.includes('relationship') || goalKeywords.includes('engage')) {
-      enhanced.tone = 'friendly';
+  // Campaign Type Inference
+  if (!enhanced.campaignType) {
+    // Infer campaign type from other fields
+    if (enhanced.primaryGoal?.toLowerCase().includes("welcome") || 
+        enhanced.deliveryFormat?.toLowerCase().includes("welcome")) {
+      enhanced.campaignType = "onboarding";
+    } else if (enhanced.primaryGoal?.toLowerCase().includes("launch") || 
+               enhanced.deliveryFormat?.toLowerCase().includes("launch")) {
+      enhanced.campaignType = "promotional";
+    } else if (enhanced.offerDetails && 
+              (enhanced.offerDetails.toLowerCase().includes("discount") || 
+               enhanced.offerDetails.toLowerCase().includes("promotion"))) {
+      enhanced.campaignType = "promotional";
+    } else if (enhanced.deliveryFormat?.toLowerCase().includes("nurture")) {
+      enhanced.campaignType = "nurture";
     } else {
-      enhanced.tone = 'professional';
+      enhanced.campaignType = "series";
     }
   }
 
-  // 6. ENHANCER FLAGS INFERENCE
-  if (!enhanced.enhancers || Object.keys(enhanced.enhancers).length === 0) {
-    enhanced.enhancers = {
-      // Email-specific enhancers
-      personalizedSubjectLines: true,
-      abTestVariants: true,
-      segmentationTags: true,
-      automationSequence: true,
-      
-      // Content enhancers
-      emotionalHooks: enhanced.tone === 'conversational' || enhanced.tone === 'friendly',
-      urgencyIndicators: enhanced.tone === 'urgent' || enhanced.keyMessage.toLowerCase().includes('limited'),
-      socialProof: enhanced.targetAudience.toLowerCase().includes('business') || enhanced.targetAudience.toLowerCase().includes('professional'),
-      valueProposition: true,
-      
-      // Advanced features
-      dynamicContent: enhanced.targetAudience.toLowerCase().includes('segment') || enhanced.targetAudience.toLowerCase().includes('diverse'),
-      behavioralTriggers: enhanced.campaignGoal.toLowerCase().includes('convert') || enhanced.campaignGoal.toLowerCase().includes('engage'),
-      crossChannelIntegration: enhanced.campaignGoal.toLowerCase().includes('awareness') || enhanced.campaignGoal.toLowerCase().includes('reach'),
-      
-      // Analytics and optimization
-      performanceTracking: true,
-      deliverabilityOptimization: true,
-      engagementScoring: true
-    };
+  // Competitive Context Inference
+  if (!enhanced.competitiveContext) {
+    // Generate default competitive differentiators
+    enhanced.competitiveContext = `${enhanced.businessName} stands out by providing personalized solutions for ${enhanced.targetAudience} with exceptional service and attention to detail.`;
   }
+
+  // Offer Details Inference
+  if (!enhanced.offerDetails) {
+    // Generate default offer based on campaign type
+    if (enhanced.campaignType === "promotional") {
+      enhanced.offerDetails = "Limited-time special offer with exclusive benefits";
+    } else if (enhanced.campaignType === "onboarding") {
+      enhanced.offerDetails = "Complete onboarding guide with step-by-step instructions";
+    } else if (enhanced.campaignType === "nurture") {
+      enhanced.offerDetails = "Valuable industry insights and best practices";
+    } else {
+      enhanced.offerDetails = "Exclusive content and special opportunities";
+    }
+  }
+
+  // Apply emotional intelligence enhancements
+  enhanced.tone = inferToneFromContent(enhanced);
 
   return enhanced;
+}
+
+/**
+ * Helper function to infer appropriate tone from content
+ */
+function inferToneFromContent(input: EmailCampaignInput): string {
+  // Default to professional for business communications
+  let inferredTone = "professional";
+  
+  // Check for specific indicators in content
+  if (input.primaryGoal?.toLowerCase().includes("urgent") || 
+      input.primaryGoal?.toLowerCase().includes("limited time") ||
+      input.offerDetails?.toLowerCase().includes("last chance") ||
+      input.offerDetails?.toLowerCase().includes("deadline")) {
+    inferredTone = "urgent";
+  } else if (input.targetAudience?.toLowerCase().includes("friend") ||
+             input.businessName?.toLowerCase().includes("community") ||
+             input.keyMessages?.toLowerCase().includes("welcome")) {
+    inferredTone = "friendly";
+  } else if (input.businessName?.toLowerCase().includes("expert") ||
+             input.keyMessages?.toLowerCase().includes("research") ||
+             input.competitiveContext?.toLowerCase().includes("leader")) {
+    inferredTone = "authoritative";
+  } else if (input.targetAudience?.toLowerCase().includes("customer") ||
+             input.keyMessages?.toLowerCase().includes("chat") ||
+             input.deliveryFormat?.toLowerCase().includes("nurture")) {
+    inferredTone = "conversational";
+  }
+  
+  return inferredTone;
 }
 
 // Export singleton instance

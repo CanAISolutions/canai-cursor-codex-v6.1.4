@@ -657,7 +657,7 @@ export class SacredMomentsOrchestrator {
     // Normalize to 1-5 scale
     Object.keys(baseImpact).forEach(key => {
       if (key !== 'overallResonance') {
-        baseImpact[key] = Math.min(5.0, Math.max(1.0, baseImpact[key]));
+        (baseImpact as any)[key] = Math.min(5.0, Math.max(1.0, (baseImpact as any)[key]));
       }
     });
 

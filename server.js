@@ -831,6 +831,46 @@ app.post('/api/activate-mdc', async (req, res) => {
   }
 });
 
+// === SIMPLE MCP TEST ENDPOINT ===
+
+// Simple MCP test endpoint for validation
+app.post('/api/simple-mcp', async (req, res) => {
+  try {
+    const { SimpleMCP } = require('./test-simple-mcp.js');
+    const mcp = new SimpleMCP();
+    
+    const { message, tone } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message is required',
+        example: {
+          message: "I want to start a coffee shop",
+          tone: "professional" // optional
+        }
+      });
+    }
+    
+    const result = await mcp.process({ message, tone });
+    
+    res.json({
+      success: true,
+      mcp_result: result,
+      test_status: 'Simple MCP working perfectly!',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Simple MCP API error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Simple MCP processing failed',
+      details: error.message
+    });
+  }
+});
+
 // === SPARKSPLIT API ENDPOINTS ===
 
 // SparkSplit generation endpoint for Make.com webhooks
@@ -1044,6 +1084,87 @@ async function generateSterileOutput(userInput, promptType) {
       return generateMockSterileOutput(userInput, promptType);
     }
 
+    let systemPrompt = 'You are a basic AI assistant. Provide straightforward, professional responses without emotional enhancement, personalization, or creative flourishes. Focus on accuracy and clarity.';
+    let userPrompt = `Create a ${promptType || 'response'} for: ${JSON.stringify(userInput)}`;
+
+    // Use specific AI Blueprint MCP template for ai_blueprint prompt type
+    if (promptType === 'ai_blueprint') {
+      systemPrompt = 'You are an expert AI strategy consultant who creates comprehensive, actionable AI blueprints for businesses. Your responses are strategic, practical, and tailored to specific business needs. Provide structured markdown output with clear sections.';
+      
+      userPrompt = `# AI Blueprint Prompt
+**Business**: ${userInput.businessName || 'Your Business'}
+**Goal**: ${userInput.primaryGoal || 'Implement AI solutions'}
+**Solution**: ${userInput.aiSolution || 'Custom AI system'}
+**MVP**: ${userInput.mvpFeatures || 'Core AI functionality'}
+**Audience**: ${userInput.targetAudience || 'Business professionals'}
+**Constraints**: ${userInput.resourceConstraints || 'Standard budget and timeline'}
+**Brand Voice**: ${userInput.brandVoice || 'professional'}
+**Current Status**: ${userInput.currentStatus || 'Evaluating AI options'}
+**Competitive Context**: ${userInput.competitiveContext || 'Competitive AI market'}
+**Success Metrics**: ${userInput.successMetrics || '30d: Prototype; 60d: Beta; 90d: Launch'}
+**Minimum Viable Execution**: ${userInput.minimumViableExecution || 'Cloud-based AI implementation'}
+
+**Output**: Generate a comprehensive AI Blueprint in markdown format with the following sections:
+
+## Intent
+[10-word strategic purpose statement]
+
+## Executive Summary
+[Summarize the business, AI solution, target audience, and primary goal]
+
+## Competitive Positioning
+[Differentiate against competitive context and market positioning]
+
+## Technical Stack
+- [Specific tools and technologies, justified by resource constraints]
+- [Include links and implementation rationale]
+
+## Workflow Design
+- [Step-by-step process for AI solution implementation]
+- [Integration with MVP features]
+
+## Prompt Engineering
+- [2-3 specific GPT prompts for the AI solution]
+- [Context and expected outputs for each prompt]
+
+## Data & Privacy
+- [Data handling procedures for the AI solution]
+- [GDPR/CCPA compliance measures]
+- [Security and privacy safeguards]
+
+## Automation Framework
+- [Trigger-action workflows for MVP features]
+- [Integration points and automation sequences]
+
+## Monetization Strategy
+- [Revenue model aligned with AI solution and target audience]
+- [Pricing strategy and value proposition]
+
+## Traffic & Launch Channels
+- [2-3 specific channels for reaching target audience]
+- [Launch strategy and customer acquisition]
+
+## Scalability Roadmap
+- [Enhancement phases tied to success metrics]
+- [Growth strategy and technical scaling]
+
+## Deliverables & Next Steps
+- [Prioritized build order and implementation steps]
+- [Integration with linked prompts]
+
+## SparkSplit Comparison
+- [Basic vs enhanced version of the AI solution]
+- [Feature comparison and upgrade path]
+
+**Requirements**:
+- Use ${userInput.brandVoice || 'professional'} tone throughout
+- Keep under 1000 words total
+- Include real-world tools matching resource constraints
+- Ensure GDPR/CCPA compliance
+- Focus on actionable deliverables
+- Reference cross-functional integration`;
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -1055,15 +1176,15 @@ async function generateSterileOutput(userInput, promptType) {
         messages: [
           {
             role: 'system',
-            content: 'You are a basic AI assistant. Provide straightforward, professional responses without emotional enhancement, personalization, or creative flourishes. Focus on accuracy and clarity.'
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: `Create a ${promptType || 'response'} for: ${JSON.stringify(userInput)}`
+            content: userPrompt
           }
         ],
-        temperature: 0.1,
-        max_tokens: 1000
+        temperature: promptType === 'ai_blueprint' ? 0.7 : 0.1,
+        max_tokens: promptType === 'ai_blueprint' ? 1500 : 1000
       })
     });
 
@@ -1097,6 +1218,66 @@ Next Steps:
 - Create implementation timeline
 
 This plan provides basic guidance for your business development needs.`,
+
+    ai_blueprint: `# AI Blueprint for ${userInput.businessName || 'Your Business'}
+
+## Intent
+${userInput.primaryGoal || 'Implement AI solutions to improve business operations'}
+
+## Executive Summary
+This AI Blueprint outlines the implementation strategy for ${userInput.businessName || 'your business'} to achieve ${userInput.primaryGoal || 'operational efficiency through AI'}. The solution targets ${userInput.targetAudience || 'business professionals'} with ${userInput.aiSolution || 'a custom AI system'}.
+
+## Competitive Positioning
+${userInput.competitiveContext || 'Differentiated AI implementation providing competitive advantage in the market'}
+
+## Technical Stack
+- **AI Framework**: TensorFlow or PyTorch for machine learning
+- **Cloud Platform**: AWS or Google Cloud for scalable infrastructure
+- **Database**: PostgreSQL for structured data, MongoDB for documents
+- **API Layer**: REST APIs with authentication and rate limiting
+- **Monitoring**: Prometheus and Grafana for system monitoring
+
+## Workflow Design
+1. **Data Collection**: Implement data pipelines for ${userInput.mvpFeatures || 'core functionality'}
+2. **Model Training**: Develop and train AI models based on requirements
+3. **Integration**: Connect AI services to existing business systems
+4. **Testing**: Comprehensive testing of AI accuracy and performance
+5. **Deployment**: Production deployment with monitoring and scaling
+
+## Data & Privacy
+- **Data Encryption**: All data encrypted at rest and in transit
+- **Access Control**: Role-based access control (RBAC) implementation
+- **GDPR Compliance**: Data processing agreements and user consent mechanisms
+- **Audit Logging**: Comprehensive logging of all data access and processing
+
+## Automation Framework
+- **Trigger Systems**: Event-driven automation based on business rules
+- **Workflow Engine**: Automated task routing and processing
+- **Integration Points**: APIs for connecting external systems
+- **Monitoring**: Real-time monitoring of automated processes
+
+## Monetization Strategy
+- **Revenue Model**: ${userInput.businessName ? 'Subscription-based pricing' : 'Value-based pricing model'}
+- **Pricing Tiers**: Basic, Professional, and Enterprise tiers
+- **Value Proposition**: Improved efficiency and reduced operational costs
+
+## Scalability Roadmap
+- **Phase 1**: ${userInput.successMetrics || 'MVP development and testing'}
+- **Phase 2**: Production deployment and user onboarding
+- **Phase 3**: Feature expansion and performance optimization
+- **Phase 4**: Advanced AI capabilities and market expansion
+
+## Deliverables & Next Steps
+1. **Technical Architecture**: Detailed system design and component specifications
+2. **Development Timeline**: ${userInput.resourceConstraints || '3-month implementation timeline'}
+3. **Resource Requirements**: Team composition and budget allocation
+4. **Risk Mitigation**: Identified risks and mitigation strategies
+5. **Success Metrics**: KPIs and measurement framework
+
+## SparkSplit Comparison
+- **Basic Version**: Core AI functionality with standard features
+- **Enhanced Version**: Advanced AI with emotional intelligence and personalization
+- **Upgrade Path**: Clear migration strategy from basic to enhanced features`,
 
     email_campaign: `Email Campaign for ${userInput.goal || 'Your Product'}
 

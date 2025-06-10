@@ -24,16 +24,22 @@ import { EmotionalMemoryBank } from '../cursor/memory/emotional-memory-bank';
 import { PromptScoringManager } from '../cursor/prompt-infrastructure/prompt-score/scoring-manager';
 import { TrustMetricsCollector } from '../cursor/trust/trust-metrics-collector';
 
-interface BusinessPlanInput {
+// Export interfaces for external use
+export interface BusinessPlanInput {
   industry: string;
   goal: string;
   tone: string;
   targetMarket?: string;
   budget?: number;
   timeline?: string;
+  // Template variables from business_plan.v1.prompt
+  bizName?: string;
+  location?: string;
+  keyOfferings?: string;
+  modelType?: string;
+  audience?: string;
   // Enhanced fields from schema lock v3
   idea?: string;
-  audience?: string;
   problemSolved?: string;
   differentiator?: string;
   customerContent?: string;
@@ -187,7 +193,7 @@ const FINANCIAL_DEFAULTS = {
 
 // Required fields and validation constants
 const requiredFields = ['industry', 'goal', 'tone'];
-const validTones = ['professional', 'conversational', 'enthusiastic', 'analytical'];
+const validTones = ['professional', 'conversational', 'enthusiastic', 'analytical', 'supportive', 'empowering'];
 const minScore = 0.75;
 const minEmotionalScore = 0.7;
 
@@ -459,7 +465,7 @@ const validateFieldTypes = (input: BusinessPlanInput): string[] => {
   if (input.goal && typeof input.goal !== 'string') {
     invalid.push('goal');
   }
-  if (input.tone && !validTones.includes(input.tone)) {
+  if (input.tone && typeof input.tone === 'string' && !validTones.includes(input.tone.toLowerCase())) {
     invalid.push('tone');
   }
   if (input.budget && typeof input.budget !== 'number') {
@@ -689,3 +695,83 @@ const hasMCPEnhancements = (original: BusinessPlanInput, enhanced: BusinessPlanI
 
 // Export singleton instance
 export const businessPlanMCP = { processPrompt, validateInput, validateFieldTypes, validateEnhancers, validateEmotionalDepth, scorePrompt, validateWordCounts, handleInvalidInput, handleLowScore, handleEmotionalMismatch, hasMCPEnhancements };
+
+// Add webhook handler
+export async function handleBusinessPlanWebhook(req: any, res: any) {
+  try {
+    const input = req.body as BusinessPlanInput;
+    
+    // Process the prompt
+    const session = await processPrompt(input);
+    
+    // Return the processed session
+    return res.status(200).json({
+      success: true,
+      data: session,
+      promptType: 'business_plan',
+      version: 'v1'
+    });
+  } catch (error) {
+    // Handle errors
+    console.error('Error processing business plan webhook:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      promptType: 'business_plan'
+    });
+  }
+}
+
+// Simple test function that doesn't rely on external dependencies
+export async function testBusinessPlanMCP(input: Partial<BusinessPlanInput> = {}): Promise<any> {
+  // Create a minimal valid input by merging with defaults
+  const testInput: BusinessPlanInput = {
+    industry: input.industry || 'saas',
+    goal: input.goal || 'Launch a SaaS platform for small business automation',
+    tone: input.tone || 'professional',
+    targetMarket: input.targetMarket || 'Small businesses with 5-50 employees',
+    idea: input.idea || 'Automation platform for small business operations',
+    ...input
+  };
+
+  try {
+    // Apply enhancers
+    const enhancedInput = applyMCPEnhancers(testInput);
+    const financialEnhancedInput = applyFinancialDefaults(enhancedInput);
+
+    // Get enhanced fields
+    const enhancedFields = [];
+    if (!testInput.problemSolved && financialEnhancedInput.problemSolved) enhancedFields.push('problemSolved');
+    if (!testInput.customerContent && financialEnhancedInput.customerContent) enhancedFields.push('customerContent');
+    if (!testInput.differentiator && financialEnhancedInput.differentiator) enhancedFields.push('differentiator');
+    if (!testInput.founderBio && financialEnhancedInput.founderBio) enhancedFields.push('founderBio');
+    
+    // Create a simple mock session
+    const mockSession = {
+      promptType: 'business_plan',
+      input: financialEnhancedInput,
+      validationStatus: {
+        isValid: true,
+        missingFields: [],
+        invalidFields: [],
+        enhancerStatus: {}
+      },
+      enhancementSummary: {
+        originalInput: testInput,
+        enhancedInput: financialEnhancedInput,
+        enhancedFields
+      }
+    };
+
+    return {
+      success: true,
+      data: mockSession
+    };
+  } catch (error) {
+    console.error('Error in test function:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}

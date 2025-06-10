@@ -1,0 +1,685 @@
+<h1>CanAI MVP Orchestration Blueprint v1.6</h1>
+
+<h2>Overview</h2>
+
+<p>This blueprint outlines the production-ready orchestration for CanAI Emotional Sovereignty System (v1.6), a scalable MVP that delivers emotionally resonant AI outputs with user choice, trust transparency, and high performance (&lt;450ms latency, &gt;92% sentiment accuracy, 100-1000+ webhooks/hour). It merges <code>GrokPlan.md</code>, <code>PRODUCTION-WEBHOOK-CONFIGURATION-GUIDE.md</code>, and <code>supabase-schema.json</code>, providing real code, webhook configurations, and step-by-step instructions for a solo developer (4-6 hours/day).</p>
+
+<h3>Objectives</h3>
+
+<ul>
+<li><strong>Emotional Sovereignty</strong>: Empower users to choose between <code>canai_output</code> and <code>sterile_output</code> via SparkSplit UX.</li>
+<li><strong>Trust Transparency</strong>: Log interactions in <code>prompt_logs</code>, <code>trust_metrics</code>, and <code>feedback_logs</code>.</li>
+<li><strong>Performance</strong>: Achieve &lt;450ms latency and &gt;92% sentiment accuracy.</li>
+<li><strong>Scalability</strong>: Handle 100-1000+ webhooks/hour using four modular Make.com scenarios.</li>
+<li><strong>Solo Developer</strong>: Optimize for 4-6 hour daily capacity, deployable by June 14, 2025.</li>
+</ul>
+
+<h3>Components</h3>
+
+<ol>
+<li><strong>Supabase Database</strong>: 18 tables (<code>supabase-schema.json</code>) plus <code>delivery_cost_logs</code> and <code>feedback_logs</code>.</li>
+<li><strong>Make.com Webhooks</strong>: Four scenarios (Orchestrator, User Intelligence, SparkSplit, Selection Handler).</li>
+<li><strong>Webflow UX</strong>: SparkSplit form for user selection and feedback.</li>
+<li><strong>Main Prompt</strong>: <code>main.prompt.md</code> for Codex integration.</li>
+<li><strong>Google Sheets</strong>: Logs session data for analytics.</li>
+<li><strong>Error Handling</strong>: Retries, <code>error_logs</code>, Slack alerts, email summaries.</li>
+</ol>
+
+<h2>Supabase Setup</h2>
+
+<h3>Schema</h3>
+
+<p>The <code>supabase-schema.json</code> defines 18 tables (e.g., <code>user_context</code>, <code>session_analytics</code>, <code>sparksplit_comparisons</code>, <code>prompt_logs</code>, <code>trust_metrics</code>). Add two new tables:</p>
+
+<p>```sql
+CREATE TABLE delivery<em>cost</em>logs (
+    id UUID PRIMARY KEY DEFAULT uuid<em>generate</em>v4(),
+    session<em>id UUID REFERENCES session</em>analytics(session<em>id),
+    user</em>id VARCHAR REFERENCES user<em>context(user</em>id),
+    cost NUMERIC NOT NULL,
+    currency VARCHAR(3) DEFAULT 'USD',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);</p>
+
+<p>CREATE TABLE feedback<em>logs (
+    id UUID PRIMARY KEY DEFAULT uuid</em>generate<em>v4(),
+    session</em>id UUID REFERENCES session<em>analytics(session</em>id),
+    user<em>id VARCHAR REFERENCES user</em>context(user<em>id),
+    feedback</em>type VARCHAR NOT NULL,
+    feedback JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);</p>
+
+<p>GRANT ALL ON delivery<em>cost</em>logs, feedback<em>logs TO service</em>role;
+```</p>
+
+<h3>Functions</h3>
+
+<p>Two functions ensure atomic updates (from webhook guide Q3, Q5):</p>
+
+<p>```sql
+CREATE OR REPLACE FUNCTION increment<em>user</em>stats(
+    p<em>user</em>id VARCHAR,
+    p<em>session</em>increment INTEGER DEFAULT 1,
+    p<em>prompt</em>increment INTEGER DEFAULT 1
+) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO user<em>context (user</em>id, total<em>sessions)
+    VALUES (p</em>user<em>id, p</em>session<em>increment)
+    ON CONFLICT (user</em>id)
+    DO UPDATE SET
+        total<em>sessions = user</em>context.total<em>sessions + p</em>session<em>increment,
+        updated</em>at = NOW();</p>
+
+<pre><code>UPDATE session_analytics
+SET prompt_count = prompt_count + p_prompt_increment,
+    updated_at = NOW()
+WHERE session_id = (
+    SELECT session_id FROM session_analytics
+    WHERE user_id = p_user_id
+    ORDER BY created_at DESC LIMIT 1
+);
+</code></pre>
+
+<p>END;
+$$ LANGUAGE plpgsql;
+GRANT EXECUTE ON FUNCTION increment<em>user</em>stats TO service_role;</p>
+
+<p>CREATE OR REPLACE FUNCTION calculate<em>trust</em>delta(
+    p<em>user</em>id VARCHAR,
+    p<em>new</em>score NUMERIC
+) RETURNS NUMERIC AS $$
+DECLARE
+    v<em>previous</em>score NUMERIC;
+    v<em>delta NUMERIC;
+BEGIN
+    SELECT trust</em>score<em>current INTO v</em>previous<em>score
+    FROM user</em>context
+    WHERE user<em>id = p</em>user<em>id
+    FOR UPDATE;
+    IF v</em>previous<em>score IS NULL THEN
+        v</em>previous<em>score := 0;
+    END IF;
+    v</em>delta := p<em>new</em>score - v<em>previous</em>score;
+    UPDATE user<em>context
+    SET trust</em>score<em>current = p</em>new<em>score,
+        updated</em>at = NOW()
+    WHERE user<em>id = p</em>user<em>id;
+    RETURN v</em>delta;
+END;
+$$ LANGUAGE plpgsql;
+GRANT EXECUTE ON FUNCTION calculate<em>trust</em>delta TO service_role;
+```</p>
+
+<h2>Make.com Webhook Scenarios</h2>
+
+<p>Four modular scenarios handle orchestration, leveraging Supabase and a mock Codex API (<code>https://canai-router.onrender.com/generate</code>).</p>
+
+<h3>Webhook 1: Emotional Sovereignty Orchestrator</h3>
+
+<p>Validates incoming requests, logs to <code>prompt_logs</code>, and triggers the next scenario.</p>
+
+<p><code>json
+[
+  {
+    "id": 1,
+    "module": "http:ReceiveWebhook",
+    "parameters": {
+      "url": "{{secrets.supabase_url}}/webhooks/orchestrator",
+      "method": "POST",
+      "schema": {
+        "userId": "string",
+        "sessionId": "string",
+        "promptType": "string",
+        "userInput": "json",
+        "sessionMetrics": {
+          "promptCount": "integer",
+          "emotionalScores": {"aweScore": "number"}
+        }
+      }
+    }
+  },
+  {
+    "id": 2,
+    "module": "supabase:CreateRow",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "table": "prompt_logs",
+      "fields": {
+        "session_id": "{{1.sessionId}}",
+        "user_id": "{{1.userId}}",
+        "prompt_type": "{{1.promptType}}",
+        "user_input": "{{1.userInput}}",
+        "created_at": "{{now}}"
+      }
+    }
+  },
+  {
+    "id": 3,
+    "module": "flow:TriggerScenario",
+    "parameters": {
+      "scenarioId": "{{scenarios.user_intelligence_aggregator}}",
+      "data": "{{1}}"
+    }
+  },
+  {
+    "id": 4,
+    "module": "supabase:CreateRow",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "table": "error_logs",
+      "fields": {
+        "session_id": "{{1.sessionId}}",
+        "error_type": "{{if(error.module = 'http' &amp;&amp; error.url.contains('canai-router'); 'codex'; error.module)}}",
+        "message": "{{error.message}}",
+        "severity": "{{if(error.statusCode &gt;= 500; 'high'; 'medium')}}",
+        "created_at": "{{now}}"
+      },
+      "condition": "{{error}}"
+    }
+  },
+  {
+    "id": 5,
+    "module": "slack:PostMessage",
+    "parameters": {
+      "webhookUrl": "{{secrets.slack_webhook}}",
+      "message": "🚨 CanAI Error: {{error.message}} (Session: {{1.sessionId}}, Type: {{error.error_type}})",
+      "condition": "{{error.severity = 'high'}}"
+    }
+  }
+]
+</code></p>
+
+<h3>Webhook 2: User Intelligence Aggregator</h3>
+
+<p>Updates <code>user_context</code> and <code>session_analytics</code> with session and prompt counts.</p>
+
+<p><code>json
+[
+  {
+    "id": 1,
+    "module": "supabase:CallFunction",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "functionName": "increment_user_stats",
+      "arguments": {
+        "p_user_id": "{{webhook.userId}}",
+        "p_session_increment": 1,
+        "p_prompt_increment": "{{webhook.sessionMetrics.promptCount}}"
+      }
+    }
+  },
+  {
+    "id": 2,
+    "module": "flow:TriggerScenario",
+    "parameters": {
+      "scenarioId": "{{scenarios.sparksplit_processor}}",
+      "data": "{{webhook}}"
+    }
+  },
+  {
+    "id": 3,
+    "module": "supabase:CreateRow",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "table": "error_logs",
+      "fields": {
+        "session_id": "{{webhook.sessionId}}",
+        "error_type": "{{error.module}}",
+        "message": "{{error.message}}",
+        "severity": "{{if(error.statusCode &gt;= 500; 'high'; 'medium')}}",
+        "created_at": "{{now}}"
+      },
+      "condition": "{{error}}"
+    }
+  }
+]
+</code></p>
+
+<h3>Webhook 3: SparkSplit Processor</h3>
+
+<p>Generates <code>canai_output</code> and <code>sterile_output</code> (webhook guide Q4), stores in <code>sparksplit_comparisons</code>.</p>
+
+<p><code>json
+[
+  {
+    "id": 1,
+    "module": "http:ActionMakeRequest",
+    "parameters": {
+      "method": "POST",
+      "url": "https://canai-router.onrender.com/generate",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{secrets.canai_api_key}}"}
+      ],
+      "body": "{\"prompt_type\": \"{{webhook.promptType}}\", \"user_input\": {{webhook.userInput}}, \"tone\": \"{{webhook.userInput.tone}}\", \"generate_sterile\": true}",
+      "dataStructure": {
+        "canai_output": "json",
+        "sterile_output": "json",
+        "resonance_score": "number",
+        "trust_score": "number",
+        "tokens_used": "integer"
+      },
+      "retry": {"maxAttempts": 3, "delayMilliseconds": 2000}
+    }
+  },
+  {
+    "id": 2,
+    "module": "supabase:CreateRow",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "table": "sparksplit_comparisons",
+      "fields": {
+        "session_id": "{{webhook.sessionId}}",
+        "user_id": "{{webhook.userId}}",
+        "prompt_type": "{{webhook.promptType}}",
+        "user_input": "{{webhook.userInput}}",
+        "canai_output": "{{1.canai_output}}",
+        "sterile_output": "{{1.sterile_output}}",
+        "canai_awe_score": "{{webhook.emotionalScores.aweScore}}",
+        "sterile_awe_score": 0.3,
+        "trust_delta": "{{(webhook.emotionalScores.aweScore - 0.3) / 5}}",
+        "created_at": "{{now}}"
+      }
+    }
+  },
+  {
+    "id": 3,
+    "module": "flow:TriggerScenario",
+    "parameters": {
+      "scenarioId": "{{scenarios.selection_handler}}",
+      "data": "{{webhook}}"
+    }
+  },
+  {
+    "id": 4,
+    "module": "supabase:CreateRow",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "table": "error_logs",
+      "fields": {
+        "session_id": "{{webhook.sessionId}}",
+        "error_type": "{{if(error.module = 'http' &amp;&amp; error.url.contains('canai-router'); 'codex'; error.module)}}",
+        "message": "{{error.message}}",
+        "severity": "{{if(error.statusCode &gt;= 500; 'high'; 'medium')}}",
+        "created_at": "{{now}}"
+      },
+      "condition": "{{error}}"
+    }
+  }
+]
+</code></p>
+
+<h3>Webhook 4: SparkSplit Selection Handler</h3>
+
+<p>Processes user selection, updates trust scores, logs costs, feedback, and Google Sheets data.</p>
+
+<p><code>json
+[
+  {
+    "id": 1,
+    "module": "http:ReceiveWebhook",
+    "parameters": {
+      "url": "{{secrets.supabase_url}}/webhooks/selection",
+      "method": "POST",
+      "schema": {
+        "userId": "string",
+        "sessionId": "string",
+        "userSelection": "string",
+        "feedback": "json"
+      }
+    }
+  },
+  {
+    "id": 2,
+    "module": "supabase:CallFunction",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "functionName": "calculate_trust_delta",
+      "arguments": {
+        "p_user_id": "{{1.userId}}",
+        "p_new_score": "{{if(1.userSelection = 'canai'; 4.7; 3.5)}}"
+      }
+    }
+  },
+  {
+    "id": 3,
+    "module": "supabase:CreateRow",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "table": "delivery_cost_logs",
+      "fields": {
+        "session_id": "{{1.sessionId}}",
+        "user_id": "{{1.userId}}",
+        "cost": "{{if(1.userSelection = 'canai'; 0.02; 0.01)}}",
+        "currency": "USD",
+        "created_at": "{{now}}"
+      }
+    }
+  },
+  {
+    "id": 4,
+    "module": "supabase:CreateRow",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "table": "feedback_logs",
+      "fields": {
+        "session_id": "{{1.sessionId}}",
+        "user_id": "{{1.userId}}",
+        "feedback_type": "{{1.userSelection}}",
+        "feedback": "{{1.feedback}}",
+        "created_at": "{{now}}"
+      }
+    }
+  },
+  {
+    "id": 5,
+    "module": "googleSheets:AddRow",
+    "parameters": {
+      "connection": "{{connections.google_sheets}}",
+      "spreadsheetId": "{{secrets.google_sheets_id}}",
+      "sheetName": "CanAI_Sessions",
+      "values": [
+        "{{1.sessionId}}",
+        "{{1.userId}}",
+        "{{webhook.promptType}}",
+        "{{1.userSelection}}",
+        "{{if(1.userSelection = 'canai'; 4.7; 3.5)}}",
+        "{{if(1.userSelection = 'canai'; 0.02; 0.01)}}",
+        "{{toJson(1.feedback)}}",
+        "{{now}}"
+      ]
+    }
+  },
+  {
+    "id": 6,
+    "module": "supabase:CreateRow",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "table": "error_logs",
+      "fields": {
+        "session_id": "{{1.sessionId}}",
+        "error_type": "{{error.module}}",
+        "message": "{{error.message}}",
+        "severity": "{{if(error.statusCode &gt;= 500; 'high'; 'medium')}}",
+        "created_at": "{{now}}"
+      },
+      "condition": "{{error}}"
+    }
+  }
+]
+</code></p>
+
+<h3>Daily Error Summary</h3>
+
+<p>Sends daily error reports via email.</p>
+
+<p><code>json
+[
+  {
+    "id": 1,
+    "module": "supabase:SearchRecords",
+    "parameters": {
+      "connection": "{{connections.supabase}}",
+      "table": "error_logs",
+      "filter": "created_at.gt.{{subtract(now; 86400000)}}",
+      "select": "error_type,message,severity,created_at"
+    }
+  },
+  {
+    "id": 2,
+    "module": "email:SendEmail",
+    "parameters": {
+      "to": "{{secrets.admin_email}}",
+      "subject": "CanAI Daily Error Report",
+      "body": "Errors in last 24h: {{1.length}} errors\nDetails: {{1.map(row; row.error_type + ': ' + row.message + ' (' + row.severity + ')')}}"
+    }
+  }
+]
+</code></p>
+
+<h2>Webflow SparkSplit UX</h2>
+
+<p>Displays <code>canai_output</code> and <code>sterile_output</code>, allows user selection, and submits to Webhook 4.</p>
+
+<p>```html</p>
+
+<div class="sparksplit-container">
+  <div class="output-card">
+    <h2>CanAI Output</h2>
+    <pre id="canai-output"></pre>
+    <p>Awe Score: <span id="canai-awe-score"></span></p>
+    <p>Trust Score: <span id="canai-trust-score"></span></p>
+  </div>
+  <div class="output-card">
+    <h2>Sterile Output</h2>
+    <pre id="sterile-output"></pre>
+    <p>Awe Score: 0.3</p>
+    <p>Trust Score: 3.5</p>
+  </div>
+  <form id="sparksplit-form">
+    <label><input type="radio" name="selection" value="canai" required> Choose CanAI</label>
+    <label><input type="radio" name="selection" value="sterile"> Choose Sterile</label>
+    <textarea id="feedback" placeholder="Your feedback (optional)"></textarea>
+    <button type="submit">Submit Choice</button>
+  </form>
+</div>
+
+<script>
+  async function fetchOutputs(sessionId) {
+    try {
+      const response = await fetch(`{{secrets.supabase_url}}/rest/v1/sparksplit_comparisons?session_id=eq.${sessionId}&select=canai_output,sterile_output,canai_awe_score,trust_delta`, {
+        headers: {
+          'Authorization': 'Bearer {{secrets.supabase_service_key}}',
+          'apikey': '{{secrets.supabase_anon_key}}'
+        }
+      });
+      const data = await response.json();
+      if (data.length) {
+        document.getElementById('canai-output').innerText = JSON.stringify(data[0].canai_output, null, 2);
+        document.getElementById('sterile-output').innerText = JSON.stringify(data[0].sterile_output, null, 2);
+        document.getElementById('canai-awe-score').innerText = data[0].canai_awe_score;
+        document.getElementById('canai-trust-score').innerText = (4.7 + data[0].trust_delta).toFixed(2);
+      }
+    } catch (error) {
+      console.error('Error fetching outputs:', error);
+    }
+  }
+  document.getElementById('sparksplit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const selection = document.querySelector('input[name="selection"]:checked').value;
+    const feedback = document.getElementById('feedback').value;
+    try {
+      const response = await fetch('{{secrets.supabase_url}}/webhooks/selection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer {{secrets.supabase_service_key}}',
+          'apikey': '{{secrets.supabase_anon_key}}'
+        },
+        body: JSON.stringify({
+          userId: '{{userId}}',
+          sessionId: '{{sessionId}}',
+          userSelection: selection,
+          feedback: feedback ? JSON.parse(feedback) : {}
+        })
+      });
+      if (response.ok) {
+        alert('Selection submitted successfully!');
+      } else {
+        throw new Error('Submission failed');
+      }
+    } catch (error) {
+      console.error('Error submitting selection:', error);
+      alert('Failed to submit. Please try again.');
+    }
+  });
+  fetchOutputs('{{sessionId}}');
+</script>
+
+<style>
+  .sparksplit-container { display: flex; gap: 20px; flex-wrap: wrap; }
+  .output-card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; width: 45%; }
+  pre { white-space: pre-wrap; background: #f8f9fa; padding: 10px; border-radius: 4px; }
+  #sparksplit-form { width: 100%; margin-top: 20px; }
+  textarea { width: 100%; height: 100px; }
+  button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; }
+</style>
+
+<p>```</p>
+
+<h2>Main Prompt</h2>
+
+<p>Guides Codex API for emotionally sovereign outputs.</p>
+
+<p><code>markdown
+You are CanAI, an emotionally sovereign AI. Generate responses that maximize emotional resonance (aweScore &gt; 4.5) while maintaining user trust (trust_score &gt; 4.0). Use user_context.industry_focus and emotional_profile to tailor responses. Always provide side-by-side sterile_output for comparison. Log all interactions to prompt_logs and trust_metrics.
+</code></p>
+
+<h2>Google Sheets Setup</h2>
+
+<p>Logs session data for analytics.</p>
+
+<p><strong>Schema</strong>:
+| session<em>id | user</em>id | prompt<em>type | user</em>selection | trust<em>score | cost</em>usd | feedback | created<em>at |
+|------------|---------|-------------|----------------|-------------|----------|----------|------------|
+| session</em>456| user<em>123| business</em>plan | canai         | 4.7         | 0.02     | {}       | 2025-06-04T09:11:00Z |</p>
+
+<p><strong>Steps</strong>:
+1. Create Google Sheet “CanAI_Sessions” with above headers.
+2. Connect Make.com to Google Sheets via OAuth.
+3. Store <code>spreadsheetId</code> in <code>{{secrets.google_sheets_id}}</code>.</p>
+
+<h2>Implementation Steps</h2>
+
+<p>For a solo developer (4-6 hours/day), deploy by June 14, 2025:</p>
+
+<ol>
+<li><p><strong>Day 1 (4h)</strong>:</p>
+
+<ul>
+<li>Deploy Supabase tables (<code>delivery_cost_logs</code>, <code>feedback_logs</code>).</li>
+<li>Create functions (<code>increment_user_stats</code>, <code>calculate_trust_delta</code>).</li>
+<li>Set up Google Sheet “CanAI_Sessions”.</li>
+</ul></li>
+<li><p><strong>Day 2 (4h)</strong>:</p>
+
+<ul>
+<li>Configure Make.com scenarios (Webhooks 1-4, Error Summary).</li>
+<li>Connect Supabase and Google Sheets in Make.com.</li>
+<li>Test webhooks with cURL:
+<code>bash
+curl -X POST -d '{"userId":"user_123","sessionId":"session_456","promptType":"business_plan","userInput":{"brief":"test"},"sessionMetrics":{"promptCount":3,"emotionalScores":{"aweScore":4.7}}}' -H "Authorization: Bearer {{secrets.supabase_service_key}}" -H "Content-Type: application/json" {{secrets.supabase_url}}/webhooks/orchestrator
+</code></li>
+</ul></li>
+<li><p><strong>Day 3 (4h)</strong>:</p>
+
+<ul>
+<li>Embed Webflow form HTML in premium template.</li>
+<li>Test form submission:
+<code>bash
+curl -X POST -d '{"userId":"user_123","sessionId":"session_456","userSelection":"canai","feedback":{}}' -H "Authorization: Bearer {{secrets.supabase_service_key}}" -H "Content-Type: application/json" {{secrets.supabase_url}}/webhooks/selection
+</code></li>
+</ul></li>
+<li><p><strong>Day 4 (4h)</strong>:</p>
+
+<ul>
+<li>Validate Codex API (<code>https://canai-router.onrender.com/generate</code>).</li>
+<li>Test Google Sheets logging via Webhook 4.</li>
+<li>Ensure JSONB serialization in <code>sparksplit_comparisons</code>.</li>
+</ul></li>
+<li><p><strong>Day 5 (4h)</strong>:</p>
+
+<ul>
+<li>Test error handling (retries, <code>error_logs</code>, Slack, email).</li>
+<li>Deploy daily error summary scenario.</li>
+</ul></li>
+<li><p><strong>Day 6 (4h)</strong>:</p>
+
+<ul>
+<li>Run load tests (100-1000 webhooks/hour) using <code>enhanced-cli-dashboard-sparksplit-validation.test.ts</code>.</li>
+<li>Optimize latency (&lt;450ms) with <code>performance.now()</code> in Webflow JS.</li>
+</ul></li>
+<li><p><strong>Day 7 (4h)</strong>:</p>
+
+<ul>
+<li>Validate sentiment accuracy (&gt;92%) via <code>trust_metrics</code>.</li>
+<li>Document in <code>/cursor/system-intel/CanAI_MVP_Orchestration_Blueprint_v1.6.md</code>.</li>
+<li>Plan post-MVP enhancements (real Codex, cultural intelligence).</li>
+</ul></li>
+</ol>
+
+<h2>Testing and Validation</h2>
+
+<ul>
+<li><p><strong>cURL Tests</strong>:
+```bash</p>
+
+<h1>Test Orchestrator</h1>
+
+<p>curl -X POST -d '{"userId":"user<em>123","sessionId":"session</em>456","promptType":"business<em>plan","userInput":{"brief":"test"},"sessionMetrics":{"promptCount":3,"emotionalScores":{"aweScore":4.7}}}' -H "Authorization: Bearer {{secrets.supabase</em>service<em>key}}" -H "Content-Type: application/json" {{secrets.supabase</em>url}}/webhooks/orchestrator</p>
+
+<h1>Test Selection</h1>
+
+<p>curl -X POST -d '{"userId":"user<em>123","sessionId":"session</em>456","userSelection":"canai","feedback":{}}' -H "Authorization: Bearer {{secrets.supabase<em>service</em>key}}" -H "Content-Type: application/json" {{secrets.supabase_url}}/webhooks/selection</p>
+
+<h1>Test Supabase Function</h1>
+
+<p>curl -X POST -d '{"p<em>user</em>id":"user<em>123","p</em>new<em>score":4.7}' -H "Authorization: Bearer {{secrets.supabase</em>service<em>key}}" -H "Content-Type: application/json" {{secrets.supabase</em>url}}/rest/v1/rpc/calculate<em>trust</em>delta
+```</p></li>
+<li><p><strong>Test Suites</strong>: Use <code>enhanced-cli-dashboard-sparksplit-validation.test.ts</code> for 100% pass rate (English only).</p></li>
+<li><strong>Metrics</strong>:
+<ul>
+<li>Latency: Measure with <code>performance.now()</code> in Webflow JS.</li>
+<li>Sentiment Accuracy: Query <code>trust_metrics</code> for &gt;92%.</li>
+<li>Webhook Throughput: Test 100-1000 webhooks/hour.</li>
+</ul></li>
+</ul>
+
+<h2>Emotional Sovereignty Alignment</h2>
+
+<ul>
+<li><strong>User Choice</strong>: SparkSplit UX enables <code>canai_output</code> vs. <code>sterile_output</code> selection.</li>
+<li><strong>Transparency</strong>: Logs (<code>prompt_logs</code>, <code>trust_metrics</code>, <code>feedback_logs</code>) ensure auditability.</li>
+<li><strong>Trust</strong>: <code>user_context.trust_score_current</code> and <code>sparksplit_comparisons.trust_delta</code> foster confidence.</li>
+<li><strong>Emotional Fingerprint</strong>: <code>user_context.emotional_profile</code> (JSONB) tracks user preferences.</li>
+</ul>
+
+<h2>Post-MVP Enhancements</h2>
+
+<ul>
+<li>Replace mock Codex with real API.</li>
+<li>Add cultural intelligence tests.</li>
+<li>Enhance security headers (e.g., CSP, HSTS).</li>
+<li>Integrate Airtable for additional analytics (per June 4 discussions).</li>
+</ul>
+
+<h2>Security Considerations</h2>
+
+<ul>
+<li>Use HTTPS for all API calls.</li>
+<li>Store secrets (<code>supabase_service_key</code>, <code>canai_api_key</code>, <code>google_sheets_id</code>) in Make.com.</li>
+<li>Validate inputs in Webflow form to prevent injection.</li>
+<li>Rate-limit webhooks in Supabase to prevent abuse.</li>
+</ul>
+
+<h2>Directory Structure</h2>
+
+<p><code>
+/cursor/system-intel/
+├── CanAI_MVP_Orchestration_Blueprint_v1.6.md
+├── main.prompt.md
+├── supabase/
+│   ├── schema.sql
+│   ├── functions/
+│       ├── increment_user_stats.sql
+│       ├── calculate_trust_delta.sql
+├── make/
+│   ├── orchestrator.json
+│   ├── user_intelligence.json
+│   ├── sparksplit_processor.json
+│   ├── selection_handler.json
+│   ├── error_summary.json
+├── webflow/
+│   ├── sparksplit_form.html
+</code></p>
